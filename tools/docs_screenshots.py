@@ -29,7 +29,7 @@ os.environ["UNSEENET_INSECURE_FAST_KDF"] = "1"
 
 import unseenet.client.session as sess  # noqa: E402
 from unseenet.client.session import Session  # noqa: E402
-from unseenet.client.tui import (BrowseDialog, ComposeDialog, GroupInfoDialog,  # noqa: E402
+from unseenet_tui.app import (BrowseDialog, ComposeDialog, GroupInfoDialog,  # noqa: E402
                                  NamesDialog, NodesDialog, ReadScreen, UnseenetApp)
 from unseenet.core.store import Store  # noqa: E402
 from unseenet.core.vault import Vault  # noqa: E402

@@ -9,7 +9,7 @@ pytest.importorskip("textual")
 from textual.widgets import Input  # noqa: E402
 
 from unseenet.client.session import Session  # noqa: E402
-from unseenet.client.tui import InfoDialog, InputDialog, ProfileDialog, UnseenetApp  # noqa: E402
+from unseenet_tui.app import InfoDialog, InputDialog, ProfileDialog, UnseenetApp  # noqa: E402
 from unseenet.core import addresses as addr  # noqa: E402
 from unseenet.core import crypto  # noqa: E402
 from unseenet.core.store import Store  # noqa: E402

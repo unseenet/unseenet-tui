@@ -4,13 +4,13 @@ The terminal client is a program that runs in a terminal window. It starts its o
 connects to a node and keeps everything you have - identity, group keys,
 subscriptions, what you have read - in one encrypted file, the **vault**.
 
-Prefer a window and a mouse? The [graphical client](graphical.md) uses the same vault
+Prefer a window and a mouse? The [graphical client](https://unseenet.org/graphical/) uses the same vault
 and works the same way.
 
 ## Install
 
 The easiest way, on **Windows, macOS and Linux**, is a
-[portable build](portable.md): one folder with the client and Tor inside,
+[portable build](https://unseenet.org/portable/): one folder with the client and Tor inside,
 nothing to install, and it runs from a USB stick.
 
 To install it with Python instead, you need Python 3.11 or newer, `git`
@@ -71,7 +71,7 @@ The client then subscribes you to the project's groups - `unseenet`
 (the project), `unseenet.announce` (releases and news), `unseenet.help`
 (ask anything) and `unseenet.test` (say hello) - so there is something to read. You can
 unsubscribe from them like any other group; they are not added again.
-Stuck? Ask in `unseenet.help` - see [Getting help](help.md).
+Stuck? Ask in `unseenet.help` - see [Getting help](https://unseenet.org/help/).
 
 The first connection takes 10-30 seconds while Tor builds its circuits, and
 can take a few tries right after Tor starts; the client retries by itself.
@@ -166,7 +166,7 @@ anything. All this is worked out in your client; nothing is sent anywhere.
 If you name someone in a group they do not follow, they would never see
 it. So when your post names people by their certified names, the client
 also sends each of them a short **mention notice** to their inbox
-([UN-RFC 0032](spec/un-rfc-0032.md)): who wrote, in which group, and the
+([UN-RFC 0032](https://unseenet.org/spec/un-rfc-0032/)): who wrote, in which group, and the
 subject - never the text. The compose window shows who will be told, and
 you can untick it for that post; *Stop telling people you mention* in the
 command palette turns it off altogether. At most 5 people are told per
@@ -207,7 +207,7 @@ open as a chat.
 
 What you write is a **chat line** (from the input line) or a **post**
 with a subject (from the compose window, ++n++), and every message says
-which it is ([UN-RFC 0028](spec/un-rfc-0028.md)). So the view only
+which it is ([UN-RFC 0028](https://unseenet.org/spec/un-rfc-0028/)). So the view only
 changes how a group looks, never what is in it: shown as threads, chat
 lines are marked `»` with their first line and kept together instead of
 each becoming a thread; shown as a chat, a post stands out with its
@@ -251,7 +251,7 @@ under the text - so a charter can have headings such as "Allowed" and
 "Not allowed", numbered lists and links. Pictures are not possible in
 rules: they live in the group's signed settings, which cannot carry
 attachments. Older clients show Markdown rules as the text you typed,
-which reads fine too ([UN-RFC 0014](spec/un-rfc-0014.md) section 2.1).
+which reads fine too ([UN-RFC 0014](https://unseenet.org/spec/un-rfc-0014/) section 2.1).
 
 ![About a group (?): its owner, type, postage, how long posts are kept, and its rules](img/client-group-info.svg)
 
@@ -286,14 +286,14 @@ show.
 
 If you have lost the identity that owns a group, the group cannot be removed
 from the network. A node operator can still
-[drop it from their own node](node/operations.md#dropping-a-group).
+[drop it from their own node](https://unseenet.org/node/operations/#dropping-a-group).
 
 ## Banning someone from your group
 
 If you own a group, select a post by the person and choose **Ban from
 group** in the command palette, with a short reason. Nodes then refuse
 their new posts in the group, and clients hide their old ones
-([UN-RFC 0004](spec/un-rfc-0004.md) section 5.1). **Banned from group**
+([UN-RFC 0004](https://unseenet.org/spec/un-rfc-0004/) section 5.1). **Banned from group**
 lists the bans and lifts one.
 
 A ban is part of the group's signed settings, so it is **public**: anyone
@@ -305,7 +305,7 @@ that slower, and withdraw posts you do not want (see below).
 ## Blocked in a hierarchy
 
 A hierarchy can have a **maintainer** - for example an organisation that
-runs `dk.*` ([how it works](guide/groups.md#names-and-hierarchies)). A maintainer can block
+runs `dk.*` ([how it works](https://unseenet.org/guide/groups/#names-and-hierarchies)). A maintainer can block
 someone in its whole hierarchy, with a public reason - say a person who
 posts threats in group after group. A maintainer it has given a part of
 the hierarchy to, such as `dk.snak.*`, can block within that part.
@@ -314,11 +314,11 @@ Your client hides posts by blocked people and says so in the group's
 title line ("2 hidden: blocked in dk.*: threats against members"). You
 decide: **Show posts blocked by maintainers** in the command palette
 shows them again. Node operators decide for their nodes, too
-([`honour_blocks`](node/configuration.md#honour_blocks-maintainers-blocks)).
+([`honour_blocks`](https://unseenet.org/node/configuration/#honour_blocks-maintainers-blocks)).
 
 If you are a maintainer, select a post and choose **Block in hierarchy**,
 with a reason. Your client adds the block to your hierarchy list and
-posts it ([UN-RFC 0018](spec/un-rfc-0018.md) section 5.4). A block does
+posts it ([UN-RFC 0018](https://unseenet.org/spec/un-rfc-0018/) section 5.4). A block does
 not delete anything and gives you no power over the groups themselves;
 for real crimes, contact the police.
 
@@ -352,7 +352,7 @@ shows the list, and shows someone again.
 ## Pinned posts
 
 The owner and moderators of a group can pin posts at the top of it, for
-example a welcome post or the rules ([UN-RFC 0033](spec/un-rfc-0033.md)).
+example a welcome post or the rules ([UN-RFC 0033](https://unseenet.org/spec/un-rfc-0033/)).
 Nodes keep a pinned post beyond the group's window until it is unpinned.
 
 In the threads view, the pins are in a **Pinned** section above the
@@ -380,7 +380,7 @@ count, and your client checks this itself, as it does for withdrawals.
 Select a post and choose **Withdraw post** in the command palette
 (++ctrl+p++), or press ++shift+d++. You can withdraw your own posts, and
 any post in a group you own or moderate. The client sends a signed
-*cancel* ([UN-RFC 0004](spec/un-rfc-0004.md) section 7): nodes delete the
+*cancel* ([UN-RFC 0004](https://unseenet.org/spec/un-rfc-0004/) section 7): nodes delete the
 post and stop passing it on, and other clients stop showing it.
 
 It is **withdrawn, not deleted**. People who have already read it may
@@ -396,7 +396,7 @@ the nodes could read it.
 
 ## Formatting: Markdown and emoji
 
-What you write is **Markdown** ([UN-RFC 0031](spec/un-rfc-0031.md)): the
+What you write is **Markdown** ([UN-RFC 0031](https://unseenet.org/spec/un-rfc-0031/)): the
 plain text Usenet always used, now also shown formatted. It reads fine
 unformatted too, so readers like tin see it as you wrote it.
 
@@ -463,7 +463,7 @@ signature below the `-- ` line. ++ctrl+s++ sends.
 
 Every identity has a personal **inbox**. The client creates it on the
 node the first time you connect. A private message is one of two kinds
-([UN-RFC 0028](spec/un-rfc-0028.md)), and you choose which when you write:
+([UN-RFC 0028](https://unseenet.org/spec/un-rfc-0028/)), and you choose which when you write:
 
 - a **post** has a subject, is read on its own and answered with a
   quote, just like a post in a group. Private posts are at the top of the group list as
@@ -535,13 +535,13 @@ Links are shown exactly as written and never opened for you; they are
 what the identity says, not something anybody checked.
 
 Your profile is renewed along with your inbox, so it stays as long as
-you use the identity ([UN-RFC 0022](spec/un-rfc-0022.md),
-[0029](spec/un-rfc-0029.md)).
+you use the identity ([UN-RFC 0022](https://unseenet.org/spec/un-rfc-0022/),
+[0029](https://unseenet.org/spec/un-rfc-0029/)).
 
 ## Names
 
 Group names and people's names are shown as short as is safe
-([UN-RFC 0018](spec/un-rfc-0018.md) and [0019](spec/un-rfc-0019.md)).
+([UN-RFC 0018](https://unseenet.org/spec/un-rfc-0018/) and [0019](https://unseenet.org/spec/un-rfc-0019/)).
 The client reads the project's lists for this in the background, like the
 node list, and keeps them in your vault.
 
@@ -650,7 +650,7 @@ identities.
 The client knows a list of nodes to start with, so you can pick one instead
 of typing an address. Once connected, it reads the newest list from the
 project's channel `unseenet.nodes@ph5fc5hop5232qsz`
-([UN-RFC 0010](spec/un-rfc-0010.md)): through the node you already use, over
+([UN-RFC 0010](https://unseenet.org/spec/un-rfc-0010/)): through the node you already use, over
 Tor, and only if it is signed by the project. Nothing is fetched from a web
 site. **Add** in "Your nodes" (++o++) offers the nodes from that list that
 you do not use yet.
@@ -670,7 +670,7 @@ carried, or just say thanks.
 ## Addresses
 
 Every group, post and person has an `unseenet:` address
-([UN-RFC 0031](spec/un-rfc-0031.md) section 3.4.1) to give to others:
+([UN-RFC 0031](https://unseenet.org/spec/un-rfc-0031/) section 3.4.1) to give to others:
 `unseenet:dk.snak@abcd...` for a group, `?m=` added for a post, and
 `unseenet:` with a fingerprint for a person. In the command palette
 (++ctrl+p++), **Address of this post** and **Address of this group** show
@@ -718,7 +718,7 @@ As a group's owner you choose who else has a role, in the command palette
 
 In a **moderated** group, a post by someone who is not a moderator is
 not posted straight away. The client sends it, sealed, to the owner and
-every moderator ([UN-RFC 0009](spec/un-rfc-0009.md) section 3), and tells
+every moderator ([UN-RFC 0009](https://unseenet.org/spec/un-rfc-0009/) section 3), and tells
 you it is waiting for approval.
 
 Moderators open **Moderation queue** in the command palette. *Approve*
@@ -798,7 +798,7 @@ unseenet --help
 | `read GROUP_ID` | Read a group, with each post's Message-ID (`--json`: author, date, references, kind, page and files of each) |
 | `withdraw GROUP_ID MESSAGE_ID ... [--yes]` | [Withdraw posts](#withdrawing-a-post): your own, or any in a group you own or moderate |
 | `withdraw GROUP_ID --all [--keep MESSAGE_ID] [--keep-author KEY]` | Withdraw every post in a group you own or moderate, but those you keep |
-| `bridges [MODE]` | Show or set [Tor bridges](tor.md) |
+| `bridges [MODE]` | Show or set [Tor bridges](https://unseenet.org/tor/) |
 
 Global options go before the command: `--vault FILE` picks the vault and
 `--identity NAME` the identity for this command (default: the first), and

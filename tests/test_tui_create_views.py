@@ -17,7 +17,7 @@ KDF = {"ops": 1, "mem": 8192 * 1024}
 
 async def _app(tmp_path, monkeypatch):
     import unseenet.client.session as sess
-    from unseenet.client.tui import UnseenetApp
+    from unseenet_tui.app import UnseenetApp
     monkeypatch.setattr(sess, "DEFAULT_POW", 10)
     node = Node(Store(), NodeConfig(min_pow=8, forward_delay=(0, 0), sites="accept"))
     server = await node.serve("127.0.0.1", 0)
@@ -35,7 +35,7 @@ async def _app(tmp_path, monkeypatch):
 @pytest.mark.parametrize("view, gtype, want", [("pages", "open", "channel"),
                                                ("feed", "channel", "channel")])
 async def test_tui_create_a_site_or_a_feed(tmp_path, monkeypatch, view, gtype, want):
-    from unseenet.client.tui import CreateGroupDialog
+    from unseenet_tui.app import CreateGroupDialog
     app, server = await _app(tmp_path, monkeypatch)
     async with app.run_test(size=(140, 50)) as pilot:
         assert await app_ready(pilot, app), stack(app)

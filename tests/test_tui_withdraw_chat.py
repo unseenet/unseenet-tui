@@ -17,7 +17,7 @@ KDF = {"ops": 1, "mem": 8192 * 1024}
 
 async def test_tui_withdraws_your_last_chat_line(tmp_path, monkeypatch):
     import unseenet.client.session as sess
-    from unseenet.client.tui import ConfirmDialog, UnseenetApp
+    from unseenet_tui.app import ConfirmDialog, UnseenetApp
     monkeypatch.setattr(sess, "DEFAULT_POW", 10)
     node = Node(Store(), NodeConfig(min_pow=8, forward_delay=(0, 0)))
     server = await node.serve("127.0.0.1", 0)

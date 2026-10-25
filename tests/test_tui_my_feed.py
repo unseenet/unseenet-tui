@@ -6,7 +6,7 @@ import pytest
 pytest.importorskip("textual")
 
 from unseenet.client.session import Session  # noqa: E402
-from unseenet.client.tui import START_FEED, START_SITE, ProfileDialog, UnseenetApp  # noqa: E402
+from unseenet_tui.app import START_FEED, START_SITE, ProfileDialog, UnseenetApp  # noqa: E402
 from unseenet.core.store import Store  # noqa: E402
 from unseenet.core.vault import Vault  # noqa: E402
 from unseenet.node.server import Node, NodeConfig  # noqa: E402

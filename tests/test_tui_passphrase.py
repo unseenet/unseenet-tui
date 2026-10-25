@@ -7,7 +7,7 @@ pytest.importorskip("textual")
 from textual.widgets import Input  # noqa: E402
 
 from unseenet.client.session import Session  # noqa: E402
-from unseenet.client.tui import UnseenetApp  # noqa: E402
+from unseenet_tui.app import UnseenetApp  # noqa: E402
 from unseenet.core.vault import Vault, VaultError  # noqa: E402
 
 from tuihelp import app_ready, laid_out, press, stack, wait_for  # noqa: E402

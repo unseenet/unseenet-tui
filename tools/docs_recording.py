@@ -185,7 +185,7 @@ def main() -> None:
         env = {k: v for k, v in os.environ.items() if k != "UNSEENET_PASSPHRASE"}
         env.update(TERM="xterm-256color", COLORTERM="truecolor", UNSEENET_INSECURE_FAST_KDF="1",
                    UNSEENET_HOME=str(home), PYTHONPATH=str(ROOT / "src"))
-        child = pexpect.spawn(sys.executable, ["-m", "unseenet.client.tui", "--vault", str(target)],
+        child = pexpect.spawn(sys.executable, ["-m", "unseenet_tui.app", "--vault", str(target)],
                               env=env, cwd=str(home), dimensions=(ROWS, COLS))
         rec = Recorder(child, args.debug)
         for i, (wait, keys, typed) in enumerate(SCRIPT):

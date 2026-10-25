@@ -9,7 +9,7 @@ pytest.importorskip("textual")
 from textual.widgets import Input, TextArea  # noqa: E402
 
 from unseenet.client.session import Session  # noqa: E402
-from unseenet.client.tui import ConfirmDialog, PageDialog, PreviewDialog, UnseenetApp  # noqa: E402
+from unseenet_tui.app import ConfirmDialog, PageDialog, PreviewDialog, UnseenetApp  # noqa: E402
 from unseenet.core.store import Store  # noqa: E402
 from unseenet.core.vault import Vault  # noqa: E402
 from unseenet.node.server import Node, NodeConfig  # noqa: E402

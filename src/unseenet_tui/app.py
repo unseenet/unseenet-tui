@@ -32,40 +32,40 @@ from textual.widgets import (Button, Checkbox, DataTable, Footer, Header, Input,
                              OptionList, RichLog, Select, Static, TextArea, Tree)
 from textual.widgets.option_list import Option
 
-from .. import __version__
-from ..portable import portable_root
-from ..console import console_css
-from ..core.vault import Vault, VaultError
-from ..nntp import NNTPError
-from ..core import crypto
-from ..core import addresses as addr
-from ..core.groups import (INBOX_NAME, make_group_id, KIND_CHAT, KIND_POST, group_refs,
+from unseenet import __version__
+from unseenet.portable import portable_root
+from unseenet.console import console_css
+from unseenet.core.vault import Vault, VaultError
+from unseenet.nntp import NNTPError
+from unseenet.core import crypto
+from unseenet.core import addresses as addr
+from unseenet.core.groups import (INBOX_NAME, make_group_id, KIND_CHAT, KIND_POST, group_refs,
                            personal_inbox_id, short_group_id, split_group_id)
-from . import session as _session_module
-from . import naming
-from . import richtext
-from . import groupfilter
-from .grouptree import fingerprint_suffix, group_tree
-from ..core import markup
-from ..core import reactions as rx
-from ..core import about
-from ..core import profiles as prof
-from ..core.blobs import FILE_CHOICES, file_choice
-from .. import names as nm
-from .session import MAX_MENTION_NOTICES
-from .session import (MAX_SIG_LINES, SIG_SEPARATOR, GroupInfo, Message, Session, SessionError,
+from unseenet.client import session as _session_module
+from unseenet.client import naming
+from unseenet.client import richtext
+from unseenet.client import groupfilter
+from unseenet.client.grouptree import fingerprint_suffix, group_tree
+from unseenet.core import markup
+from unseenet.core import reactions as rx
+from unseenet.core import about
+from unseenet.core import profiles as prof
+from unseenet.core.blobs import FILE_CHOICES, file_choice
+from unseenet import names as nm
+from unseenet.client.session import MAX_MENTION_NOTICES
+from unseenet.client.session import (MAX_SIG_LINES, SIG_SEPARATOR, GroupInfo, Message, Session, SessionError,
                       default_vault_path, split_signature)
 
 REFRESH_SECONDS = 60           # a fallback; new posts normally arrive by push (UN-RFC 0008)
 REPO_URL, DOCS_URL = about.REPO_URL, about.DOCS_URL
-from .threads import CONTACT, FOR_YOU, TIMELINE   # the session's pseudo groups (#139)
+from unseenet.client.threads import CONTACT, FOR_YOU, TIMELINE   # the session's pseudo groups (#139)
 ACROSS = (FOR_YOU, TIMELINE)             # views across groups: act in the post's own group
 FEED_MARK = "≡"                          # the timeline in the group list (UN-RFC 0034)
 START_FEED = ("action", "start-feed")    # "Start my feed" at the top of the group list (#495)
 START_SITE = ("action", "start-site")    # ... and "Start my site", the same way
 SITE_MARK = "▤"                          # your site in the group list (UN-RFC 0035)
-from .runtime import ClientRuntime
-from . import events as ev
+from unseenet.client.runtime import ClientRuntime
+from unseenet.client import events as ev
 REPLY_MARK, MENTION_MARK = "◄", "♦"   # in the basic character set (Windows console)
 
 
@@ -397,7 +397,7 @@ class SetupDialog(Dialog):
     def __init__(self, need_identity: bool, need_node: bool, known: list | None = None):
         super().__init__()
         self.need_identity, self.need_node = need_identity, need_node
-        from ..known_nodes import KNOWN_NODES
+        from unseenet.known_nodes import KNOWN_NODES
         self.known = list(known or KNOWN_NODES)
 
     def compose(self) -> ComposeResult:
@@ -593,7 +593,7 @@ class PageDialog(Dialog):
 
     @on(Button.Pressed, "#preview")
     def action_preview(self) -> None:
-        from ..core import pages as pg
+        from unseenet.core import pages as pg
         path = self._path() or "index"
 
         def resolve(href: str) -> str | None:
@@ -607,7 +607,7 @@ class PageDialog(Dialog):
 
     @on(Button.Pressed, "#ok")
     def action_send(self) -> None:
-        from ..core import pages as pg
+        from unseenet.core import pages as pg
         path, text = self._path(), self.query_one("#body", TextArea).text
         if not pg.valid_path(path):
             self.app.notify("A path is 1-8 parts of a-z 0-9 - _ . separated by /",
@@ -1487,7 +1487,7 @@ class GroupInfoDialog(Dialog):
                          + ("person" if len(bans) == 1 else "people") + " - "
                          + "; ".join(f"{b.get('key', '')[8:16]}...: {b.get('reason') or 'no reason given'}"
                                      for b in bans[:5]) + (" ..." if len(bans) > 5 else ""))
-        from ..core import portals as _portals
+        from unseenet.core import portals as _portals
         found = _portals.portals(d)
         if found:                                  # UN-RFC 0023 3.5: always shown
             lines += ["", "Also published outside Tor, through portals:"]
@@ -2142,7 +2142,7 @@ class BrowseDialog(Dialog):
             self._show(g)
 
     def _owner(self, g: GroupInfo, data: dict) -> str:
-        from ..known_nodes import NODES_GROUP
+        from unseenet.known_nodes import NODES_GROUP
         s = self.app.session
         fp = g.group_id.rpartition("@")[2]
         if fp == s.my_inbox.rpartition("@")[2]:
@@ -3811,7 +3811,7 @@ class UnseenetApp(App):
     def current_address(self) -> str | None:
         """The unseenet: address of what you are on: the post or page, else the group,
         else - in a chat with someone - the person."""
-        from ..core import addresses as addr
+        from unseenet.core import addresses as addr
         s, gid, m = self.session, self.current_group or "", self.current_message
         if gid.startswith(CONTACT):
             return addr.identity_address(crypto.fingerprint(crypto.key_from_text(gid[len(CONTACT):])))
@@ -3835,7 +3835,7 @@ class UnseenetApp(App):
             self.copy_to_clipboard(a)              # OSC 52: many terminals take it
         except Exception:  # noqa: BLE001 - a terminal without it: the dialog is enough
             pass
-        from ..core import addresses as addr
+        from unseenet.core import addresses as addr
         try:
             web = addr.web_address(a)
         except addr.AddressError:
@@ -3845,7 +3845,7 @@ class UnseenetApp(App):
     @work(group="dialog", exit_on_error=False)
     async def action_open_address(self) -> None:
         """Open an unseenet: address - a group, a post, a page or a person."""
-        from ..core import addresses as addr
+        from unseenet.core import addresses as addr
         s = self.session
         text = await self.push_screen_wait(InputDialog(
             "Open an address", "An unseenet: address - of a group, a post, a page or a person - "
@@ -3950,7 +3950,7 @@ class UnseenetApp(App):
             return
         cmd = ([sys.executable, "update"] if getattr(sys, "frozen", False)
                else [sys.executable, "-m", "unseenet.update"]) + ["--media", str(root), "--pause"]
-        from .. import __version__
+        from unseenet import __version__
         if ".dev" in __version__:          # a development build follows development builds
             cmd += ["--channel", "dev"]
         with self.suspend():
@@ -4098,7 +4098,7 @@ class UnseenetApp(App):
     async def compose_page(self, g: GroupInfo, m: Message | None = None) -> None:
         """A new page (``m`` None) or a new version of page ``m``; the site is read first,
         so the new version names the current one."""
-        from ..core import pages as pg
+        from unseenet.core import pages as pg
         s, gid = self.session, g.group_id
         data = s.manifest_data(gid)
         label = s.group_label(gid)
@@ -5822,7 +5822,7 @@ class UnseenetApp(App):
 
     @work(group="dialog", exit_on_error=False)
     async def _pin(self, gid: str | None, selected: Message | None) -> None:
-        from ..core import pins as pn
+        from unseenet.core import pins as pn
         s = self.session
         if not self._pins_possible(gid):
             self.notify("Only the owner and moderators of a group pin posts, in groups "
@@ -5947,7 +5947,7 @@ class UnseenetApp(App):
                 screen.show(screen.msg, keep_place=True)
 
     def _pins_possible(self, gid: str | None) -> bool:
-        from ..core import pins as pn
+        from unseenet.core import pins as pn
         s = self.session
         if not gid or gid in ACROSS or gid.startswith(CONTACT) or gid == s.my_inbox:
             return False
@@ -6025,7 +6025,9 @@ class UnseenetApp(App):
 def main(argv=None) -> None:
     p = argparse.ArgumentParser(prog="unseenet-tui", description="Unseenet terminal client.")
     p.add_argument("--vault", default=str(default_vault_path()), help="encrypted vault file")
-    p.add_argument("--version", action="version", version=f"unseenet-tui {__version__}")
+    from . import __version__ as tui_version
+    p.add_argument("--version", action="version",
+                   version=f"unseenet-tui {tui_version} (unseenet {__version__})")
     args = p.parse_args(argv)
     UnseenetApp(Path(args.vault)).run()
 

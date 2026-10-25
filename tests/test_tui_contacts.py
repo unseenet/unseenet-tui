@@ -1,7 +1,7 @@
 """The address book (c) and writing a private post to a contact by name (UN-RFC 0028)."""
 
 from unseenet.client.session import Session
-from unseenet.client.tui import ContactsDialog, UnseenetApp
+from unseenet_tui.app import ContactsDialog, UnseenetApp
 from unseenet.core import crypto
 from unseenet.core.vault import Vault
 

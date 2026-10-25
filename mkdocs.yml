@@ -1,0 +1,25 @@
+# The docs of the terminal client, to preview alone (mkdocs serve) and to check
+# strictly in pull requests. On unseenet.org they are gathered by
+# unseenet/unseenet-docs (sources.yml), at the same addresses.
+site_name: Unseenet terminal client
+site_url: https://unseenet.org/
+repo_url: https://github.com/unseenet/unseenet-tui
+theme:
+  name: material
+  font: false
+nav:
+  - Using the terminal client: client.md
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.tabbed:
+      alternate_style: true

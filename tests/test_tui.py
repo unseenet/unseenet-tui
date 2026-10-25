@@ -8,7 +8,7 @@ import pytest
 pytest.importorskip("textual")
 
 from unseenet.client.session import Session  # noqa: E402
-from unseenet.client.tui import UnseenetApp  # noqa: E402
+from unseenet_tui.app import UnseenetApp  # noqa: E402
 from unseenet.core.store import Store  # noqa: E402
 from unseenet.core.vault import Vault  # noqa: E402
 from unseenet.node.server import Node, NodeConfig  # noqa: E402
@@ -135,13 +135,13 @@ async def test_tui_inbox_and_operator_contact(tmp_path, monkeypatch):
         assert await wait_for(pilot, lambda: app._inbox_ready, 300)
         # the group list is filled right after the inbox is made
         assert await wait_for(pilot, lambda: app.session.my_inbox in app.groups, 300)
-        from unseenet.client.tui import NodeInfoDialog, NodesDialog
+        from unseenet_tui.app import NodeInfoDialog, NodesDialog
         await pilot.press("o")
         assert await wait_for(pilot, lambda: isinstance(app.screen, NodesDialog))
         await pilot.click("#info")                    # details of the selected node
         assert await wait_for(pilot, lambda: isinstance(app.screen, NodeInfoDialog))
         await pilot.click("#ok")                      # "Write to operator"
-        from unseenet.client.tui import ComposeDialog
+        from unseenet_tui.app import ComposeDialog
         # the dialog comes from a worker that may first read the inbox's manifest (#497)
         assert await wait_for(pilot, lambda: isinstance(app.screen, ComposeDialog)
                               and laid_out(app, "#subject"), 300), stack(app)
@@ -200,7 +200,7 @@ async def test_tui_signature_added_and_not_quoted(tmp_path, monkeypatch):
 
 async def test_tui_create_group_rejects_bad_name_and_keeps_dialog(tmp_path, monkeypatch):
     import unseenet.client.session as sess
-    from unseenet.client.tui import CreateGroupDialog
+    from unseenet_tui.app import CreateGroupDialog
     monkeypatch.setattr(sess, "DEFAULT_POW", 10)
     node = Node(Store(), NodeConfig(min_pow=8, forward_delay=(0, 0)))
     server = await node.serve("127.0.0.1", 0)
@@ -336,7 +336,7 @@ async def test_tui_background_error_is_reported_not_fatal(tmp_path, monkeypatch)
 
 async def test_tui_chat_group_and_rules_on_first_visit(tmp_path, monkeypatch):
     import unseenet.client.session as sess
-    from unseenet.client.tui import GroupInfoDialog
+    from unseenet_tui.app import GroupInfoDialog
     monkeypatch.setattr(sess, "DEFAULT_POW", 10)
     node = Node(Store(), NodeConfig(min_pow=8, forward_delay=(0, 0)))
     server = await node.serve("127.0.0.1", 0)
@@ -408,7 +408,7 @@ async def test_tui_chat_updates_by_push(tmp_path, monkeypatch):
 
 
 async def test_tui_about_screen(tmp_path, monkeypatch):
-    from unseenet.client.tui import AboutDialog, DOCS_URL, REPO_URL
+    from unseenet_tui.app import AboutDialog, DOCS_URL, REPO_URL
     node = Node(Store(), NodeConfig(min_pow=8, forward_delay=(0, 0)))
     server = await node.serve("127.0.0.1", 0)
     vault_path = tmp_path / "me.vault"
@@ -436,7 +436,7 @@ async def test_tui_about_screen(tmp_path, monkeypatch):
 async def test_tui_nodes_add_default_remove(tmp_path, monkeypatch):
     """Two nodes in the TUI: groups from both, the node manager, one key."""
     import unseenet.client.session as sess
-    from unseenet.client.tui import BrowseDialog, NodesDialog
+    from unseenet_tui.app import BrowseDialog, NodesDialog
     monkeypatch.setattr(sess, "DEFAULT_POW", 8)
     servers, addrs = [], []
     for _ in range(2):
@@ -462,7 +462,7 @@ async def test_tui_nodes_add_default_remove(tmp_path, monkeypatch):
         assert await wait_for(pilot, lambda: isinstance(app.screen, NodesDialog))
         await pilot.click("#add")
         from textual.widgets import Select
-        from unseenet.client.tui import OTHER_NODE, AddNodeDialog
+        from unseenet_tui.app import OTHER_NODE, AddNodeDialog
         assert await wait_for(pilot, lambda: isinstance(app.screen, AddNodeDialog))
         app.screen.query_one("#known", Select).value = OTHER_NODE     # not a known node
         await pilot.pause(0.2)
@@ -502,7 +502,7 @@ def _all_nodes(node):
 
 async def test_tui_bridges_dialog(tmp_path, monkeypatch):
     from textual.widgets import Select, TextArea
-    from unseenet.client.tui import BridgesDialog
+    from unseenet_tui.app import BridgesDialog
     node = Node(Store(), NodeConfig(min_pow=8, forward_delay=(0, 0)))
     server = await node.serve("127.0.0.1", 0)
     vault_path = tmp_path / "me.vault"
@@ -532,7 +532,7 @@ async def test_tui_bridges_dialog(tmp_path, monkeypatch):
 async def test_tui_first_start_offers_known_nodes(tmp_path, monkeypatch):
     from textual.widgets import Input, Select
     import unseenet.client.session as sess
-    from unseenet.client.tui import SetupDialog
+    from unseenet_tui.app import SetupDialog
     from unseenet.known_nodes import KNOWN_NODES
 
     async def offline(self, address=None, quiet=False):     # no Tor in tests
@@ -557,7 +557,7 @@ async def test_tui_first_start_offers_known_nodes(tmp_path, monkeypatch):
 async def test_tui_browse_and_nodes_fit_small_terminal(tmp_path, monkeypatch):
     """Lists fill the dialog and the buttons stay visible in a small window;
     the highlighted group and node are described below the list."""
-    from unseenet.client.tui import BrowseDialog, NodesDialog
+    from unseenet_tui.app import BrowseDialog, NodesDialog
     names = [f"dk.gruppe{i}" for i in range(30)]
     app, server = await _app_with_groups(tmp_path, monkeypatch, names)
     async with app.run_test(size=(80, 20)) as pilot:
@@ -597,7 +597,7 @@ async def test_tui_browse_and_nodes_fit_small_terminal(tmp_path, monkeypatch):
 async def test_tui_browse_does_not_subscribe_to_someone_elses_inbox(tmp_path, monkeypatch):
     """A node operator's contact inbox (operator@...) is listed, but only its owner
     can read it: Enter explains that instead of subscribing."""
-    from unseenet.client.tui import BrowseDialog
+    from unseenet_tui.app import BrowseDialog
     app, server = await _app_with_groups(tmp_path, monkeypatch, ["dk.snak"])
     addr = f"127.0.0.1:{server.sockets[0].getsockname()[1]}"
     op = Session(Vault.open(tmp_path / "op.vault", "pw", **KDF), status=lambda *_: None)
@@ -630,7 +630,7 @@ async def test_tui_browse_does_not_subscribe_to_someone_elses_inbox(tmp_path, mo
 
 
 def test_group_icons():
-    from unseenet.client.tui import ICON_LEGEND, group_icons
+    from unseenet_tui.app import ICON_LEGEND, group_icons
     assert group_icons("open", {"view": "threads"}) == "  ≡"
     assert group_icons("open", {"view": "chat"}) == "  »"
     assert group_icons("closed", {"view": "chat"}) == "∩ »"
@@ -652,7 +652,7 @@ async def test_tui_browse_hides_data_groups(tmp_path, monkeypatch):
     know yet is marked as soon as its manifest is read (UN-RFC 0008 3.1.1). The
     owner's settings dialog does not break on views."""
     import unseenet.known_nodes as kn
-    from unseenet.client.tui import BrowseDialog, EditGroupDialog
+    from unseenet_tui.app import BrowseDialog, EditGroupDialog
     app, server = await _app_with_groups(tmp_path, monkeypatch, ["dk.snak"])
     addr = f"127.0.0.1:{server.sockets[0].getsockname()[1]}"
     other = Session(Vault.open(tmp_path / "o.vault", "pw", **KDF), status=lambda *_: None)
@@ -719,7 +719,7 @@ async def test_tui_group_list_shows_icons(tmp_path, monkeypatch):
 async def test_tui_sent_private_messages_and_full_screen(tmp_path, monkeypatch):
     """Private posts you sent show in Private posts (also to keys that are
     not contacts); Enter reads a message on the whole screen, n/p move, Esc goes back."""
-    from unseenet.client.tui import ReadScreen
+    from unseenet_tui.app import ReadScreen
     app, server = await _app_with_groups(tmp_path, monkeypatch, ["dk.snak"])
     addr = f"127.0.0.1:{server.sockets[0].getsockname()[1]}"
     other = Session(Vault.open(tmp_path / "o.vault", "pw", **KDF), status=lambda *_: None)
@@ -769,7 +769,7 @@ async def test_tui_sent_private_messages_and_full_screen(tmp_path, monkeypatch):
 async def test_tui_browse_space_and_click_on_box(tmp_path, monkeypatch):
     """Space subscribes; a click on the line only shows the group, a click on
     [ ] subscribes."""
-    from unseenet.client.tui import BrowseDialog
+    from unseenet_tui.app import BrowseDialog
     app, server = await _app_with_groups(tmp_path, monkeypatch, ["dk.snak"])
     addr = f"127.0.0.1:{server.sockets[0].getsockname()[1]}"
     other = Session(Vault.open(tmp_path / "o.vault", "pw", **KDF), status=lambda *_: None)
@@ -850,7 +850,7 @@ async def test_tui_shortcuts_follow_where_you_are(tmp_path, monkeypatch):
 
 async def test_tui_names_dialog(tmp_path, monkeypatch):
     """@ opens your names (UN-RFC 0019); a claim with no registrar is an error, not a crash."""
-    from unseenet.client.tui import NamesDialog
+    from unseenet_tui.app import NamesDialog
     node = Node(Store(), NodeConfig(min_pow=8, forward_delay=(0, 0)))
     server = await node.serve("127.0.0.1", 0)
     vault_path = tmp_path / "me.vault"
@@ -877,7 +877,7 @@ async def test_tui_names_dialog(tmp_path, monkeypatch):
 
 async def test_tui_withdraw_own_post(tmp_path, monkeypatch):
     """D withdraws your own post after a warning that it is best effort (UN-RFC 0004, 7)."""
-    from unseenet.client.tui import ConfirmDialog
+    from unseenet_tui.app import ConfirmDialog
     app, server = await _app_with_groups(tmp_path, monkeypatch, ["dk.snak"])
     async with app.run_test(size=(140, 40)) as pilot:
         assert await wait_for(pilot, lambda: len(app.groups) == 2, 300)
@@ -902,7 +902,7 @@ async def test_tui_withdraw_own_post(tmp_path, monkeypatch):
 async def test_tui_names_transfer_and_release(tmp_path, monkeypatch):
     """Under @ you can also transfer a name to another key, or release it (UN-RFC 0019, 6.5)."""
     from unseenet.client import naming
-    from unseenet.client.tui import ConfirmDialog, InputDialog, NamesDialog
+    from unseenet_tui.app import ConfirmDialog, InputDialog, NamesDialog
     from unseenet.core import crypto
     sent = []
 
@@ -938,7 +938,7 @@ async def test_tui_names_transfer_and_release(tmp_path, monkeypatch):
 
 async def test_tui_ignore_and_show_again(tmp_path, monkeypatch):
     """#72: Ignore this person hides their posts; People you ignore shows them again."""
-    from unseenet.client.tui import ConfirmDialog, KeyListDialog
+    from unseenet_tui.app import ConfirmDialog, KeyListDialog
     from unseenet.core import crypto
     from unseenet.core.article import new_article
     app, server = await _app_with_groups(tmp_path, monkeypatch, ["dk.snak"])
@@ -977,7 +977,7 @@ async def test_tui_ignore_and_show_again(tmp_path, monkeypatch):
 
 async def test_tui_owner_bans_and_lifts(tmp_path, monkeypatch):
     """UN-RFC 0004 section 5.1 in the client: Ban from group, Banned from group."""
-    from unseenet.client.tui import InputDialog, KeyListDialog
+    from unseenet_tui.app import InputDialog, KeyListDialog
     from unseenet.core import crypto
     from unseenet.core.article import new_article
     app, server = await _app_with_groups(tmp_path, monkeypatch, ["dk.snak"])
@@ -1008,7 +1008,7 @@ async def test_tui_owner_bans_and_lifts(tmp_path, monkeypatch):
 
 async def test_tui_make_and_remove_moderator(tmp_path, monkeypatch):
     """#70: Make moderator (key filled in from the selected post) and remove again."""
-    from unseenet.client.tui import InputDialog, KeyListDialog
+    from unseenet_tui.app import InputDialog, KeyListDialog
     from unseenet.core import crypto
     from unseenet.core.article import new_article
     app, server = await _app_with_groups(tmp_path, monkeypatch, ["dk.snak"])
@@ -1040,7 +1040,7 @@ async def test_tui_moderation_queue(tmp_path, monkeypatch):
     """UN-RFC 0009 section 3 in the client: a submission waits in the queue and
     Approve posts it."""
     import unseenet.client.session as sess
-    from unseenet.client.tui import ModerationDialog
+    from unseenet_tui.app import ModerationDialog
     app, server = await _app_with_groups(tmp_path, monkeypatch, [])
     addr = f"127.0.0.1:{server.sockets[0].getsockname()[1]}"
     async with app.run_test(size=(140, 40)) as pilot:
@@ -1067,7 +1067,7 @@ async def test_tui_moderation_queue(tmp_path, monkeypatch):
 
 async def test_tui_report_post(tmp_path, monkeypatch):
     """#74: Report post lists who can act on it and sends the report."""
-    from unseenet.client.tui import ReportDialog
+    from unseenet_tui.app import ReportDialog
     app, server = await _app_with_groups(tmp_path, monkeypatch, [])
     addr = f"127.0.0.1:{server.sockets[0].getsockname()[1]}"
     owner = Session(Vault.open(tmp_path / "o.vault", "pw", **KDF), status=lambda *_: None)
@@ -1107,7 +1107,7 @@ async def test_tui_give_a_name_and_answer_a_request(tmp_path, monkeypatch):
     """UN-RFC 0019 section 5.4 in the client: give a name under yours, and answer a request."""
     from unseenet import names as nm
     from unseenet.client import naming
-    from unseenet.client.tui import InputDialog, ModerationDialog
+    from unseenet_tui.app import InputDialog, ModerationDialog
     from unseenet.core import crypto
     app, server = await _app_with_groups(tmp_path, monkeypatch, [])
     addr = f"127.0.0.1:{server.sockets[0].getsockname()[1]}"
@@ -1151,7 +1151,7 @@ async def test_tui_give_a_name_and_answer_a_request(tmp_path, monkeypatch):
 def test_for_you_marks_and_news():
     """#170: replies and mentions are shown and announced apart."""
     from unseenet.client.session import ForYouCount
-    from unseenet.client.tui import for_you_marks, for_you_news
+    from unseenet_tui.app import for_you_marks, for_you_news
     assert for_you_marks(ForYouCount(0, 0)) == ""
     assert for_you_marks(ForYouCount(1, 2)) == " ◄1 ♦2"
     assert for_you_marks(ForYouCount(0, 3)) == " ♦3"
@@ -1164,7 +1164,7 @@ def test_for_you_marks_and_news():
 
 async def test_tui_for_you(tmp_path, monkeypatch):
     """#109: 'For you' at the top of the groups lists a reply to your post, marked."""
-    from unseenet.client.tui import FOR_YOU, REPLY_MARK
+    from unseenet_tui.app import FOR_YOU, REPLY_MARK
     app, server = await _app_with_groups(tmp_path, monkeypatch, [])
     addr = f"127.0.0.1:{server.sockets[0].getsockname()[1]}"
     other = Session(Vault.open(tmp_path / "o.vault", "pw", **KDF), status=lambda *_: None)
@@ -1200,7 +1200,7 @@ async def test_tui_for_you(tmp_path, monkeypatch):
 
 async def test_tui_group_ref(tmp_path, monkeypatch):
     """#172: # on a post naming #dk.marsvin asks before subscribing, then opens it."""
-    from unseenet.client.tui import ConfirmDialog
+    from unseenet_tui.app import ConfirmDialog
     app, server = await _app_with_groups(tmp_path, monkeypatch, ["dk.snak"])
     addr = f"127.0.0.1:{server.sockets[0].getsockname()[1]}"
     other = Session(Vault.open(tmp_path / "o.vault", "pw", **KDF), status=lambda *_: None)
@@ -1235,7 +1235,7 @@ async def test_tui_group_ref(tmp_path, monkeypatch):
 
 async def test_tui_group_ref_link(tmp_path, monkeypatch):
     """#172: clicking a #group link runs group_ref with that reference."""
-    from unseenet.client.tui import ConfirmDialog
+    from unseenet_tui.app import ConfirmDialog
     app, server = await _app_with_groups(tmp_path, monkeypatch, ["dk.snak"])
     addr = f"127.0.0.1:{server.sockets[0].getsockname()[1]}"
     other = Session(Vault.open(tmp_path / "o.vault", "pw", **KDF), status=lambda *_: None)
@@ -1324,7 +1324,7 @@ async def test_tui_group_tree_drops_prefix_and_folds(tmp_path, monkeypatch):
 
 async def test_confirm_dialog_focuses_cancel(tmp_path, monkeypatch):
     """Enter must not confirm by accident: Cancel has the focus when the dialog opens."""
-    from unseenet.client.tui import ConfirmDialog
+    from unseenet_tui.app import ConfirmDialog
     app, server = await _app_with_groups(tmp_path, monkeypatch, ["dk.snak"])
     async with app.run_test(size=(120, 36)) as pilot:
         assert await app_ready(pilot, app), stack(app)
@@ -1382,7 +1382,7 @@ async def test_tui_search_groups_while_browsing_and_in_your_list(tmp_path, monke
     """#13: typing in the group browser searches it; / searches your own list; Esc
     clears the search before it closes anything."""
     from textual.widgets import Input
-    from unseenet.client.tui import BrowseDialog
+    from unseenet_tui.app import BrowseDialog
     app, server = await _app_with_groups(tmp_path, monkeypatch,
                                          ["dk.snak", "dk.snak.marsvin", "alt.test"])
     async with app.run_test(size=(140, 40)) as pilot:
@@ -1422,7 +1422,7 @@ async def test_tui_search_groups_while_browsing_and_in_your_list(tmp_path, monke
 async def test_tui_edit_own_post(tmp_path, monkeypatch):
     """UN-RFC 0042: e edits your own post in place; it is marked edited."""
     from textual.widgets import TextArea
-    from unseenet.client.tui import ComposeDialog
+    from unseenet_tui.app import ComposeDialog
     app, server = await _app_with_groups(tmp_path, monkeypatch, ["dk.snak"])
     async with app.run_test(size=(140, 40)) as pilot:
         assert await wait_for(pilot, lambda: len(app.groups) == 2, 300)
@@ -1547,7 +1547,7 @@ async def test_tui_keeps_your_state_local_when_asked(tmp_path, monkeypatch):
 async def test_tui_follows_a_person_and_shows_the_timeline_and_a_feed(tmp_path, monkeypatch):
     """#207 in the TUI: Follow (by key), a Timeline in the group list with the person's
     entries, and their feed as a feed - comments under the entry, marked ↳."""
-    from unseenet.client.tui import TIMELINE
+    from unseenet_tui.app import TIMELINE
     app, server = await _app_with_groups(tmp_path, monkeypatch, [])
     addr = f"127.0.0.1:{server.sockets[0].getsockname()[1]}"
     alice = Session(Vault.open(tmp_path / "a.vault", "pw", **KDF), status=lambda *_: None)
@@ -1585,7 +1585,7 @@ async def test_tui_sends_a_picture_cleaned_of_its_metadata(tmp_path, monkeypatch
     import io
     from PIL import Image
     import unseenet.client.session as sess
-    from unseenet.client.tui import ComposeDialog
+    from unseenet_tui.app import ComposeDialog
     from unseenet.core import blobs as bl
     from unseenet.core.blobs import BlobStore
     monkeypatch.setattr(sess, "DEFAULT_POW", 10)
@@ -1632,7 +1632,7 @@ async def test_tui_publishes_a_profile_picture(tmp_path, monkeypatch):
     """#155 in the TUI: Edit profile takes a picture file, published cleaned (avatar@)."""
     from PIL import Image
     import unseenet.client.session as sess
-    from unseenet.client.tui import ConfirmDialog, EditProfileDialog
+    from unseenet_tui.app import ConfirmDialog, EditProfileDialog
     from unseenet.core import crypto
     monkeypatch.setattr(sess, "DEFAULT_POW", 10)
     node = Node(Store(), NodeConfig(min_pow=8, forward_delay=(0, 0), profiles="accept",
@@ -1702,7 +1702,7 @@ async def test_tui_shows_a_site_as_its_pages(tmp_path, monkeypatch):
 
 async def test_tui_shows_a_profile_shared_with_you(tmp_path, monkeypatch):
     """#182 in the TUI: a profile shared with you shows in your private posts, marked."""
-    from unseenet.client.tui import ProfileDialog
+    from unseenet_tui.app import ProfileDialog
     app, server = await _app_with_groups(tmp_path, monkeypatch, [])
     addr = f"127.0.0.1:{server.sockets[0].getsockname()[1]}"
     alice = Session(Vault.open(tmp_path / "a.vault", "pw", **KDF), status=lambda *_: None)
@@ -1733,7 +1733,7 @@ async def test_tui_shows_a_profile_shared_with_you(tmp_path, monkeypatch):
 async def test_tui_copies_and_opens_addresses(tmp_path, monkeypatch):
     """#357 in the TUI: the address of what you are on, and opening one - a post in a
     group you do not follow yet: asked first, then the cursor on the post."""
-    from unseenet.client.tui import ConfirmDialog, InputDialog
+    from unseenet_tui.app import ConfirmDialog, InputDialog
     from unseenet.core import addresses as addr
     app, server = await _app_with_groups(tmp_path, monkeypatch, [])
     addr_ = f"127.0.0.1:{server.sockets[0].getsockname()[1]}"

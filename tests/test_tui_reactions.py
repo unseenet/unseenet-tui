@@ -9,7 +9,7 @@ pytest.importorskip("textual")
 from textual.widgets import DataTable  # noqa: E402
 
 from unseenet.client.session import Session  # noqa: E402
-from unseenet.client.tui import ReactDialog, UnseenetApp, reactions_text  # noqa: E402
+from unseenet_tui.app import ReactDialog, UnseenetApp, reactions_text  # noqa: E402
 from unseenet.core import reactions as rx  # noqa: E402
 from unseenet.core.store import Store  # noqa: E402
 from unseenet.core.vault import Vault  # noqa: E402
