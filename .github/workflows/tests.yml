@@ -1,0 +1,17 @@
+name: tests
+# Pull requests and main: the tests against the core's main (as the nightly
+# builds use it), on Linux and - since the portable builds run there - Windows
+# and macOS; and the docs, strictly. Nothing is built here (unseenet#544).
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+jobs:
+  tests:
+    uses: unseenet/.github/.github/workflows/python-tests.yml@main
+    with:
+      core-main: true
+      other-os: true
+  docs:
+    uses: unseenet/.github/.github/workflows/docs-check.yml@main

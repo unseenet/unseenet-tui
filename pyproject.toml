@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "unseenet-tui"
+dynamic = ["version"]
+description = "The Unseenet terminal client: groups, threads, chats, feeds and sites over Tor, in a terminal"
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.11"
+dependencies = [
+    "unseenet>=0.5,<0.6",   # one minor version of the core at a time
+    "textual>=0.80",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "pytest-asyncio>=0.23", "aiohttp>=3.9", "pillow"]
+
+[project.scripts]
+unseenet-tui = "unseenet_tui.app:main"
+
+[project.urls]
+Homepage = "https://github.com/unseenet/unseenet-tui"
+Documentation = "https://unseenet.org/client/"
+Changelog = "https://github.com/unseenet/unseenet-tui/blob/main/CHANGELOG.md"
+
+[tool.setuptools.dynamic]
+version = { attr = "unseenet_tui.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["src", "tests"]

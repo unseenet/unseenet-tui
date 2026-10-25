@@ -1,0 +1,34 @@
+name: release
+# Push a tag like v0.1.0 to release (v0.1.1a1 for a test release). The tag must
+# match unseenet_tui.__version__ and, for a full release, have a section in
+# CHANGELOG.md, which becomes the release notes. Conventions:
+# https://github.com/unseenet/.github/blob/main/CONVENTIONS.md
+on:
+  push:
+    tags: ["v*"]
+jobs:
+  build:
+    uses: unseenet/.github/.github/workflows/release-build.yml@main
+    with:
+      package: unseenet_tui
+  pypi:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/unseenet-tui
+    permissions:
+      id-token: write          # trusted publishing: no API token stored anywhere
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
+  github:
+    needs: pypi
+    uses: unseenet/.github/.github/workflows/release-github.yml@main
+    with:
+      title: "Unseenet terminal"
+    permissions:
+      contents: write
