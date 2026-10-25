@@ -34,21 +34,21 @@ and the `tor` program.
     brew install tor git python
     ```
 
-Then install Unseenet from PyPI with [pipx](https://pipx.pypa.io/), which
-keeps it in its own environment:
+Then install the terminal client from PyPI with [pipx](https://pipx.pypa.io/),
+which keeps it in its own environment (it brings the Unseenet core along):
 
 ```bash
-pipx install "unseenet[tui]"
+pipx install unseenet-tui
 unseenet-tui
 ```
 
 Or, to follow development, from the repository:
 
 ```bash
-git clone https://github.com/unseenet/unseenet
-cd unseenet
+git clone https://github.com/unseenet/unseenet-tui
+cd unseenet-tui
 python3 -m venv .venv
-.venv/bin/pip install -e ".[tui]"
+.venv/bin/pip install -e .
 .venv/bin/unseenet-tui
 ```
 
