@@ -1,10 +1,62 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/unseenet/unseenet/main/assets/logo-dark.svg">
+    <img src="https://raw.githubusercontent.com/unseenet/unseenet/main/assets/logo-light.svg" alt="Unseenet" width="360">
+  </picture>
+</p>
+
 # unseenet-tui
 
-The Unseenet terminal client: groups, threads, chats, private posts, feeds and sites in a terminal, built on the Unseenet core library like every other client.
+**The Unseenet terminal client.** Groups and threads read one post at a
+time, chats, private posts, feeds and sites, your people and your nodes - in
+a terminal, over Tor. Built on the [unseenet](https://github.com/unseenet/unseenet)
+core library like every other client; this repository is only the user
+interface ([Textual](https://textual.textualize.io/)).
 
-Its manual and task-based guide are in `docs/`, published on unseenet.org/tui/.
+> Status: **pre-alpha**, like the rest of Unseenet. Not security reviewed.
 
-> **Being set up** ([unseenet#548](https://github.com/unseenet/unseenet/issues/548), part of [unseenet#391](https://github.com/unseenet/unseenet/issues/391)). Until it is, this lives in [unseenet](https://github.com/unseenet/unseenet).
+> **Being set up** ([unseenet#548](https://github.com/unseenet/unseenet/issues/548)).
+> Until the move is finished the terminal client is released from
+> unseenet (`pipx install "unseenet[tui]"`); this repository takes over then.
+
+## Use it
+
+- **Portable or bootable**, with Tor inside: the
+  [Portable · Terminal and Bootable · Terminal builds](https://unseenet.org/portable/).
+- **With Python** (3.11+, and `tor` installed): `pipx install unseenet-tui`,
+  then `unseenet-tui`.
+
+How to use it: [Using the terminal client](https://unseenet.org/client/)
+(from [`docs/client.md`](docs/client.md)).
+
+## Develop
+
+```bash
+pip install -e ".[dev]"     # the core comes from PyPI; for its main:
+pip install "unseenet @ git+https://github.com/unseenet/unseenet@main"
+pytest -q                   # headless, against a local node, no Tor
+mkdocs serve                # the docs page, alone
+```
+
+| | |
+|---|---|
+| `src/unseenet_tui/app.py` | the client: the app, its screens and dialogs |
+| `tests/` | headless tests against a node on localhost (`tuihelp.py`: helpers) |
+| `docs/` | the manual, gathered into unseenet.org by unseenet-docs |
+| `tools/docs_screenshots.py`, `tools/docs_recording.py` | the screenshots and the recording in the docs |
+
+Everything that is not the user interface belongs in the core: when the
+client needs something the core lacks, it gets an issue in unseenet, and
+changes in the core that the client must follow get an issue here.
+
+## Versions and releases
+
+This client numbers its own releases, on the
+[Unseenet conventions](https://github.com/unseenet/.github/blob/main/CONVENTIONS.md#versions);
+each release names the minor version of the core it needs
+(`unseenet>=0.5,<0.6`). Tags `vX.Y.Z` on `main`; `release.yml` checks the
+tag against `__version__` and `CHANGELOG.md`, publishes to PyPI and makes
+the GitHub release.
 
 ## Part of Unseenet
 
