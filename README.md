@@ -15,10 +15,6 @@ interface ([Textual](https://textual.textualize.io/)).
 
 > Status: **pre-alpha**, like the rest of Unseenet. Not security reviewed.
 
-> **Being set up** ([unseenet#548](https://github.com/unseenet/unseenet/issues/548)).
-> Until the move is finished the terminal client is released from
-> unseenet (`pipx install "unseenet[tui]"`); this repository takes over then.
-
 ## Use it
 
 - **Portable or bootable**, with Tor inside: the
