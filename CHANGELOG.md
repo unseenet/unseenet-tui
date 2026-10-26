@@ -6,6 +6,11 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+- **app.py split by area** (#20, part 1): `helpers.py`, `screens.py` and
+  `dialogs/` (base, setup, compose, people, groups, moderation, nodes); `app.py`
+  keeps `UnseenetApp` and re-exports every moved name. A pure move: the same
+  statements, each in one place.
+
 - **Reactions in private chats and posts** (#9, on unseenet#513): the counts
   under private messages, `l` in a private chat (choosing among their lines) and
   on a private post, any emoji - where the core allows it, never on your own.
