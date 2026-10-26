@@ -112,7 +112,7 @@ class UnseenetApp(GroupsMixin, ChatMixin, ActionsMixin, FeedsMixin, AddressesMix
         Binding("m", "message", "Message"),
         Binding("c", "contacts", "Contacts", show=False),
         Binding("o", "node_info", "Nodes", show=False),
-        Binding("k", "show_key", "My key", show=False),
+        Binding("k", "show_key", "Your key", show=False),
         Binding("at", "names", "Names", show=False),
         Binding("s", "signature", "Signature", show=False),
         Binding("a", "add_contact", "Add contact", show=False),
@@ -429,7 +429,7 @@ class UnseenetApp(GroupsMixin, ChatMixin, ActionsMixin, FeedsMixin, AddressesMix
 
     @work(group="export", exclusive=True, exit_on_error=False)
     async def action_export(self) -> None:
-        """Export my data (#14, UN-RFC 0049 section 7): never keys; private messages only
+        """Export your data (#14, UN-RFC 0049 section 7): never keys; private messages only
         when chosen, and then the file encrypted with a passphrase."""
         from .export_dialog import ExportDialog, default_path
         s = self.session

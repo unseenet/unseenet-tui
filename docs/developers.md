@@ -45,3 +45,10 @@ Session: one class, `UnseenetApp`, put together in `app.py` from mixins.
 | `identity_dialogs.py` | Recovery words and copying to another device (UN-RFC 0050, unseenet-tui#15): the dialogs |
 | `notify.py` | Notifications when something lands in For you (unseenet-tui#4), the terminal way |
 | `screens.py` | The screens and widgets: the chat box, reading a post, files on it, About |
+
+## Words
+
+The client says **your** when it speaks to you (titles, navigation, the palette,
+messages: *Your feed*, *Your rules*, *Export your data*) and **my** only in your own
+words (a checkbox or a choice: *Use my rules*) - never both in one list. The rule for
+every client is in the core's *Write a client*, docs/developers/index.md.

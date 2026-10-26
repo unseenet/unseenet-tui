@@ -72,7 +72,7 @@ async def test_tui_start_my_feed_at_the_top_then_my_feed(tmp_path, monkeypatch):
                 yield from leaves(c)
         assert [n.data for n in leaves(tree.root)].count(gid) == 1
         label = str(next(n for n in tree.root.children if n.data == gid).label)
-        assert "My feed" in label
+        assert "Your feed" in label
         await pilot.press("q")
     server.close()
 
@@ -90,10 +90,10 @@ async def test_tui_profile_buttons_start_my_feed_and_follow(tmp_path, monkeypatc
     await alice.close()
     async with app.run_test(size=(140, 40)) as pilot:
         assert await app_ready(pilot, app), stack(app)
-        # your own profile: Start my feed
+        # your own profile: Start your feed
         app.action_show_profile(app.session.identity().key_text)
         assert await wait_for(pilot, lambda: isinstance(app.screen, ProfileDialog), 200)
-        assert str(app.screen.query_one("#my-feed").label) == "Start my feed"
+        assert str(app.screen.query_one("#my-feed").label) == "Start your feed"
         assert not app.screen.query("#follow")
         await press(pilot, app, "#my-feed")
         assert await wait_for(pilot, lambda: type(app.screen).__name__ == "ConfirmDialog", 100)
@@ -127,14 +127,14 @@ async def test_tui_profile_buttons_start_my_feed_and_follow(tmp_path, monkeypatc
 
 
 async def test_tui_start_my_site_at_the_top_and_on_the_profile(tmp_path, monkeypatch):
-    """My site works as My feed does: at the top, and a button on your own profile."""
+    """Your site works as your feed does: at the top, and a button on your own profile."""
     app, server, _ = await _setup(tmp_path, monkeypatch)
     async with app.run_test(size=(140, 40)) as pilot:
         assert await app_ready(pilot, app), stack(app)
         assert await wait_for(pilot, lambda: START_SITE in _top(app), 200)
         app.action_show_profile(app.session.identity().key_text)
         assert await wait_for(pilot, lambda: isinstance(app.screen, ProfileDialog), 200)
-        assert str(app.screen.query_one("#my-site").label) == "Start my site"
+        assert str(app.screen.query_one("#my-site").label) == "Start your site"
         await press(pilot, app, "#my-site")
         assert await wait_for(pilot, lambda: type(app.screen).__name__ == "ConfirmDialog", 100)
         await press(pilot, app, "#ok")
@@ -142,7 +142,7 @@ async def test_tui_start_my_site_at_the_top_and_on_the_profile(tmp_path, monkeyp
         assert await wait_for(pilot, lambda: app.session.has_personal_group("site"), 400)
         assert await wait_for(pilot, lambda: gid in _top(app) and START_SITE not in _top(app), 300)
         tree = app.query_one("#groups")
-        assert "My site" in str(next(n for n in tree.root.children if n.data == gid).label)
+        assert "Your site" in str(next(n for n in tree.root.children if n.data == gid).label)
         await pilot.press("q")
     server.close()
 

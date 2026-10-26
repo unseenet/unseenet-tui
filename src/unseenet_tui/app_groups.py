@@ -201,7 +201,7 @@ class GroupsMixin:
         my_feed = self.session.personal_group("feed")
         my_site = self.session.personal_group("site")
         on_top = list(mine)                              # not listed again further down
-        for kind, gid_ in (("feed", my_feed), ("site", my_site)):   # "My feed", "My site" (#495)
+        for kind, gid_ in (("feed", my_feed), ("site", my_site)):   # "Your feed", "Your site" (#495)
             if not searching and self.session.has_personal_group(kind):
                 on_top += [g for g in groups if g.group_id == gid_]
         for g in mine:                                   # private messages always first
@@ -220,13 +220,13 @@ class GroupsMixin:
                                             ("site", my_site, SITE_MARK, START_SITE)):
                 if self.session.has_personal_group(kind):
                     unread = self.session.unread_count(gid_)
-                    mine_text = Text(f"{mark} My {kind}" + (f" ({unread})" if unread else ""))
+                    mine_text = Text(f"{mark} Your {kind}" + (f" ({unread})" if unread else ""))
                     if unread:
                         mine_text.stylize("bold")
                     nodes[gid_] = tree.root.add_leaf(mine_text, data=gid_)
                 else:
                     nodes[start] = tree.root.add_leaf(
-                        Text(f"{mark} Start my {kind}", style="dim"), data=start)
+                        Text(f"{mark} Start your {kind}", style="dim"), data=start)
         self._for_you_seen = getattr(self, "_for_you_seen", None) or for_you
         # one chat per person: your contacts, and anyone else you have chatted with
         # (UN-RFC 0028, 6.2); posts are in Private posts

@@ -6,6 +6,11 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+- **"Your", as the client speaks to you**: *Your feed*, *Your site*, *Start your
+  feed*, *Export your data*, *Show your key*, *Share your profile* - matching *For
+  you* beside them; "my" stays only in your own words (*Use my rules*). The rule is
+  in the core's *Write a client*.
+
 - **Your own rules** (unseenet#615, UN-RFC 0051): *Your rules* in the palette -
   an editor checked as you type (the line and what is wrong), a suggestion shown
   when you have none (yours only if you save it), and *Use my rules* to turn them

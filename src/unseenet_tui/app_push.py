@@ -136,13 +136,13 @@ class PushMixin:
             ("Follow", "Follow a person - the selected post's author, or anyone by key or name; "
              "their feeds come into your Timeline", self.action_follow),
             ("Following", "The people you follow - stop following one", self.action_following),
-            ("Start my feed", "Your own feed, public, where anyone can comment - or open it",
+            ("Start your feed", "Your own feed, public, where anyone can comment - or open it",
              self.action_start_feed),
             (("Pictures in private posts: on" if self.session and self.session.inbox_files()
               else "Pictures in private posts: off"),
              "Whether people can send you pictures in private posts and chats - encrypted, "
              "only you can see them", self.action_toggle_inbox_files),
-            ("Start my site", "Your own site of pages, public - or open it; n writes a page",
+            ("Start your site", "Your own site of pages, public - or open it; n writes a page",
              self.action_start_site),
             ("Previous version of this page", "Publish the selected page's earlier version "
              "again (a site you write in)", self.action_page_previous),
@@ -161,7 +161,7 @@ class PushMixin:
              "you write; typing :ta offers them too", self.action_insert_emoji),
             ("Publish a folder as this site", "A folder of Markdown or HTML files as the pages of "
              "the site you write in - only what changed is sent", self.action_publish_folder),
-            ("Share my profile", "With one person or this closed group only - not public",
+            ("Share your profile", "With one person or this closed group only - not public",
              self.action_share_profile),
             ("Take back my shared profile", "From a person or this closed group",
              self.action_unshare_profile),
@@ -190,7 +190,7 @@ class PushMixin:
              self.action_group_address),
             ("Nodes", "Your nodes: add, remove, default, who runs them, write to an operator  [o]",
              self.action_node_info),
-            ("Show my key", "Your key, to share for private messages and invitations  [k]",
+            ("Show your key", "Your key, to share for private messages and invitations  [k]",
              self.action_show_key),
             ("Profile of this author (u)", "Who wrote the selected post: names, about, links, "
              "and their feed and site to look at without following", self.action_show_profile),
@@ -209,7 +209,7 @@ class PushMixin:
              else "Notifications: show who and what",
              "Show the sender and the start of the text in notifications (they can show on the "
              "lock screen)", self.action_toggle_notification_content),
-            ("Export my data", "Your posts, comments, chat lines and pages as signed, their files, "
+            ("Export your data", "Your posts, comments, chat lines and pages as signed, their files, "
              "profile and groups - never your keys; private messages only encrypted",
              self.action_export),
             ("Show recovery words", "The 24 words that bring your identity back on any device "

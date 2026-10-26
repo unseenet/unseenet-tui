@@ -1,4 +1,4 @@
-"""Export my data (#14, on the core's export, unseenet#577 / UN-RFC 0049 section 7):
+"""Export your data (#14, on the core's export, unseenet#577 / UN-RFC 0049 section 7):
 what an export holds and does not, private posts and chats only when chosen - then a
 passphrase, twice - and where it is saved (Downloads, else the home folder)."""
 
@@ -40,10 +40,10 @@ class ExportDialog(_dialog_base()):
         self.path = path
 
     def compose(self) -> ComposeResult:
-        """Export my data: what it holds and never holds, private messages with a passphrase
+        """Export your data: what it holds and never holds, private messages with a passphrase
         twice, Export."""
         with Vertical(classes="dialog"):
-            yield Label("Export my data", classes="title")
+            yield Label("Export your data", classes="title")
             yield Label(HOLDS)
             yield Label(NEVER, classes="hint")
             yield Label(f"Saved as {self.path}", classes="hint")
