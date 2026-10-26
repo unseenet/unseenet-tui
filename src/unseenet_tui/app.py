@@ -406,6 +406,11 @@ class SetupDialog(Dialog):
             if self.need_identity:
                 yield Label("Your identity is a key pair. The name is just a label others see.",
                             classes="hint")
+                # UN-RFC 0050: a new identity, or one you have - from its words or a device
+                yield Select([("Create a new identity", "new"),
+                              ("Restore from recovery words", "restore"),
+                              ("Get identity from another device", "copy")],
+                             value="new", allow_blank=False, id="how")
                 yield Input(placeholder="Display name, e.g. Andreas", id="display")
             if self.need_node:
                 yield Label("Which node do you want to connect to? Pick one of the known nodes, "
@@ -427,6 +432,10 @@ class SetupDialog(Dialog):
                 yield Button("Quit", id="cancel")
                 yield Button("Continue", variant="primary", id="ok")
 
+    @on(Select.Changed, "#how")
+    def _how_changed(self, event: Select.Changed) -> None:
+        self.query_one("#display").display = event.value == "new"
+
     @on(Select.Changed, "#known")
     def _known_changed(self, event: Select.Changed) -> None:
         self.query_one("#node").display = event.value == OTHER_NODE
@@ -443,8 +452,9 @@ class SetupDialog(Dialog):
     def _ok(self) -> None:
         result = {}
         if self.need_identity:
+            result["how"] = self.query_one("#how", Select).value
             result["display"] = self.query_one("#display", Input).value.strip()
-            if not result["display"]:
+            if result["how"] == "new" and not result["display"]:
                 self.app.notify("Please choose a display name", severity="error")
                 return
         if self.need_node:
@@ -2452,13 +2462,18 @@ class UnseenetApp(App):
             if result is None:
                 self.exit()
                 return
-            if "display" in result:
-                name = result["display"].lower().replace(" ", "-")
-                s.new_identity(name, result["display"])
+            how = result.get("how")
             if "node" in result:
                 s.add_node(result["node"])
                 for backup in result.get("backups", []):    # read from if the first is down
                     s.add_node(backup)
+            if how == "new":
+                name = result["display"].lower().replace(" ", "-")
+                s.new_identity(name, result["display"])
+                await self._first_words(passphrase)
+            elif how in ("restore", "copy") and not await self._identity_from_elsewhere(how):
+                self.exit()
+                return
         self._use_saved_theme()
         self.runtime = ClientRuntime(s)          # startup, refresh and push (#139)
         s.on(self._on_event)
@@ -2466,6 +2481,13 @@ class UnseenetApp(App):
         await self.show_offline()
         self.refresh_groups()
         self.set_interval(REFRESH_SECONDS, self.action_refresh)
+        if getattr(self, "_restored", False):
+            self._after_restore()
+        elif s.words_reminder_due():           # UN-RFC 0050 4.2: gently, at most weekly
+            s.note_words_reminded()
+            self.notify("Your recovery words are not written down yet - they bring your "
+                        "identity back if this stick is lost. Ctrl+P: Show recovery words.",
+                        timeout=15)
 
     @work(group="known-nodes", exclusive=True, exit_on_error=False)
     async def update_known_nodes(self) -> None:
@@ -3938,6 +3960,187 @@ class UnseenetApp(App):
                         "the old one - replace or delete them.", timeout=12)
             return
 
+    # --- recovery words and copying (UN-RFC 0050, #15) ---
+    async def _first_words(self, passphrase: str | None) -> None:
+        """Right after a new identity: its words, to write down now or later (4.2)."""
+        from .identity_dialogs import ShowWordsDialog
+        s = self.session
+        if not passphrase:
+            return
+        try:
+            words = await asyncio.to_thread(s.recovery_words, passphrase)
+        except SessionError:
+            return
+        result = await self.push_screen_wait(ShowWordsDialog(
+            s.default_identity_name(), s.identity().fingerprint, words, first_time=True,
+            vault_path=self.vault_path))
+        if result == "written":
+            s.note_words_written()
+        else:
+            s.note_words_reminded()
+
+    async def _identity_from_elsewhere(self, how: str) -> bool:
+        """At first start: restore from words, or get the identity from another device.
+        False if the user gave up."""
+        from .identity_dialogs import RestoreDialog
+        s = self.session
+        while True:
+            if how == "restore":
+                got = await self.push_screen_wait(RestoreDialog())
+                if got is None:
+                    return False
+                try:
+                    s.restore_identity(got["words"], display=got["display"] or None)
+                except SessionError as exc:
+                    self.notify(str(exc), severity="error", timeout=10)
+                    continue
+                self._restored = True
+                return True
+            if await self._receive_copy():
+                return True
+            return False
+
+    @work(group="dialog", exit_on_error=False)
+    async def action_show_words(self) -> None:
+        """Show recovery words: behind the vault passphrase, every time (4.2)."""
+        from .identity_dialogs import PassphraseDialog, ShowWordsDialog
+        s, error = self.session, ""
+        while True:
+            pw = await self.push_screen_wait(PassphraseDialog(error))
+            if pw is None:
+                return
+            try:
+                words = await asyncio.to_thread(s.recovery_words, pw)
+                break
+            except SessionError as exc:
+                error = str(exc)
+        result = await self.push_screen_wait(ShowWordsDialog(
+            s.default_identity_name(), s.identity().fingerprint, words, vault_path=self.vault_path))
+        if result == "written":
+            s.note_words_written()
+            self.notify("Noted: your recovery words are written down.")
+
+    @work(group="dialog", exit_on_error=False)
+    async def action_restore_words(self) -> None:
+        """Restore an identity from its words into this vault; it becomes the default."""
+        from .identity_dialogs import RestoreDialog
+        got = await self.push_screen_wait(RestoreDialog())
+        if got is None:
+            return
+        try:
+            name, ident, new = self.session.restore_identity(got["words"], display=got["display"] or None)
+        except SessionError as exc:
+            self.notify(str(exc), severity="error", timeout=10)
+            return
+        self.notify(f"{name} is back{'' if new else ' (it was already here)'} - reading it from "
+                    "the network ...")
+        self._update_subtitle()
+        self._after_restore()
+
+    @work(group="restore", exit_on_error=False)
+    async def _after_restore(self) -> None:
+        """Read the restored identity's state, name and profile from the network, and say
+        which closed groups did not come back - offering to ask their owners (4.4, 4.5)."""
+        from .identity_dialogs import ClosedGroupsDialog
+        s = self.session
+        self._restored = False
+        found = await s.restore_from_network()
+        self.refresh_groups()
+        ask = await self.push_screen_wait(ClosedGroupsDialog(found["closed_groups"], found["state"]))
+        for gid in ask or []:
+            try:
+                await s.ask_to_be_invited(gid)
+            except (SessionError, OSError, ConnectionError, NNTPError) as exc:
+                self.notify(f"{s.group_label(gid)}: {exc}", severity="error")
+        if ask:
+            self.notify(f"Asked {len(ask)} owner(s) to invite you again.")
+
+    @work(group="dialog", exit_on_error=False)
+    async def action_copy_to(self) -> None:
+        """Copy to another device (section 3): choose, show the code, check the words."""
+        from .identity_dialogs import CopyChoiceDialog, CopyOfferDialog
+        s = self.session
+        ids = [(n, e.get("display", n)) for n, e in s.data["identities"].items()]
+        choice = await self.push_screen_wait(CopyChoiceDialog(ids))
+        if not choice:
+            return
+        self.notify("Opening a one-time onion service ...")
+        try:
+            offer = await s.start_copy(choice["names"], choice["group_secrets"])
+        except SessionError as exc:
+            self.notify(str(exc), severity="error", timeout=12)
+            return
+        dialog = CopyOfferDialog(offer.code, offer.qr, offer.expires)
+        answer: asyncio.Future = asyncio.get_running_loop().create_future()
+        self.push_screen(dialog, lambda r: answer.done() or answer.set_result(r))
+        check = asyncio.ensure_future(offer.wait_for_check())
+        await asyncio.wait({check, answer}, return_when=asyncio.FIRST_COMPLETED)
+        if answer.done():                        # closed before the other device came
+            check.cancel()
+            await offer.cancel()
+            return
+        words = check.result()
+        if words is None:
+            dialog.dismiss(None)
+            self.notify(offer.error or f"The copy {offer.state}.", severity="error", timeout=12)
+            return
+        dialog.show_check(words)
+        match = await answer
+        if match is None:
+            await offer.cancel()
+            self.notify("Copy cancelled: nothing was sent.")
+            return
+        result = await offer.confirm(bool(match))
+        if result["state"] == "done":
+            self.notify("Copied" + (f": {', '.join(result['added'])}" if result["added"]
+                                    else " - the other device had it already."), timeout=10)
+        else:
+            self.notify(result["error"] or f"The copy {result['state']}.",
+                        severity="warning" if result["state"] == "cancelled" else "error", timeout=12)
+
+    @work(group="dialog", exit_on_error=False)
+    async def action_copy_from(self) -> None:
+        if await self._receive_copy():
+            self._update_subtitle()
+            self.refresh_groups()
+
+    async def _receive_copy(self) -> bool:
+        """Get identities from another device by its code (section 3; a terminal has no
+        camera, so the code is typed). True when something came."""
+        from .identity_dialogs import CopyCodeDialog, CopyWaitDialog
+        s = self.session
+        while True:
+            code = await self.push_screen_wait(CopyCodeDialog())
+            if code is None:
+                return False
+            self.notify("Connecting to the other device over Tor ...")
+            try:
+                got = await s.receive_copy(code)
+            except SessionError as exc:
+                self.notify(str(exc), severity="error", timeout=12)
+                continue
+            waiting = CopyWaitDialog(got.check_words)
+            cancelled = asyncio.Event()
+            self.push_screen(waiting, lambda r: cancelled.set())
+            finish = asyncio.ensure_future(got.finish())
+            stop = asyncio.ensure_future(cancelled.wait())
+            await asyncio.wait({finish, stop}, return_when=asyncio.FIRST_COMPLETED)
+            if not finish.done():
+                finish.cancel()
+                await got.cancel()
+                return False
+            stop.cancel()
+            waiting.dismiss(None)
+            try:
+                added = finish.result()
+            except SessionError as exc:
+                self.notify(str(exc), severity="error", timeout=12)
+                continue
+            self.notify("Got " + (", ".join(added) or "nothing new") + " from the other device.",
+                        timeout=10)
+            self._restored = bool(added)
+            return True
+
     def action_about(self) -> None:
         self.push_screen(AboutDialog())
 
@@ -4975,6 +5178,15 @@ class UnseenetApp(App):
              self.action_signature),
             ("Change passphrase", "A new passphrase for this vault file (copies elsewhere "
              "keep the old one)", self.action_change_passphrase),
+            ("Show recovery words", "The 24 words that bring your identity back on any device "
+             "- behind your passphrase" + ("" if self.session.words_written() else
+                                          " (not written down yet)"), self.action_show_words),
+            ("Copy to another device", "Your identities to a phone, PC or stick: a code or QR "
+             "code, then two check words", self.action_copy_to),
+            ("Get identity from another device", "Type the code another device shows",
+             self.action_copy_from),
+            ("Restore from recovery words", "Bring an identity back from its 24 words",
+             self.action_restore_words),
             ("Write plain text" if self.session.text_type() == markup.MARKDOWN_TYPE else "Write Markdown",
              "What you write is sent as Markdown (*emphasis*, `code`, :tada:) or as plain text "
              "(UN-RFC 0031)", self.action_toggle_markdown),
