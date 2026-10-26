@@ -6,6 +6,10 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+- **Reactions in private chats and posts** (#9, on unseenet#513): the counts
+  under private messages, `l` in a private chat (choosing among their lines) and
+  on a private post, any emoji - where the core allows it, never on your own.
+
 - **Export my data** (#14, on unseenet#577): Ctrl+P - your posts, comments,
   chat lines and pages as signed, their files, profile and groups, saved in
   Downloads; never your keys; private posts and chats only when chosen, and then

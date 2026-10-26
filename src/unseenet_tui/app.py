@@ -2337,7 +2337,9 @@ class UnseenetApp(App):
             return contact or (m is not None and m.readable and (
                 m.private or s.write_permission(gid, reply_to=m, kind=KIND_POST).allowed))
         if action == "react":                     # hidden where reacting is impossible (0048)
-            if contact or not group or shown == "pages":
+            if contact:                           # a private chat (UN-RFC 0048 4.3, #9)
+                return chat or (m is not None and s.react_permission(m.group, m).allowed)
+            if not group or shown == "pages":
                 return False
             if chat:
                 return bool(s.reaction_set(gid))
@@ -3365,7 +3367,7 @@ class UnseenetApp(App):
         """The reactions under ``m`` as text (UN-RFC 0048 section 7.2), "" for none.
         ``cache``: {group: all its counts}, so a list counts each group once."""
         s = self.session
-        if m.private or not m.readable:
+        if not m.readable:                  # private ones count too (UN-RFC 0048 4.3, #9)
             return ""
         if cache is None:
             counts = s.reactions_on(m)
@@ -3474,12 +3476,13 @@ class UnseenetApp(App):
                 body.append("\n\n")
                 body.append(attachments_text(msg.attachments))
             liked = self._reactions_line(msg)                # UN-RFC 0048 section 7.2
-            if liked or (not msg.private and self.session.react_permission(msg.group, msg)):
+            may = self.session.react_permission(msg.group, msg)    # private too (#9)
+            if liked or may:
                 body.append("\n\n")
                 if liked:
                     body.append(liked)
                     body.append("   ")
-                if not msg.private and self.session.react_permission(msg.group, msg):
+                if may:
                     body.append("l reacts", style="dim italic")
         else:
             body = Text("\n" + (msg.error or msg.subject))
@@ -6236,8 +6239,12 @@ class UnseenetApp(App):
     async def _react(self, gid: str, m: Message | None, chat: bool) -> None:
         s = self.session
         if chat:                                       # no selection in a chat
-            lines = [x for x in sorted(s.cache.get(gid, {}).values(), key=lambda x: x.number,
-                                       reverse=True) if x.readable][:40]
+            if gid.startswith("contact:"):            # a private chat: their lines (#9)
+                lines = [x for x in reversed(s.conversation(gid.split(":", 1)[1]))
+                         if x.readable and s.react_permission(x.group, x).allowed][:40]
+            else:
+                lines = [x for x in sorted(s.cache.get(gid, {}).values(), key=lambda x: x.number,
+                                           reverse=True) if x.readable][:40]
             chosen = await self.push_screen_wait(KeyListDialog(
                 "React to", "Newest first.",
                 [(x.message_id, f"{self._who(x)}: {self._first_line(x)[:60]}") for x in lines],
