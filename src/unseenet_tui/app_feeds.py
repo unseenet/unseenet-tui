@@ -134,7 +134,7 @@ class FeedsMixin:
             self.select_group(gid)
             return
         if not await self.push_screen_wait(ConfirmDialog(
-                "Start my feed", s.personal_group_warning("feed"), "Start my feed")):
+                "Start your feed", s.personal_group_warning("feed"), "Start your feed")):
             return
         self.set_status("Starting your feed ...")
         try:
@@ -157,7 +157,7 @@ class FeedsMixin:
             self.select_group(gid)
             return
         if not await self.push_screen_wait(ConfirmDialog(
-                "Start my site", s.personal_group_warning("site"), "Start my site")):
+                "Start your site", s.personal_group_warning("site"), "Start your site")):
             return
         self.set_status("Starting your site ...")
         try:

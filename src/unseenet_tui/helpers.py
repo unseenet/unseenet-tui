@@ -61,8 +61,8 @@ REFRESH_SECONDS = 60           # a fallback; new posts normally arrive by push (
 REPO_URL, DOCS_URL = about.REPO_URL, about.DOCS_URL
 ACROSS = (FOR_YOU, TIMELINE)             # views across groups: act in the post's own group
 FEED_MARK = "≡"                          # the timeline in the group list (UN-RFC 0034)
-START_FEED = ("action", "start-feed")    # "Start my feed" at the top of the group list (#495)
-START_SITE = ("action", "start-site")    # ... and "Start my site", the same way
+START_FEED = ("action", "start-feed")    # "Start your feed" at the top of the group list (#495)
+START_SITE = ("action", "start-site")    # ... and "Start your site", the same way
 SITE_MARK = "▤"                          # your site in the group list (UN-RFC 0035)
 REPLY_MARK, MENTION_MARK = "◄", "♦"   # in the basic character set (Windows console)
 

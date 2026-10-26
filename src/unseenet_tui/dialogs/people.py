@@ -295,9 +295,9 @@ class ProfileDialog(Dialog):
             with Horizontal(classes="buttons"):
                 yield Button("Close", variant="primary", id="cancel")
                 if self.mine:
-                    yield Button("My feed" if self.feed_started else "Start my feed",
+                    yield Button("Your feed" if self.feed_started else "Start your feed",
                                  id="my-feed")
-                    yield Button("My site" if self.site_started else "Start my site",
+                    yield Button("Your site" if self.site_started else "Start your site",
                                  id="my-site")
                 else:
                     yield Button("Following" if self.following else "Follow", id="follow")

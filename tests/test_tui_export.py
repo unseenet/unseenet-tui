@@ -1,4 +1,4 @@
-"""#14: Export my data in the terminal client, on the core's Session.export."""
+"""#14: Export your data in the terminal client, on the core's Session.export."""
 import zipfile
 
 import pytest
