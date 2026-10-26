@@ -278,6 +278,7 @@ class PagesMixin:
 
     @work(group="dialog", exit_on_error=False)
     async def action_browse(self) -> None:
+        """Browse the groups your nodes carry, to follow some."""
         self.set_status("Fetching group list ...")
         try:
             groups = await self.session.list_groups()
@@ -297,6 +298,7 @@ class PagesMixin:
 
     @work(group="dialog", exit_on_error=False)
     async def action_create_group(self) -> None:
+        """Create a group, then show it."""
         result = await self.push_screen_wait(CreateGroupDialog())
         if not result:
             return
@@ -319,6 +321,7 @@ class PagesMixin:
 
     @work(group="dialog", exit_on_error=False)
     async def action_invite(self) -> None:
+        """Invite a key to the closed group shown."""
         g = self._need_group()
         if not g:
             return
@@ -360,6 +363,7 @@ class PagesMixin:
                                              self._hints(self.current_group)))
 
     def action_group_address(self) -> None:
+        """The group's address, to copy (UN-RFC 0031 3.4.1)."""
         gid = self.current_group
         if not gid or gid not in self.groups or gid in ACROSS or gid.startswith(CONTACT):
             self.notify("Select a group first", severity="warning")
@@ -618,6 +622,7 @@ class PagesMixin:
 
     @work(group="dialog", exit_on_error=False)
     async def action_show_profile(self, key: str = "") -> None:
+        """A profile: the key given, or the author of the selected post."""
         m = None if key else self.current_message
         key = key or (m.author_key if m and m.readable and m.author_key else "")
         if not key:
@@ -787,6 +792,7 @@ class PagesMixin:
 
     @work(group="dialog", exit_on_error=False)
     async def action_edit_profile(self) -> None:
+        """Edit your profile and publish it."""
         s = self.session
         if not s.has_published_profile() and not await self.push_screen_wait(ConfirmDialog(
                 "Before you publish a profile", PROFILE_WARNING, confirm="I understand")):
@@ -823,6 +829,7 @@ class PagesMixin:
                      "Profile published") if answer else "Profile removed")
 
     def action_show_key(self) -> None:
+        """Your key, to give people for private messages and invitations."""
         self.push_screen(InfoDialog("Your key - share it to get private messages or invitations",
                                     self.session.identity().key_text))
 

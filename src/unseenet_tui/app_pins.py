@@ -139,6 +139,7 @@ class PinsMixin:
                     and datetime.now(timezone.utc) - m.date > timedelta(days=days))
 
     def action_toggle_pins(self) -> None:
+        """Show or fold the pinned posts of the group shown."""
         gid, s = self.current_group, self.session
         if not self._pins_here(gid):
             self.notify("Nothing is pinned in this group", severity="warning")
@@ -152,6 +153,7 @@ class PinsMixin:
         self._render_threads()
 
     def action_next_pin(self) -> None:
+        """To the next pinned post."""
         gid = self.current_group
         pins = self._pins_here(gid)
         if not pins:
@@ -369,6 +371,7 @@ class PinsMixin:
         self.notify("Withdrawn")
 
     def action_open_inbox(self) -> None:
+        """Open your inbox: your private posts."""
         gid = self.session.my_inbox
         if gid in self.groups:
             self.select_group(gid)
@@ -377,6 +380,7 @@ class PinsMixin:
                         severity="warning")
 
     def action_mark_all_read(self) -> None:
+        """Mark every post of the group shown as read."""
         g = self._need_group()
         if not g:
             return
@@ -387,10 +391,12 @@ class PinsMixin:
         self._save_soon()
 
     def action_refresh(self) -> None:
+        """F5: read the groups from the nodes now."""
         if self.session:
             self.refresh_groups()
 
     async def action_quit(self) -> None:
+        """q: stop the runtime and Tor, save, and quit."""
         if getattr(self, "runtime", None) is not None:
             self.runtime.stop_ripening()           # a segment must not keep us open
         if self.session:

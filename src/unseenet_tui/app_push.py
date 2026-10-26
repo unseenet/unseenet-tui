@@ -305,6 +305,7 @@ class PushMixin:
 
     @work(group="dialog", exit_on_error=False)
     async def action_group_info(self, first_time: bool = False) -> None:
+        """i: the group's info (first_time: as it is first opened, with its rules)."""
         g = self._need_group()
         if not g:
             return
@@ -324,6 +325,7 @@ class PushMixin:
 
     @work(group="dialog", exit_on_error=False)
     async def action_edit_group(self) -> None:
+        """The owner's settings of the group shown."""
         g = self._need_group()
         if not g:
             return

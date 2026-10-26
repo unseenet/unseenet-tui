@@ -186,6 +186,7 @@ class UnseenetApp(GroupsMixin, ChatMixin, ActionsMixin, FeedsMixin, AddressesMix
         return True
 
     def action_leave_input(self) -> None:
+        """Esc: out of the chat box or the filter, back to the list."""
         if getattr(self.focused, "id", None) != "chat-input" and (
                 self.group_query or getattr(self.focused, "id", None) == "groups-filter"):
             self._close_group_search()               # Esc ends a search of your groups
@@ -193,6 +194,7 @@ class UnseenetApp(GroupsMixin, ChatMixin, ActionsMixin, FeedsMixin, AddressesMix
         self.query_one("#chat-log").focus()          # now the letters are shortcuts again
 
     def action_write(self) -> None:
+        """w: into the chat box of the chat shown."""
         gid = self.current_group
         if gid and not gid.startswith(CONTACT) and gid in self.groups:
             p = self.session.write_permission(gid, kind=KIND_CHAT)
@@ -241,6 +243,8 @@ class UnseenetApp(GroupsMixin, ChatMixin, ActionsMixin, FeedsMixin, AddressesMix
 
     # --- layout ---
     def compose(self) -> ComposeResult:
+        """The app's layout: the header, the group list, the threads or chat, the status
+        line and footer."""
         yield Header()
         with Horizontal():
             with Vertical(id="groups-pane"):
@@ -264,6 +268,7 @@ class UnseenetApp(GroupsMixin, ChatMixin, ActionsMixin, FeedsMixin, AddressesMix
         yield Footer()
 
     def on_mount(self) -> None:
+        """Set up the threads table's columns, then start."""
         table = self.query_one("#threads", DataTable)
         table.add_column(" ", key="flag", width=2)
         table.add_column("Subject", key="subject", width=44)
@@ -272,6 +277,7 @@ class UnseenetApp(GroupsMixin, ChatMixin, ActionsMixin, FeedsMixin, AddressesMix
         self.start()
 
     def set_status(self, text: str) -> None:
+        """The status line's text (nothing when the app is closing)."""
         try:
             self.query_one("#status", Static).update(text)
         except Exception:  # noqa: BLE001  (before mount)
@@ -292,6 +298,8 @@ class UnseenetApp(GroupsMixin, ChatMixin, ActionsMixin, FeedsMixin, AddressesMix
 
     @work(exclusive=True, group="startup", exit_on_error=False)
     async def start(self) -> None:
+        """Open the vault (asking for the passphrase, or set up a first identity), show what
+        is kept, then go online."""
         passphrase = os.environ.get("UNSEENET_PASSPHRASE")
         error = ""
         kdf = {"ops": 1, "mem": 8192 * 1024} if os.environ.get("UNSEENET_INSECURE_FAST_KDF") == "1" else {}
@@ -377,6 +385,8 @@ class UnseenetApp(GroupsMixin, ChatMixin, ActionsMixin, FeedsMixin, AddressesMix
 
     @work(group="notify", exclusive=True, exit_on_error=False)
     async def check_notifications(self) -> None:
+        """Ask the core what is new in For you and tell, ask first, or stay quiet as the
+        reader chose (#4)."""
         from .identity_dialogs import on_bootable
         from .notify import AskDialog
         s = self.session
@@ -434,6 +444,7 @@ class UnseenetApp(GroupsMixin, ChatMixin, ActionsMixin, FeedsMixin, AddressesMix
         self.notify(f"Saved {out['path']}: {what}. {out['note']}", timeout=15)
 
     def action_toggle_notifications(self) -> None:
+        """Turn notifications on or off, kept with your settings in the core."""
         s = self.session
         on = s.notification_settings()["on"] is True
         s.set_notification_settings(on=not on)
@@ -441,6 +452,7 @@ class UnseenetApp(GroupsMixin, ChatMixin, ActionsMixin, FeedsMixin, AddressesMix
                     "Notifications on - they say only \"new in For you\" unless you choose otherwise.")
 
     def action_toggle_notification_content(self) -> None:
+        """Show or hide who wrote and what in notifications."""
         s = self.session
         content = s.notification_settings()["content"]
         s.set_notification_settings(content=not content)
@@ -534,6 +546,7 @@ class UnseenetApp(GroupsMixin, ChatMixin, ActionsMixin, FeedsMixin, AddressesMix
 
 
 def main(argv=None) -> None:
+    """unseenet-tui: open a vault (the default, or --vault) and run the terminal client."""
     p = argparse.ArgumentParser(prog="unseenet-tui", description="Unseenet terminal client.")
     p.add_argument("--vault", default=str(default_vault_path()), help="encrypted vault file")
     from . import __version__ as tui_version

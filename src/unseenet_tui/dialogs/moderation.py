@@ -67,6 +67,7 @@ class ReportDialog(Dialog):
         self.subject, self.targets = subject, targets
 
     def compose(self) -> ComposeResult:
+        """Reporting a post to the group's moderators: why, and Send."""
         with Vertical(classes="dialog"):
             yield Label(f"Report \"{self.subject}\"", classes="title", markup=False)
             yield Label("For posts that break the group's rules or the law. The people you "
@@ -104,6 +105,7 @@ class ModerationDialog(Dialog):
         self.texts = (title, hint, prompt, reject, approve)
 
     def compose(self) -> ComposeResult:
+        """The moderators' queue: a submission with Approve and Reject."""
         title, hint, prompt, reject, approve = self.texts
         with Vertical(classes="dialog list"):
             yield Label(title, classes="title", markup=False)

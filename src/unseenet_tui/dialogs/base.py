@@ -65,11 +65,13 @@ class Dialog(ModalScreen):
     def dismiss(self, result=None):
         # Only the dialog on top can close, and only once: two handlers for one
         # button press must not pop the screen below it (ScreenStackError).
+        """Close the dialog with a result - only the one on top, and only once."""
         if self.app.screen is not self:
             return None
         return super().dismiss(result)
 
     def action_cancel(self) -> None:
+        """Esc: close with CANCEL_RESULT."""
         self.dismiss(self.CANCEL_RESULT)
 
     @on(Button.Pressed, "#cancel")
@@ -83,6 +85,7 @@ class InputDialog(Dialog):
         self.title_, self.hint, self.placeholder, self.value = title, hint, placeholder, value
 
     def compose(self) -> ComposeResult:
+        """A title, a hint, one field, Cancel and OK."""
         with Vertical(classes="dialog"):
             yield Label(self.title_, classes="title")
             yield Label(self.hint, classes="hint")
@@ -106,6 +109,7 @@ class InfoDialog(Dialog):
         self.title_, self.text, self.web = title, text, web
 
     def compose(self) -> ComposeResult:
+        """A title, a text to read and copy, and Close."""
         with Vertical(classes="dialog"):
             yield Label(self.title_, classes="title")
             yield Input(value=self.text, id="value")   # an Input so it can be selected and copied
@@ -127,6 +131,7 @@ class ConfirmDialog(Dialog):
         self.title_, self.text, self.confirm, self.danger = title, text, confirm, danger
 
     def compose(self) -> ComposeResult:
+        """A question, its explanation, and the two answers."""
         with Vertical(classes="dialog"):
             yield Label(self.title_, classes="title", markup=False)
             yield Static(self.text, markup=False)
@@ -147,6 +152,7 @@ class KeyListDialog(Dialog):
         self.title_, self.hint, self.people, self.action = title, hint, people, action
 
     def compose(self) -> ComposeResult:
+        """A title, a hint and a list to choose one from."""
         with Vertical(classes="dialog"):
             yield Label(self.title_, classes="title", markup=False)
             yield Label(self.hint, classes="hint", markup=False)

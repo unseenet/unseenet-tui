@@ -121,6 +121,7 @@ GROUP_NAME_HELP = ("Lowercase letters, digits and - _ +, parts separated by dots
 
 class CreateGroupDialog(Dialog):
     def compose(self) -> ComposeResult:
+        """Creating a group: name, type, view, kinds, comments, files, reactions and rules."""
         with Vertical(classes="dialog"):
             yield Label("Create a group", classes="title")
             yield Input(placeholder="Name, e.g. dk.snak", id="name")
@@ -149,6 +150,7 @@ class CreateGroupDialog(Dialog):
                 yield Button("Create", variant="primary", id="ok")
 
     def on_mount(self) -> None:
+        """Size the rules field, and the focus in the name."""
         self.query_one("#rules", TextArea).styles.height = 6
         self.query_one("#comments", Select).display = False
 
@@ -223,6 +225,8 @@ class GroupInfoDialog(Dialog):
         self.can_edit, self.first_time = can_edit, first_time
 
     def compose(self) -> ComposeResult:
+        """A group's info: its address, owner, type, view, rules, retention, node and
+        settings."""
         d = self.data
         kinds = GROUP_KINDS
         lines = [f"Group:     {self.gid}",
@@ -274,6 +278,7 @@ class GroupInfoDialog(Dialog):
                 yield Button("OK" if self.first_time else "Close", variant="primary", id="cancel")
 
     def on_mount(self) -> None:
+        """Show the rules as Markdown or plain text, as the group says."""
         if self.data.get("rules"):
             self.query_one("#rules-view").styles.max_height = 14
 
@@ -290,6 +295,8 @@ class EditGroupDialog(Dialog):
         self.data = data
 
     def compose(self) -> ComposeResult:
+        """The owner's settings of a group: title, description, rules, view, comments,
+        files, reactions, pins, pages."""
         d = self.data
         current = "fastchat" if d.get("low_latency") else d.get("view", "threads")
         if current not in DELIVERY:                  # a view this client does not know
@@ -384,6 +391,7 @@ class BrowseTree(Tree):
             self.node = node
 
     def action_toggle_subscription(self) -> None:
+        """Space: follow the group under the cursor, or stop."""
         node = self.cursor_node
         if node is None:
             return
@@ -427,6 +435,7 @@ class BrowseDialog(Dialog):
         self.query_text = ""
 
     def compose(self) -> ComposeResult:
+        """Browsing what the nodes carry: a filter and the tree of hierarchies and groups."""
         with Vertical(classes="dialog list"):
             several = len(self.app.session.nodes) > 1
             yield Label("Groups on your nodes" if several else "Groups on this node", classes="title")
@@ -502,9 +511,11 @@ class BrowseDialog(Dialog):
         self.query_one("#browse-tree", Tree).focus()
 
     def action_search(self) -> None:
+        """/: to the filter."""
         self.query_one("#browse-filter", Input).focus()
 
     def action_cancel(self) -> None:
+        """Esc: clear the filter first, then close."""
         box = self.query_one("#browse-filter", Input)
         if box.value:                            # Esc clears the search first
             box.value = ""
@@ -535,6 +546,7 @@ class BrowseDialog(Dialog):
         return Text(f"{mark} {icons} {self.app.session.group_label(g.group_id, self.known)}   {g.description}{where}")
 
     def on_mount(self) -> None:
+        """The focus in the tree."""
         self.query_one("#browse-tree", Tree).focus()
 
     @on(Tree.NodeHighlighted, "#browse-tree")

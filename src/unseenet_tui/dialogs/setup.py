@@ -67,6 +67,7 @@ class UnlockDialog(Dialog):
         self.new = not path.exists()
 
     def compose(self) -> ComposeResult:
+        """Unlocking the vault: its path and the passphrase."""
         with Vertical(classes="dialog"):
             yield Label("Create a new vault" if self.new else "Unlock your vault", classes="title")
             yield Label(str(self.path.resolve()), classes="hint")
@@ -102,6 +103,7 @@ class ChangePassphraseDialog(Dialog):
         self.path, self.error = path, error
 
     def compose(self) -> ComposeResult:
+        """Changing the passphrase: the old one, the new one twice, and where copies are."""
         with Vertical(classes="dialog"):
             yield Label("Change passphrase", classes="title")
             yield Label(str(self.path.resolve()), classes="hint")
@@ -147,6 +149,7 @@ class SetupDialog(Dialog):
         self.known = list(known or KNOWN_NODES)
 
     def compose(self) -> ComposeResult:
+        """First start: your name and a node to begin with."""
         with Vertical(classes="dialog"):
             yield Label("Welcome to Unseenet", classes="title")
             if self.need_identity:
@@ -229,6 +232,7 @@ class BridgesDialog(Dialog):
         self.setting = setting
 
     def compose(self) -> ComposeResult:
+        """Tor bridges, where Tor is blocked: the kind and the bridge lines."""
         with Vertical(classes="dialog"):
             yield Label("Tor bridges", classes="title")
             yield Label("If Tor cannot connect - at work, at school, or in a country that blocks "
@@ -246,6 +250,7 @@ class BridgesDialog(Dialog):
                 yield Button("Save", variant="primary", id="ok")
 
     def on_mount(self) -> None:
+        """Size the bridge lines' field."""
         self.query_one("#lines", TextArea).styles.height = 6
         self._show_lines()
 
@@ -255,6 +260,7 @@ class BridgesDialog(Dialog):
 
     @on(Button.Pressed, "#ok")
     def action_save(self) -> None:
+        """Ctrl+S: check and keep the bridges."""
         mode = self.query_one("#mode", Select).value
         lines = [ln.strip() for ln in self.query_one("#lines", TextArea).text.splitlines()
                  if ln.strip()]

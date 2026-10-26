@@ -9,6 +9,7 @@ theme:
   font: false
 nav:
   - Using the terminal client: client.md
+  - Developers: developers.md
 markdown_extensions:
   - admonition
   - attr_list

@@ -71,6 +71,7 @@ class ChatMixin:
 
     # --- chat view (UN-RFC 0008 section 5) ---
     def view_of(self, gid: str | None) -> str:
+        """How a group is shown here: threads, chat, feed or pages, as the core says."""
         return self.session.view_of(gid)
 
     def _apply_view(self, mode: str) -> None:
@@ -160,6 +161,7 @@ class ChatMixin:
             self.notify(f"Mention notices not sent: {exc}", severity="warning")
 
     def action_toggle_notices_send(self) -> None:
+        """Send mention notices when you name someone, or not (UN-RFC 0032)."""
         on = not self.session.notice_settings()["send"]
         self.session.set_notice_settings(send=on)
         self.notify("People you mention by name are told in their inbox (you can say no per "
@@ -167,6 +169,7 @@ class ChatMixin:
                     "they follow the group")
 
     def action_toggle_notices_receive(self) -> None:
+        """Take mention notices from others, or not."""
         on = not self.session.notice_settings()["receive"]
         self.session.set_notice_settings(receive=on)
         self.notify("Mentions of you in groups you do not follow show in For you" if on
@@ -224,6 +227,7 @@ class ChatMixin:
                     else "You write plain text: it is sent and shown exactly as you type it")
 
     def action_toggle_view(self) -> None:
+        """Show the group as threads or as a chat, for you."""
         gid = self.current_group
         if not gid or gid == self.session.my_inbox:
             self.notify("Private posts are always shown as a list; open a contact to chat",
@@ -304,6 +308,7 @@ class ChatMixin:
 
     @work(group="post", exit_on_error=False)
     async def send_chat(self, gid: str, text: str, files: list[str] | None = None) -> None:
+        """Send a chat line (with files) through the core, showing the postage work."""
         self.set_status("Sending (computing postage) ...")
         waiting = [p for p in self.pending.get(gid, []) if p["state"] != "failed"]
         shown = text + (f"  (+ {len(files)} file{'s' if len(files) > 1 else ''})" if files else "")
@@ -502,6 +507,7 @@ class ChatMixin:
         self.notify("Nothing unread here", timeout=3)
 
     def action_read(self) -> None:
+        """Enter: read the selected post on its own screen."""
         if self.current_message is None:
             self.notify("Select a post first", severity="warning")
             return

@@ -89,6 +89,7 @@ def for_you_news(before, now) -> str | None:
 
 
 def sess_default_pow() -> int:
+    """The core's default proof of work, read when used so tests can lower it."""
     return _session_module.DEFAULT_POW
 
 
@@ -168,6 +169,7 @@ NETWORK_NAMES = {"facebook": "Facebook", "x": "X", "twitter": "X", "instagram": 
 
 
 def network_name(network: str) -> str:
+    """A network's name as people know it (facebook -> Facebook), for imported posts."""
     return NETWORK_NAMES.get(network, network.capitalize())
 
 
@@ -205,6 +207,7 @@ def group_icons(gtype: str | None, data: dict | None = None) -> str:
 
 
 def is_personal_inbox(group_id: str) -> bool:
+    """Whether a group id is someone's personal inbox (UN-RFC 0009)."""
     return group_id.split("@", 1)[0] == INBOX_NAME
 
 

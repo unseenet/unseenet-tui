@@ -79,6 +79,7 @@ class ChatBox(TextArea):
 
         @property
         def control(self) -> "ChatBox":
+            """The chat box the line was written in."""
             return self.input
 
     def __init__(self, placeholder: str = "", **kw):
@@ -87,10 +88,12 @@ class ChatBox(TextArea):
 
     @property
     def value(self) -> str:
+        """The text in the chat box (set: replace it, the cursor at the end)."""
         return self.text
 
     @value.setter
     def value(self, text: str) -> None:
+        """The text in the chat box (set: replace it, the cursor at the end)."""
         self.load_text(text)
         self.move_cursor(self.document.end)
 
@@ -164,6 +167,7 @@ class ReadScreen(Screen):
         self.msg = msg
 
     def compose(self) -> ComposeResult:
+        """The read screen: the header, the post's head and its body in a scroll."""
         yield Header()
         yield Static("", id="read-head")
         with VerticalScroll(id="read-scroll"):
@@ -171,6 +175,7 @@ class ReadScreen(Screen):
         yield Footer()
 
     def on_mount(self) -> None:
+        """Show the post and put the focus in it."""
         self.show(self.msg)
         self.query_one("#read-scroll").focus()
 
@@ -185,6 +190,7 @@ class ReadScreen(Screen):
             self.query_one("#read-scroll").scroll_home(animate=False)
 
     def action_back(self) -> None:
+        """Esc: back to the list."""
         self.app.pop_screen()
 
     async def action_save_files(self) -> None:
@@ -211,32 +217,40 @@ class ReadScreen(Screen):
                             "program happens outside Unseenet and Tor.", timeout=10)
 
     def action_reply(self) -> None:
+        """r: reply to the post read."""
         self.app.action_reply()
 
     def action_react(self) -> None:
+        """l: react to the post read (UN-RFC 0048)."""
         self.app.action_react(self.msg)
 
     def action_message(self) -> None:
+        """m: a private message to its author."""
         self.app.action_message()
 
     def action_group_ref(self) -> None:
+        """g: open a #group the post names."""
         self.app.action_group_ref()
 
     def action_next(self) -> None:
+        """n: the next post, or say it was the last."""
         if self.app.neighbour(+1) is None:
             self.app.notify("That was the last one")
 
     def action_profile(self) -> None:
+        """p: the author's profile."""
         if self.msg.readable and self.msg.author_key:
             self.app.action_show_profile(self.msg.author_key)
         else:
             self.app.notify("This post has nobody to show", severity="warning")
 
     def action_previous(self) -> None:
+        """Shift+N: the previous post, or say it was the first."""
         if self.app.neighbour(-1) is None:
             self.app.notify("That was the first one")
 
     def action_page(self) -> None:
+        """Space: a page down, and the next post at the end."""
         scroll = self.query_one("#read-scroll")
         if scroll.scroll_y >= scroll.max_scroll_y:
             self.action_next()                 # like the old newsreaders: space reads on
@@ -249,6 +263,8 @@ class AboutDialog(Dialog):
 
     def compose(self) -> ComposeResult:
         # the text is the core's (core/about.py), so every client says the same
+        """About: the core's text (core/about.py, the same in every client), the versions
+        and links."""
         text = Text()
 
         def para(p: str) -> None:

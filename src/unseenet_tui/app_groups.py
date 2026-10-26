@@ -90,6 +90,7 @@ class GroupsMixin:
 
     @work(exclusive=True, group="groups", exit_on_error=False)
     async def refresh_groups(self) -> None:
+        """Read the group list from the nodes again and draw it, with the counts."""
         s = self.session
         if set(s.data["subscribed"]) != set(self.groups):    # just followed or left one:
             self.groups = self._groups_from_vault()          # show it now, not after the round
@@ -282,6 +283,7 @@ class GroupsMixin:
         return f"{group_icons(g.type, self.session.manifest_data(g.group_id))} {self.session.group_label(g.group_id)}"
 
     def action_search_groups(self) -> None:
+        """/: to the group filter."""
         box = self.query_one("#groups-filter", Input)
         box.disabled = False
         box.add_class("shown")
@@ -332,6 +334,7 @@ class GroupsMixin:
 
     @work(exclusive=True, group="fetch", exit_on_error=False)
     async def select_group(self, gid: str) -> None:
+        """Show a group: its threads, chat, feed or site, read from the cache then the node."""
         self.current_group = gid
         self.current_message = None
         self.refresh_bindings()

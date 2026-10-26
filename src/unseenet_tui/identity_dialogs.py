@@ -68,6 +68,8 @@ def same_medium(a: Path, b: Path) -> bool:
 
 
 def looks_like_cloud(path: Path) -> bool:
+    """Whether a folder looks synchronised to a cloud service, where the recovery words must
+    not be saved."""
     low = str(path).lower()
     return any(h in low for h in CLOUD_HINTS)
 
@@ -91,6 +93,8 @@ class ShowWordsDialog(_dialog_base()):
         self.positions = rc.check_positions()
 
     def compose(self) -> ComposeResult:
+        """The 24 recovery words in a grid, what they are and are not, and save, print or
+        Done (UN-RFC 0050 4.2)."""
         with VerticalScroll(classes="dialog"):
             yield Label("Your recovery words" + (" - write them down now" if self.first_time else ""),
                         classes="title")
@@ -133,6 +137,7 @@ class CheckWordsDialog(_dialog_base()):
         self.words, self.positions = words, positions
 
     def compose(self) -> ComposeResult:
+        """Three of the words to type again, so you know you wrote them down right."""
         with Vertical(classes="dialog"):
             yield Label("Check your recovery words", classes="title")
             yield Label("Type these words from what you wrote down (four letters are enough).",
@@ -167,6 +172,7 @@ class SaveWordsDialog(_dialog_base()):
         self.ident, self.fingerprint, self.words, self.vault_path = name, fingerprint, words, vault_path
 
     def compose(self) -> ComposeResult:
+        """Where to save the words as a file, after the warning, and Save."""
         with Vertical(classes="dialog"):
             yield Label("Save the recovery words as a file", classes="title")
             yield Label("Whoever has this file IS you: they can read your private posts and post "
@@ -220,6 +226,7 @@ class PassphraseDialog(_dialog_base()):
         self.error = error
 
     def compose(self) -> ComposeResult:
+        """The vault's passphrase again, before the words are shown."""
         with Vertical(classes="dialog"):
             yield Label("Show recovery words", classes="title")
             yield Label("Type the vault passphrase again: the words are your key.", classes="hint")
@@ -241,6 +248,7 @@ class RestoreDialog(_dialog_base()):
     name. Returns {"words", "display"} or None."""
 
     def compose(self) -> ComposeResult:
+        """Restoring from the words: the words, checked as typed, and a display name."""
         with Vertical(classes="dialog"):
             yield Label("Restore from recovery words", classes="title")
             yield Label("Type your 24 words in order, separated by spaces or lines. Four letters "
@@ -287,6 +295,8 @@ class ClosedGroupsDialog(_dialog_base()):
         self.groups, self.state = groups, state
 
     def compose(self) -> ComposeResult:
+        """After restoring: what came back from the network, and the closed groups to ask to
+        be invited to again."""
         lead = {"read": "Your groups, contacts and settings came back from the network.",
                 "none": "Nothing was found in the network for this identity: you start with the "
                         "default groups.",
@@ -320,6 +330,7 @@ class CopyChoiceDialog(_dialog_base()):
         self.identities = identities
 
     def compose(self) -> ComposeResult:
+        """First start: a new identity, restore from words, or copy from another device."""
         with Vertical(classes="dialog"):
             yield Label("Copy to another device", classes="title")
             yield Label("The identities go straight to the other device over Tor, after you "
@@ -353,6 +364,8 @@ class CopyOfferDialog(_dialog_base()):
         self.check: tuple[str, str] | None = None
 
     def compose(self) -> ComposeResult:
+        """Copying to another device: the code and QR code, the time left, and the check
+        words when it connects."""
         with VerticalScroll(classes="dialog"):
             yield Label("Copy to another device", classes="title")
             yield Label("On the other device choose 'Get identity from another device', then "
@@ -367,6 +380,7 @@ class CopyOfferDialog(_dialog_base()):
                 yield Button("The words match", variant="primary", id="ok", disabled=True)
 
     def on_mount(self) -> None:
+        """Start the countdown of the code's ten minutes."""
         self._tick()
         self.set_interval(1, self._tick)
 
@@ -375,6 +389,7 @@ class CopyOfferDialog(_dialog_base()):
         self.query_one("#countdown", Label).update(f"The code works once, for {left // 60}:{left % 60:02d} more.")
 
     def show_check(self, words: tuple[str, str]) -> None:
+        """Show the check words from the other device, to compare before Confirm."""
         self.check = words
         self.query_one("#qr").display = False
         self.query_one("#check", Static).update(
@@ -397,6 +412,7 @@ class CopyCodeDialog(_dialog_base()):
     """Get identity from another device: the code it shows (or the QR code's text)."""
 
     def compose(self) -> ComposeResult:
+        """Getting a copy: the code the other device shows."""
         with Vertical(classes="dialog"):
             yield Label("Get identity from another device", classes="title")
             yield Label("On the other device choose 'Copy to another device' and type the code it "
@@ -422,6 +438,7 @@ class CopyWaitDialog(_dialog_base()):
         self.words = words
 
     def compose(self) -> ComposeResult:
+        """Waiting for the other device: the check words to compare, and Cancel."""
         with Vertical(classes="dialog"):
             yield Label("Check words", classes="title")
             yield Static(Text(f"{self.words[0]}   {self.words[1]}", style="bold"))
