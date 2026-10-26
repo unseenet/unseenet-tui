@@ -6,6 +6,12 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+- **Imported posts say where they were first published** (#3, UN-RFC 0049):
+  `← Facebook` after the subject in threads and feeds, the whole "Imported from
+  Facebook · originally 3 August 2026" on chat lines, and in the reader the
+  time of posting with the origin as the poster's claim. Order, unread counts
+  and For you come from the core.
+
 **Needs the core's 0.6 functions** (unseenet#572, #573; tested against its main).
 
 - **Recovery words** (#15, UN-RFC 0050 section 4): shown after a new identity

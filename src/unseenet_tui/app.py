@@ -162,6 +162,29 @@ ICON_LEGEND = ("≡ posts  » chat  ¤ data for programs  √ moderated  ► cha
                "@ inbox  ⌂ local (one node)  · not known yet")
 
 
+ORIGIN_MARK = "←"               # first published elsewhere (UN-RFC 0049); in WGL4
+NETWORK_NAMES = {"facebook": "Facebook", "x": "X", "twitter": "X", "instagram": "Instagram",
+                 "mastodon": "Mastodon", "bluesky": "Bluesky", "tiktok": "TikTok", "nostr": "Nostr",
+                 "matrix": "Matrix", "usenet": "Usenet", "fidonet": "FidoNet",
+                 "unseenet": "another Unseenet key"}
+
+
+def network_name(network: str) -> str:
+    return NETWORK_NAMES.get(network, network.capitalize())
+
+
+def origin_text(m: Message) -> str:
+    """UN-RFC 0049 section 5.1: "Imported from Facebook · originally 3 August 2026" - the
+    origin date is the poster's claim, never shown as the time of posting."""
+    if not getattr(m, "origin_network", ""):
+        return ""
+    text = "Imported from " + network_name(m.origin_network)
+    if m.origin_date:
+        d = m.origin_date.astimezone()
+        text += f" · originally {d.day} {d.strftime('%B %Y')}"
+    return text
+
+
 def edited_when(m: Message) -> str:
     """When a post was edited: the time today, else the date (UN-RFC 0042, 4.2)."""
     at = m.edited.astimezone()
@@ -2926,6 +2949,8 @@ class UnseenetApp(App):
                 subject += f"  ({s.group_label(m.group)})"
             date = m.date.astimezone().strftime("%d %b %H:%M") if m.date else ""
             line = Text(subject)
+            if getattr(m, "origin_network", ""):                 # UN-RFC 0049 section 5.1
+                line.append(f"  {ORIGIN_MARK} {network_name(m.origin_network)}", style="dim italic")
             liked = self._reactions_line(m, counted)
             if liked:
                 line.append("   " + liked, style="dim")
@@ -3003,6 +3028,8 @@ class UnseenetApp(App):
                 line.append(" √", style="green")
             if not own and not m.private and self.session.is_bot(m.author_key):
                 line.append(" bot", style="dim")             # UN-RFC 0030 section 6
+            if getattr(m, "origin_network", ""):                 # UN-RFC 0049 section 5.1
+                line.append(f" {ORIGIN_MARK} {origin_text(m)}", style="dim italic")
             if m.message_id in pinned:
                 line.append(f" {PIN_MARK}", style="bold yellow")   # UN-RFC 0033 section 7.3
             if m.readable and m.kind != KIND_CHAT:      # a post in a chat stands out (UN-RFC 0028)
@@ -3329,6 +3356,9 @@ class UnseenetApp(App):
     def article(self, msg: Message) -> tuple[str, Text]:
         """The header (markup) and the body of a message, as the reader shows them."""
         date = msg.date.astimezone().strftime("%A %d %B %Y %H:%M") if msg.date else ""
+        if getattr(msg, "origin_network", ""):               # UN-RFC 0049 section 5.1
+            date = (f"posted {date}\n{ORIGIN_MARK} {escape(origin_text(msg))} "
+                    "[dim](the date it was first published is the poster's claim)[/dim]")
         if msg.edited:                                       # UN-RFC 0042, 4.2
             date += f"  (edited {edited_when(msg)})"
         if msg.to_key:
