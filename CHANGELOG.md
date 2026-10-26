@@ -6,6 +6,12 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+- **The palette says what waits for the network**: while Unseenet is not
+  connected yet, what needs it says *Waiting for the network* in the palette and,
+  chosen, says so instead of failing - ready by itself once connected. What works
+  offline (your rules, nodes, contacts, settings, writing) is as always. *Take
+  back your shared profile* says "your" too.
+
 - **Help in the rules editor** (unseenet#615): *Help* (or F1) shows the language
   in short - the core's, the same in every client.
 - **"Your", as the client speaks to you**: *Your feed*, *Your site*, *Start your

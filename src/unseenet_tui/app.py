@@ -379,6 +379,8 @@ class UnseenetApp(GroupsMixin, ChatMixin, ActionsMixin, FeedsMixin, AddressesMix
         elif isinstance(event, ev.Ripening) and event.level is not None:
             self._update_subtitle()
         elif isinstance(event, ev.Refreshed) or (isinstance(event, ev.GroupUpdated) and event.new):
+            if isinstance(event, ev.Refreshed):                  # the network reached, or not
+                self._connected = not event.error
             self._notify_soon()                                  # #4: anything for you?
 
     # --- notifications (#4): what is new comes from the core, telling is ours ---
