@@ -6,6 +6,22 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+**Needs the core's 0.6 functions** (unseenet#572, #573; tested against its main).
+
+- **Recovery words** (#15, UN-RFC 0050 section 4): shown after a new identity
+  is made, with a check of three words, and again with *Show recovery words*
+  behind the passphrase; a reminder at most once a week until they are
+  written down; *Save as file…* only on another disk than the vault and not in
+  a cloud folder, never on the bootable client. *Restore from recovery words*
+  at first start and in the palette, checking the words as they are typed,
+  then listing the closed groups that did not come back and asking their
+  owners to invite you again.
+- **Copy to another device** (#15, UN-RFC 0050 section 3): choose identities and
+  whether closed groups' keys go too, a QR code drawn in the terminal and the
+  code with a countdown, then the two check words to confirm. *Get identity
+  from another device* at first start and in the palette, by typed code.
+- New dependency: `segno` (QR codes, pure Python).
+
 ## [0.1.0] - 2026-10-25
 
 **For unseenet 0.5** (`unseenet>=0.5,<0.6`). The terminal client in its own

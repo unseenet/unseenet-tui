@@ -735,8 +735,9 @@ makes mass spam expensive. The client computes it in the background.
 
 - Everything you store is in the vault file, encrypted with your
   passphrase (Argon2id + XSalsa20-Poly1305). It is only decrypted in memory.
-- Back it up. If you lose it, you lose your identity and your keys to
-  closed groups.
+- Back it up, or at least write down your **recovery words** (below). If
+  you lose the vault and have neither, you lose your identity and your
+  keys to closed groups.
 - The vault and its cache are normal files, so they can live on a USB stick
   together with the program. A copy of the vault on another device is the
   same identity: it opens with the same passphrase and holds the same keys.
@@ -744,6 +745,48 @@ makes mass spam expensive. The client computes it in the background.
   new passphrase. Only that one file changes: copies of it on other devices,
   sticks or backups still open with the old passphrase. If you change it
   because the old one may be known, replace or delete those copies too.
+
+## Recovery words
+
+Your identity can be written down as 24 **recovery words**. With them you
+get it back on any device - your groups, contacts and settings come back
+from the network, where they are kept encrypted for you.
+
+- When you create an identity the client shows the words. Write them on
+  paper, then type three of them back as a check. You can do it later:
+  the client reminds you, at most once a week. **Show recovery words** in
+  the command palette (Ctrl+P) shows them again, after your passphrase.
+- Whoever has the words *is* you. Keep the paper safe and away from the
+  stick. **Save as file…** is there if you must, but never on the same
+  stick or disk as the vault, and not in a cloud-synced folder; on the
+  bootable client the words are only shown.
+- **Closed groups do not come back** with the words. After a restore the
+  client lists the closed groups you followed and can ask their owners to
+  invite you again.
+- To restore: at first start choose **Restore from recovery words**, or
+  use the command palette. Four letters of each word are enough; a typing
+  mistake is caught before anything happens.
+
+These are Unseenet recovery words, not a cryptocurrency wallet phrase -
+never type them into a wallet.
+
+## Copying to another device
+
+**Copy to another device** (Ctrl+P) puts your identities on a phone, PC
+or another stick, straight over Tor - no file to carry around.
+
+1. Choose which identities to copy, and whether the keys of your closed
+   groups go too. Leave out an identity that must stay hidden: a phone is
+   lost more often than a stick.
+2. The client shows a QR code and a code such as `7-guitar-tunnel`. On
+   the other device choose **Get identity from another device** (at first
+   start, or in its palette) and scan or type it. The code works once,
+   for 10 minutes.
+3. Both devices show the same two **check words**. Only when you confirm
+   here that they match is anything sent.
+
+The copy is a copy: both devices have the identity afterwards. In the
+terminal client you type the code; scanning needs a device with a camera.
 
 ## Reading offline
 
