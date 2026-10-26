@@ -399,6 +399,9 @@ class GroupsMixin:
             home = site["home"]
         else:                                    # the same rows in every client (#139)
             rows = (s.feed_rows(gid) if feed else s.threads(gid)) if gid else []
+        self._scores = {}
+        if (not feed or gid == TIMELINE) and shown not in ("chat", "pages"):   # your rules (UN-RFC 0051)
+            rows, self._scores = self.scored_rows(gid, rows)
         table = self.query_one("#threads", DataTable)
         keep = self.current_message.message_id if self.current_message else None
         table.clear()
@@ -449,6 +452,16 @@ class GroupsMixin:
             liked = self._reactions_line(m, counted)
             if liked:
                 line.append("   " + liked, style="dim")
+            res = self._scores.get(m.message_id)
+            if res is not None:                              # your rules: how it is shown
+                if "highlight" in res.actions:
+                    line.stylize("bold reverse")
+                elif "dim" in res.actions:
+                    line.stylize("dim")
+                folded_n = getattr(self, "_folded", {}).get(m.message_id)
+                if folded_n:
+                    line.append(f"   ▸ {folded_n} folded", style="dim italic")
+                line.append(f"   {res.score:+d}", style="dim")
             table.add_row(flag, line, Text(self._who(m)), date, key=m.message_id)
         self._render_title()
         # the rows are fresh objects; an open read screen follows them, so it
@@ -458,6 +471,11 @@ class GroupsMixin:
                 fresh = self.messages.get(screen.msg.message_id)
                 if fresh is not None and fresh is not screen.msg:
                     screen.show(fresh, keep_place=True)
+        if self._scores and gid not in (FOR_YOU, TIMELINE) and not gid.startswith(CONTACT):
+            # seen only while your rules are on: only they use it (UN-RFC 0044 4.5)
+            newest = max((m.date for m, _ in rows if m.date), default=None)
+            if newest is not None:                   # shown on the screen: seen (UN-RFC 0044 4.5)
+                s.mark_seen(gid, newest)
         mode = self.view_of(gid)
         self._apply_view(mode)
         self._render_chat_pins(gid if mode == "chat" else None, pins, by_id)
