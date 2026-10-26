@@ -70,6 +70,21 @@ from .screens import ChatBox, attachments_text, save_name, ReadScreen, AboutDial
 class ChatMixin:
 
     # --- chat view (UN-RFC 0008 section 5) ---
+    @work(exclusive=True, group="emoji")
+    async def action_insert_emoji(self) -> None:
+        """Insert emoji (the palette, #6): pick one by name or category; its :shortcode:
+        goes into the post being written, or else the chat box."""
+        from .emoji import EmojiPickerDialog
+        top, target = self.screen, None
+        if top.query("#body") and isinstance(top.query_one("#body"), TextArea):
+            target = top.query_one("#body", TextArea)       # the post editor
+        elif self.query("#chat-input"):
+            target = self.query_one("#chat-input", TextArea)
+        code = await self.push_screen_wait(EmojiPickerDialog())
+        if code and target is not None:
+            target.insert(f":{code}: ")
+            target.focus()
+
     def view_of(self, gid: str | None) -> str:
         """How a group is shown here: threads, chat, feed or pages, as the core says."""
         return self.session.view_of(gid)

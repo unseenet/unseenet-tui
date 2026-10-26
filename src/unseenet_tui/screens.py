@@ -64,7 +64,10 @@ from .dialogs.base import Dialog
 # Dialogs
 # ======================================================================
 
-class ChatBox(TextArea):
+from .emoji import EmojiCompletion  # noqa: E402 - #6
+
+
+class ChatBox(EmojiCompletion, TextArea):
     """The chat line (#530): Enter sends; Alt+Enter (or Shift+Enter where the terminal
     tells them apart, or Ctrl+J) starts a new line, since a chat line may hold several
     (UN-RFC 0031 section 3.3). Grows with its text up to a few lines. ``value`` and
@@ -98,6 +101,8 @@ class ChatBox(TextArea):
         self.move_cursor(self.document.end)
 
     async def _on_key(self, event) -> None:
+        if await self.emoji_key(event):                 # :ta while typing (#6)
+            return
         if event.key == "enter":
             event.stop(); event.prevent_default()
             if not self.disabled:
@@ -108,6 +113,7 @@ class ChatBox(TextArea):
             self.insert("\n")
             return
         await super()._on_key(event)
+        self.refresh_emoji()
 
 
 def attachments_text(attachments) -> Text:

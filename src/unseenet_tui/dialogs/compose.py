@@ -59,6 +59,9 @@ from unseenet.client import events as ev
 from .base import Dialog
 
 
+from ..emoji import EmojiTextArea  # noqa: E402 - #6
+
+
 class ComposeDialog(Dialog):
     BINDINGS = [Binding("escape", "cancel", "Cancel"), Binding("ctrl+s", "send", "Send")]
 
@@ -82,7 +85,8 @@ class ComposeDialog(Dialog):
             yield Input(value=self.subject, placeholder="Subject", id="subject")
             text = self.quote + (("\n" if self.quote else "\n\n") + SIG_SEPARATOR + self.signature
                                  if self.signature else "")
-            yield TextArea(text, id="body", soft_wrap=True)
+            yield EmojiTextArea(text, id="body", soft_wrap=True)     # :ta completion (#6)
+            yield Static("", id="body-emoji", markup=False)
             if self.files_allowed:
                 yield Input(placeholder="Files to send with it - paths, comma between: "
                             "~/garden.jpg, ~/map.pdf", id="files")
@@ -132,6 +136,8 @@ class ComposeDialog(Dialog):
     def on_mount(self) -> None:
         """Put the cursor below the quote and above the signature."""
         body = self.query_one("#body", TextArea)
+        body.emoji_bar = self.query_one("#body-emoji", Static)
+        body.emoji_bar.display = False
         # the cursor goes below the quote, above the signature
         body.move_cursor((self.quote.count("\n"), 0) if self.signature else body.document.end)
         if self.is_reply:

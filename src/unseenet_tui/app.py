@@ -264,11 +264,15 @@ class UnseenetApp(GroupsMixin, ChatMixin, ActionsMixin, FeedsMixin, AddressesMix
                     yield RichLog(id="chat-log", wrap=True, markup=False, highlight=False)
                     yield ChatBox(placeholder="Write a message - Enter sends, Alt+Enter new "
                                   "line, Esc for the shortcuts", id="chat-input")
+                    yield Static("", id="chat-emoji", markup=False)      # :ta completion (#6)
         yield Static("", id="status", markup=False)
         yield Footer()
 
     def on_mount(self) -> None:
         """Set up the threads table's columns, then start."""
+        box = self.query_one("#chat-input", ChatBox)
+        box.emoji_bar = self.query_one("#chat-emoji", Static)
+        box.emoji_bar.display = False
         table = self.query_one("#threads", DataTable)
         table.add_column(" ", key="flag", width=2)
         table.add_column("Subject", key="subject", width=44)

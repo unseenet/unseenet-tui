@@ -148,6 +148,8 @@ class PushMixin:
              "again (a site you write in)", self.action_page_previous),
             ("Remove this page", "Remove the selected page from the site you write in",
              self.action_page_remove),
+            ("Insert emoji", "Pick an emoji by name or category - its :shortcode: goes where "
+             "you write; typing :ta offers them too", self.action_insert_emoji),
             ("Publish a folder as this site", "A folder of Markdown or HTML files as the pages of "
              "the site you write in - only what changed is sent", self.action_publish_folder),
             ("Share my profile", "With one person or this closed group only - not public",

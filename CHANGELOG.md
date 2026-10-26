@@ -6,6 +6,12 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+- **Emoji** (#6), as the graphical client has them: typing `:ta` in the chat
+  box or a post offers up to 8 shortcodes under it (Tab or Enter takes one, Up and
+  Down choose, Esc closes; Enter does not send while they are shown), and *Insert
+  emoji* in the palette picks one by name or category. Both insert the
+  `:shortcode:`, on the core's `find_emoji`.
+
 - **Search engines and your site** (#5): a site's settings say whether search
   engines may index it (UN-RFC 0035 section 3), with the warning that their
   copies can outlive the pages - as in the graphical client.
