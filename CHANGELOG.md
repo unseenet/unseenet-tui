@@ -6,6 +6,13 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+- **Notifications** (#4): when something lands in For you - private messages,
+  replies, mentions - from the core (`Session.notifications`): a desktop
+  notification (OSC 9 / OSC 777) in terminals that show them, else the bell, and a
+  line in the client. Asked once; it says only "N new in For you" unless you
+  choose to show who and what (Ctrl+P); none for what is on screen; only while
+  the client runs; never on the bootable client. The same setting as the GUI's.
+
 - **Imported posts say where they were first published** (#3, UN-RFC 0049):
   `← Facebook` after the subject in threads and feeds, the whole "Imported from
   Facebook · originally 3 August 2026" on chat lines, and in the reader the
