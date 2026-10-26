@@ -23,6 +23,8 @@ NEVER = ("Never your keys: an export is not a backup of your identity (your reco
 
 
 def default_path(fingerprint: str, home: Path | None = None) -> Path:
+    """Where an export is saved: Downloads, else the home folder, with the fingerprint and
+    the day in its name."""
     home = home or Path.home()
     folder = home / "Downloads"
     folder = folder if folder.is_dir() else home
@@ -38,6 +40,8 @@ class ExportDialog(_dialog_base()):
         self.path = path
 
     def compose(self) -> ComposeResult:
+        """Export my data: what it holds and never holds, private messages with a passphrase
+        twice, Export."""
         with Vertical(classes="dialog"):
             yield Label("Export my data", classes="title")
             yield Label(HOLDS)
@@ -54,6 +58,7 @@ class ExportDialog(_dialog_base()):
                 yield Button("Export", variant="primary", id="ok")
 
     def on_mount(self) -> None:
+        """The passphrase fields hidden until private messages are chosen."""
         self._show_passphrase(False)
 
     def _show_passphrase(self, on: bool) -> None:

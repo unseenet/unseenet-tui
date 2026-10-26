@@ -72,6 +72,7 @@ class NamesMixin:
     # --- names under a name (UN-RFC 0019 section 5.4) ---
     @work(group="dialog", exit_on_error=False)
     async def action_ask_subname(self) -> None:
+        """Ask the holder of a name for a name under it (UN-RFC 0019 5.4)."""
         s = self.session
         name = await self.push_screen_wait(InputDialog(
             "Ask for a name under someone's name",
@@ -90,6 +91,7 @@ class NamesMixin:
 
     @work(group="dialog", exit_on_error=False)
     async def action_give_subname(self) -> None:
+        """Give a name under one of yours to a key."""
         s = self.session
         parents = naming.parents_i_hold(s)
         if not parents:
@@ -125,6 +127,7 @@ class NamesMixin:
 
     @work(group="dialog", exit_on_error=False)
     async def action_name_requests(self) -> None:
+        """The requests for names under yours, to give or refuse."""
         s = self.session
         try:
             await s.fetch_group(s.my_inbox)
@@ -154,6 +157,7 @@ class NamesMixin:
 
     @work(group="dialog", exit_on_error=False)
     async def action_names_given(self) -> None:
+        """The names you gave under yours, to take back."""
         s = self.session
         given = naming.names_given(s)
         if not given:
@@ -179,6 +183,7 @@ class NamesMixin:
 
     @work(group="dialog", exit_on_error=False)
     async def action_primary_name(self) -> None:
+        """Choose which of your names is shown first."""
         s = self.session
         mine = naming.my_names(s)
         if len(mine) < 2:
@@ -193,6 +198,7 @@ class NamesMixin:
 
     @work(group="dialog", exit_on_error=False)
     async def action_report(self) -> None:
+        """Report the selected post to the group's moderators."""
         m, s = self.current_message, self.session
         if m is None or m.private or not m.readable:
             self.notify("Select the post you want to report", severity="warning")
@@ -219,6 +225,7 @@ class NamesMixin:
         self.notify(f"Reported to {n} " + ("person" if n == 1 else "people"))
 
     async def action_open_reported(self) -> None:
+        """Open the post a report names, for moderators."""
         m, s = self.current_message, self.session
         found = s.reported_post(m) if m else None
         if not found:
@@ -317,6 +324,7 @@ class NamesMixin:
 
     @work(group="dialog", exit_on_error=False)
     async def action_roles(self) -> None:
+        """The moderators and posters of a group you own."""
         gid = self._owned_group()
         if not gid:
             return
@@ -342,6 +350,7 @@ class NamesMixin:
 
     @work(group="dialog", exit_on_error=False)
     async def action_members(self) -> None:
+        """The members of a closed group you own: add, remove (a new key for the others)."""
         gid = self._owned_group("closed")
         if not gid:
             return
@@ -409,12 +418,14 @@ class NamesMixin:
         self._render_threads()
 
     def action_toggle_bots(self) -> None:
+        """Hide or show posts by bots (UN-RFC 0030 6)."""
         on = not self.session.hide_bots()
         self.session.set_hide_bots(on)
         self.notify("Hiding posts by bots" if on else "Showing posts by bots, marked (bot)")
         self._render_threads()
 
     def action_toggle_blocked(self) -> None:
+        """Show or hide what a hierarchy's maintainer blocked (UN-RFC 0018 5.4)."""
         on = not self.session.data.get("show_blocked")
         self.session.set_show_blocked(on)
         self.notify("Showing posts blocked by maintainers" if on
@@ -423,6 +434,7 @@ class NamesMixin:
 
     @work(group="dialog", exit_on_error=False)
     async def action_banned(self) -> None:
+        """The keys banned from the group shown, to add or lift."""
         s, gid = self.session, self.current_group
         if not gid or not s.group_entry(gid).get("owner"):
             self.notify("Only a group's owner can see and lift its bans here; "
@@ -447,6 +459,7 @@ class NamesMixin:
 
     @work(group="dialog", exit_on_error=False)
     async def action_ignored(self) -> None:
+        """Your ignored people (your own killfile, never sent anywhere)."""
         people = self.session.ignored()
         if not people:
             self.notify("You do not ignore anyone")
@@ -463,6 +476,8 @@ class NamesMixin:
 
     @work(group="dialog", exit_on_error=False)
     async def action_add_contact(self) -> None:
+        """Add the author of the selected post (or a key) as a contact, with your own name
+        for them."""
         m = self.current_message
         mine = self.session.identity().key_text
         key = m.author_key if m and m.readable and m.author_key and m.author_key != mine else ""
@@ -489,6 +504,7 @@ class NamesMixin:
 
     @work(group="dialog", exit_on_error=False)
     async def action_rename_contact(self) -> None:
+        """Give the contact of the chat shown another name."""
         key = self._current_contact()
         if not key:
             self.notify("Select a contact first", severity="warning")
@@ -502,6 +518,7 @@ class NamesMixin:
 
     @work(group="dialog", exit_on_error=False)
     async def action_remove_contact(self) -> None:
+        """Remove the contact of the chat shown; the chat stays."""
         key = self._current_contact()
         if not key:
             self.notify("Select a contact first", severity="warning")
@@ -544,6 +561,7 @@ class NamesMixin:
 
     @work(group="dialog", exit_on_error=False)
     async def action_signature(self) -> None:
+        """Your signature: edit the template."""
         text = await self.push_screen_wait(SignatureDialog(self.session.signature_template()))
         if text is None:
             return
@@ -556,6 +574,7 @@ class NamesMixin:
 
     @work(group="dialog", exit_on_error=False)
     async def action_unsubscribe(self) -> None:
+        """Stop following the group shown."""
         g = self._need_group()
         if not g:
             return
@@ -575,6 +594,7 @@ class NamesMixin:
 
     @work(group="dialog", exit_on_error=False)
     async def action_remove_group(self) -> None:
+        """Remove a group you own (UN-RFC 0013), with the reason readers will see."""
         g = self._need_group()
         if not g:
             return

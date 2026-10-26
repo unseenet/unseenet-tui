@@ -91,6 +91,7 @@ class ActionsMixin:
                              owner_key=owner, references=references)
 
     def action_new_post(self) -> None:
+        """n: a new post here - a thread, or in a chat a private post to that person."""
         contact = self._current_contact()
         if contact:
             self._write_to_contact(contact)
@@ -111,6 +112,7 @@ class ActionsMixin:
         self.compose_post(g)
 
     def action_reply(self) -> None:
+        """r: reply to the selected post, or in a chat to the person privately."""
         contact = self._current_contact()
         m = self.current_message
         if contact:
@@ -160,6 +162,8 @@ class ActionsMixin:
     async def compose_private(self, target: str, heading: str, subject: str = "", quote: str = "",
                               owner_key: bytes | None = None,
                               references: list[str] | None = None) -> None:
+        """The compose window for a private post or reply to an inbox, then send it sealed
+        (UN-RFC 0009)."""
         g = GroupInfo(target, type="inbox")
         dlg = ComposeDialog(
             g, subject, quote, bool(references), heading=heading + "  @ only they can read it",
@@ -184,6 +188,7 @@ class ActionsMixin:
 
     @work(group="dialog", exit_on_error=False)
     async def action_message(self) -> None:
+        """m: a private message to the author of the selected post."""
         m = self.current_message
         known = (m.sender_key or m.author_key) if m and m.readable else ""
         if m and m.private and not m.sender_key:
@@ -274,6 +279,7 @@ class ActionsMixin:
 
     @work(group="dialog", exit_on_error=False)
     async def action_bridges(self) -> None:
+        """Tor bridges, for where Tor is blocked: edit them and restart Tor with them."""
         existing = self.session.tor_in_use()
         if existing is not None:
             self.notify(f"Unseenet uses the Tor at {existing} ({existing.source}). Bridges are "

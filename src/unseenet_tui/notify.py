@@ -45,6 +45,8 @@ def sequences(text: str) -> str:
 
 
 def text_of(n: dict) -> str:
+    """The notification's text: "N new in For you", or who and what for one when content is
+    chosen."""
     items = n["items"]
     if n["settings"].get("content") and len(items) == 1 and items[0].get("text"):
         return f"{items[0]['who']}: {items[0]['text']}"
@@ -52,6 +54,8 @@ def text_of(n: dict) -> str:
 
 
 def on_screen(item: dict, current: str | None, focused: bool = True) -> bool:
+    """Whether an item is already on screen (its group, For you, or a chat for a private
+    one), so needs none."""
     return focused and current is not None and (
         current in (item["group"], FOR_YOU)
         or (current.startswith("contact:") and item["why"] == "private"))
@@ -66,6 +70,8 @@ class AskDialog(_dialog_base()):
     """Asked once: "yes", "later" (not this time) or "never"."""
 
     def compose(self) -> ComposeResult:
+        """Asked once: tell about new messages? Yes, Not now, Never - with why it says only
+        "new in For you"."""
         with Vertical(classes="dialog"):
             yield Label("Tell you about new messages?", classes="title")
             yield Label("A notification when a private message, a reply or a mention lands "

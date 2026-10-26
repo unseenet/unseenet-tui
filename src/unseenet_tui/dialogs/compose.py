@@ -72,6 +72,8 @@ class ComposeDialog(Dialog):
         self.files: list[str] = []               # what to send with it, read after dismiss
 
     def compose(self) -> ComposeResult:
+        """The compose window: where it goes, the subject, the text with the quote and
+        signature, files."""
         with Vertical(classes="dialog compose"):
             kind = "Reply in" if self.is_reply else "New post in"
             lock = "  ∩ encrypted" if self.group.type == "closed" else ""
@@ -128,6 +130,7 @@ class ComposeDialog(Dialog):
                           if len(found) > MAX_MENTION_NOTICES else ""))
 
     def on_mount(self) -> None:
+        """Put the cursor below the quote and above the signature."""
         body = self.query_one("#body", TextArea)
         # the cursor goes below the quote, above the signature
         body.move_cursor((self.quote.count("\n"), 0) if self.signature else body.document.end)
@@ -138,6 +141,7 @@ class ComposeDialog(Dialog):
 
     @on(Button.Pressed, "#ok")
     def action_send(self) -> None:
+        """Ctrl+S: check and send it, or say what is missing."""
         subject = self.query_one("#subject", Input).value.strip()
         body = self.query_one("#body", TextArea).text
         if not subject or not split_signature(body)[0].strip():
@@ -168,6 +172,7 @@ class PageDialog(Dialog):
         self.files: list[str] = []
 
     def compose(self) -> ComposeResult:
+        """Writing a page of a site: its path, title and Markdown (UN-RFC 0035)."""
         with Vertical(classes="dialog compose"):
             yield Label(self.heading, classes="title", markup=False)
             yield Input(value=self.path, placeholder="Path - e.g. index, about or projects/ovos",
@@ -186,6 +191,7 @@ class PageDialog(Dialog):
                 yield Button("Publish", variant="primary", id="ok")
 
     def on_mount(self) -> None:
+        """The focus in the path for a new page, else in the text."""
         self.query_one("#path" if self.new else "#body").focus()
 
     def _path(self) -> str:
@@ -193,6 +199,7 @@ class PageDialog(Dialog):
 
     @on(Button.Pressed, "#preview")
     def action_preview(self) -> None:
+        """Ctrl+P: the page as readers will see it (UN-RFC 0035 9.2)."""
         from unseenet.core import pages as pg
         path = self._path() or "index"
 
@@ -207,6 +214,7 @@ class PageDialog(Dialog):
 
     @on(Button.Pressed, "#ok")
     def action_send(self) -> None:
+        """Ctrl+S: check the path and size, then publish the page."""
         from unseenet.core import pages as pg
         path, text = self._path(), self.query_one("#body", TextArea).text
         if not pg.valid_path(path):
@@ -234,6 +242,7 @@ class PreviewDialog(Dialog):
         self.title_, self.rendered = title, rendered
 
     def compose(self) -> ComposeResult:
+        """The preview of a page: its rendered text in a scroll, and Close."""
         with Vertical(classes="dialog compose"):
             yield Label(self.title_, classes="title", markup=False)
             with VerticalScroll(id="preview-view"):
@@ -250,6 +259,7 @@ class SignatureDialog(Dialog):
         self.template = template or "{name}  ·  {key}"
 
     def compose(self) -> ComposeResult:
+        """Your signature: the template, what it will be, and Save."""
         with Vertical(classes="dialog"):
             yield Label("Your signature", classes="title")
             yield Label(f"Added below '-- ' at the end of your posts. At most {MAX_SIG_LINES} lines. "
@@ -261,11 +271,13 @@ class SignatureDialog(Dialog):
                 yield Button("Save", variant="primary", id="ok")
 
     def on_mount(self) -> None:
+        """Size the field to the most lines a signature may have."""
         self.query_one("#sig", TextArea).styles.height = MAX_SIG_LINES + 2
         self.query_one("#sig").focus()
 
     @on(Button.Pressed, "#ok")
     def action_save(self) -> None:
+        """Ctrl+S: save the signature, if it is not too long."""
         text = self.query_one("#sig", TextArea).text
         if len([ln for ln in text.strip("\n").split("\n") if text.strip()]) > MAX_SIG_LINES:
             self.app.notify(f"At most {MAX_SIG_LINES} lines, please - that was the rule on Usenet too",
@@ -283,6 +295,7 @@ class PinDialog(Dialog):
         self.title_, self.hint, self.warning = title, hint, warning
 
     def compose(self) -> ComposeResult:
+        """Pinning a post: a note to show with it, and Pin (UN-RFC 0033)."""
         with Vertical(classes="dialog"):
             yield Label(self.title_, classes="title", markup=False)
             yield Label(self.hint, classes="hint", markup=False)
@@ -312,6 +325,7 @@ class ReactDialog(Dialog):
         self.first_time = first_time
 
     def compose(self) -> ComposeResult:
+        """Reacting: the group's emoji with a number each, or any emoji typed; yours marked."""
         with Vertical(classes="dialog"):
             yield Label("React to " + self.what, classes="title", markup=False)
             lines = []
@@ -330,6 +344,7 @@ class ReactDialog(Dialog):
                 yield Button("Cancel", id="cancel")
 
     def on_key(self, event) -> None:
+        """A digit picks that emoji at once."""
         if event.character and event.character.isdigit() and event.character != "0":
             i = int(event.character)
             if i <= len(self.offered):

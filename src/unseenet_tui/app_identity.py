@@ -209,6 +209,7 @@ class IdentityMixin:
 
     @work(group="dialog", exit_on_error=False)
     async def action_copy_from(self) -> None:
+        """Get an identity from another device (UN-RFC 0050 3.6), then go on with it."""
         if await self._receive_copy():
             self._update_subtitle()
             self.refresh_groups()
@@ -251,6 +252,7 @@ class IdentityMixin:
             return True
 
     def action_about(self) -> None:
+        """About Unseenet and this client."""
         self.push_screen(AboutDialog())
 
     async def action_update(self) -> None:
@@ -353,6 +355,7 @@ class IdentityMixin:
     @work(group="post", exit_on_error=False)
     async def compose_post(self, g: GroupInfo, subject: str = "", quote: str = "",
                            references: list[str] | None = None) -> None:
+        """The compose window for a post or reply in a group, then send it."""
         data = self.session.manifest_data(g.group_id)
         dlg = ComposeDialog(
             g, subject, quote, bool(references), signature=self.session.signature(),

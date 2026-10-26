@@ -6,6 +6,11 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+- **Docstrings** (#20, part 3): every public function and method of the
+  terminal client says what it does (149 added), every file what belongs in it;
+  `tests/test_docstrings.py` keeps it so, as the core's does. A Developers page
+  with the map of the files.
+
 - **UnseenetApp split into mixins by area** (#20, part 2): `app_groups.py`,
   `app_chat.py`, ... `app_pins.py`; `app.py` (547 lines) puts the class together.
   A pure move: the same 191 members.

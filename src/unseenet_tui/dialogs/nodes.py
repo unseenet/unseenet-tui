@@ -72,6 +72,8 @@ class NodesDialog(Dialog):
         self.labels = labels or {}    # the session's names: listed, else marked unlisted (#518)
 
     def compose(self) -> ComposeResult:
+        """Your nodes: the table of them with how each is doing, and add, remove, first,
+        info."""
         with Vertical(classes="dialog list"):
             yield Label("Your nodes", classes="title")
             yield Label("You are the same on every node - your key lives in your vault. "
@@ -87,6 +89,7 @@ class NodesDialog(Dialog):
                 yield Button("Details", variant="primary", id="info")
 
     def on_mount(self) -> None:
+        """Fill the table and the focus on the node in use."""
         table = self.query_one("#nodes-table", DataTable)
         table.add_columns("", "Name", "Address", "Your groups", "")
         for i, address in enumerate(self.nodes):
@@ -139,6 +142,7 @@ class AddNodeDialog(Dialog):
         self.choices.append(("Another node - enter its address", OTHER_NODE))
 
     def compose(self) -> ComposeResult:
+        """Adding a node: its address, or one from the known list."""
         with Vertical(classes="dialog"):
             yield Label("Add a node", classes="title")
             yield Label("You keep your key and your groups; the node's groups are added to "
@@ -183,6 +187,7 @@ class NodeInfoDialog(Dialog):
         self.info, self.address = info, address
 
     def compose(self) -> ComposeResult:
+        """A node's info: who runs it, its policy, what it carries and its limits."""
         i, p = self.info, self.info.get("policy", {})
         can_write = bool(i.get("contact") and i.get("operator"))
         lines = [f"Address:   {self.address}"]

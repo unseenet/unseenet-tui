@@ -78,6 +78,7 @@ class ContactsDialog(Dialog):
         self.shown = list(contacts)
 
     def compose(self) -> ComposeResult:
+        """Your contacts: the list, and chat, rename, remove, add."""
         with Vertical(classes="dialog"):
             yield Label("Contacts", classes="title")
             if not self.contacts:
@@ -96,6 +97,7 @@ class ContactsDialog(Dialog):
                     yield Button("Chat", variant="primary", id="chat")
 
     def on_mount(self) -> None:
+        """The focus on the first contact, or on Add."""
         if self.contacts:
             self.query_one("#find", Input).focus()
             self.query_one("#who", OptionList).highlighted = 0
@@ -120,6 +122,7 @@ class ContactsDialog(Dialog):
         self.query_one("#count", Label).update(self._count())
 
     def action_move(self, step: int) -> None:
+        """Up and down the list of contacts."""
         if not self.contacts:
             return
         who = self.query_one("#who", OptionList)
@@ -129,6 +132,7 @@ class ContactsDialog(Dialog):
         who.highlighted = max(0, min(len(self.shown) - 1, at + step))
 
     def action_cancel(self) -> None:
+        """Esc: close, or cancel a removal being confirmed."""
         if self.contacts:
             find = self.query_one("#find", Input)
             if find.value:
@@ -166,6 +170,7 @@ class NamesDialog(Dialog):
         self.text = text
 
     def compose(self) -> ComposeResult:
+        """Names (UN-RFC 0019): the name to look up, give or take back."""
         with Vertical(classes="dialog"):
             yield Label("Your names", classes="title")
             yield Label("A name lets others see @yourname instead of Name~abcd. A name "
@@ -181,6 +186,7 @@ class NamesDialog(Dialog):
                 yield Button("Claim", variant="primary", id="claim")
 
     def on_mount(self) -> None:
+        """The focus in the name."""
         self.query_one("#value", Input).focus()
 
     @on(Input.Submitted)
@@ -222,6 +228,7 @@ def manifest_text(text: str, text_type: str | None) -> Text:
 
 
 def profiles_clean(text: str) -> str:
+    """A profile's text cleaned as the core does (UN-RFC 0022): no control characters."""
     return prof.clean_text(text or "")
 
 
@@ -253,6 +260,8 @@ class ProfileDialog(Dialog):
         self.shared = shared             # "with you" / "with this group": private (0022, 6)
 
     def compose(self) -> ComposeResult:
+        """Someone's profile: name, picture or identicon, about, links, their feed and site,
+        and what you may do."""
         p = self.profile
         with Vertical(classes="dialog"):
             title = self.label + ("   [bot]" if p is not None and p.bot else "")
@@ -336,6 +345,7 @@ class EditProfileDialog(Dialog):
         self.current = current or {"v": 1}
 
     def compose(self) -> ComposeResult:
+        """Editing your profile: about (Markdown or plain), links, and the bot mark."""
         c = self.current
         links = "\n".join(f"{link['kind']} {link['value']}"
                            + (f"  # {link['label']}" if link.get("label") else "")
