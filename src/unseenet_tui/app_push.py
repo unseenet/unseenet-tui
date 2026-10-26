@@ -67,6 +67,22 @@ from .dialogs.nodes import NodesDialog, AddNodeDialog, NodeInfoDialog  # noqa: F
 from .screens import ChatBox, attachments_text, save_name, ReadScreen, AboutDialog  # noqa: F401
 
 
+# Commands that need the network: while Unseenet is not connected yet, the palette says
+# "Waiting for the network" for them and they wait instead of failing. What works
+# offline - your rules, nodes, contacts, settings, writing (posts wait in the queue) -
+# is not here.
+NEEDS_NETWORK = frozenset({
+    "Update Unseenet", "Follow", "Start your feed", "Start your site", "Publish a folder as this site",
+    "Share your profile", "Take back your shared profile", "Open address", "Browse groups",
+    "Create group", "Invite to closed group", "Join group or open an address", "Profile of this author (u)",
+    "Your profile", "Names", "Copy to another device", "Get identity from another device", "Edit group",
+    "Ask for a name under someone's name", "Give a name under yours", "Name requests", "Names you gave",
+    "Name your posts show", "Report post", "Open reported post", "Moderation queue", "Make moderator",
+    "Make poster", "Moderators and posters", "Members of closed group", "Ban from group",
+    "Block in hierarchy", "Banned from group", "Withdraw (delete) post", "Pin or unpin post",
+    "Remove group from the network"})
+
+
 class PushMixin:
 
     # --- push (UN-RFC 0008 section 2) ---
@@ -111,8 +127,10 @@ class PushMixin:
         yield SystemCommand("Tor: which Tor", "Start our own Tor, or use one already running "
                             "(Tails, Whonix, a system tor)", self.action_tor)
         if portable_root() is not None:
-            yield SystemCommand("Update Unseenet", "Get the newest release onto this stick or "
-                                "folder, over Tor - data/ is kept", self.action_update)
+            waiting = not getattr(self, "_connected", False)
+            yield SystemCommand("Update Unseenet", ("Waiting for the network · " if waiting else "") +
+                                "Get the newest release onto this stick or folder, over Tor - data/ is kept",
+                                self._waiting_for_network if waiting else self.action_update)
         if self.session is None:
             return
         commands = [
@@ -163,7 +181,7 @@ class PushMixin:
              "the site you write in - only what changed is sent", self.action_publish_folder),
             ("Share your profile", "With one person or this closed group only - not public",
              self.action_share_profile),
-            ("Take back my shared profile", "From a person or this closed group",
+            ("Take back your shared profile", "From a person or this closed group",
              self.action_unshare_profile),
             ("Copy address", "The unseenet: address of this post, page, group or person - to "
              "give to others", self.action_copy_address),
@@ -307,7 +325,15 @@ class PushMixin:
              self.action_remove_group),
         ]
         for title, help_text, callback in commands:
+            if title in NEEDS_NETWORK and not getattr(self, "_connected", False):
+                # not connected yet: said, not run - ready by itself once connected
+                help_text = "Waiting for the network · " + help_text
+                callback = self._waiting_for_network
             yield SystemCommand(title, help_text, callback)
+
+    def _waiting_for_network(self) -> None:
+        self.notify("Waiting for the network: this is ready as soon as Unseenet is connected.",
+                    severity="warning", timeout=5)
 
     def _owner_label(self, data: dict) -> str:
         key = data.get("owner", "")
