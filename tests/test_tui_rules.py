@@ -49,6 +49,12 @@ async def test_the_editor(tmp_path, monkeypatch):
         assert await wait_for(pilot, lambda: type(app.screen).__name__ == "RulesDialog"), stack(app)
         box = app.screen.query_one("#rules")
         assert "[feed]" in box.text and "suggestion" in str(app.screen.query_one(".hint").render())
+        await press(pilot, app, "#help")                               # the rules in short
+        assert await wait_for(pilot, lambda: type(app.screen).__name__ == "InfoDialog"), stack(app)
+        from unseenet.client import scoring
+        assert app.screen.text == scoring.HELP and "IN SHORT" in app.screen.text
+        app.pop_screen()
+        await pilot.pause(0.1)
         box.load_text("+10 if autor in following")
         await pilot.pause(0.2)
         assert "did you mean 'author'" in str(app.screen.query_one("#rules-check").render())

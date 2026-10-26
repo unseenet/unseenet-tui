@@ -6,6 +6,8 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+- **Help in the rules editor** (unseenet#615): *Help* (or F1) shows the language
+  in short - the core's, the same in every client.
 - **"Your", as the client speaks to you**: *Your feed*, *Your site*, *Start your
   feed*, *Export your data*, *Show your key*, *Share your profile* - matching *For
   you* beside them; "my" stays only in your own words (*Use my rules*). The rule is
