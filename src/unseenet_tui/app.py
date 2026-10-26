@@ -2583,6 +2583,27 @@ class UnseenetApp(App):
             self.bell()
         self.notify(f"{text} - see For you", timeout=8)
 
+    @work(group="export", exclusive=True, exit_on_error=False)
+    async def action_export(self) -> None:
+        """Export my data (#14, UN-RFC 0049 section 7): never keys; private messages only
+        when chosen, and then the file encrypted with a passphrase."""
+        from .export_dialog import ExportDialog, default_path
+        s = self.session
+        path = default_path(s.identity().fingerprint)
+        choice = await self.push_screen_wait(ExportDialog(path))
+        if not choice:
+            return
+        self.set_status("Exporting your data...")
+        try:
+            out = await s.export(path, private=choice["private"], passphrase=choice["passphrase"])
+        except (SessionError, OSError) as exc:
+            self.set_status(f"Not exported: {exc}")
+            return
+        what = (f"{out['articles']} articles, {out['files']} files, {out['sites']} sites"
+                + (f", {out['private']} private messages - encrypted" if out["encrypted"] else ""))
+        self.set_status(f"Saved {out['path']}")
+        self.notify(f"Saved {out['path']}: {what}. {out['note']}", timeout=15)
+
     def action_toggle_notifications(self) -> None:
         s = self.session
         on = s.notification_settings()["on"] is True
@@ -5276,6 +5297,9 @@ class UnseenetApp(App):
              else "Notifications: show who and what",
              "Show the sender and the start of the text in notifications (they can show on the "
              "lock screen)", self.action_toggle_notification_content),
+            ("Export my data", "Your posts, comments, chat lines and pages as signed, their files, "
+             "profile and groups - never your keys; private messages only encrypted",
+             self.action_export),
             ("Show recovery words", "The 24 words that bring your identity back on any device "
              "- behind your passphrase" + ("" if self.session.words_written() else
                                           " (not written down yet)"), self.action_show_words),
