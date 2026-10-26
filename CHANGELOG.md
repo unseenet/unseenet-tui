@@ -6,6 +6,11 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+- **Export my data** (#14, on unseenet#577): Ctrl+P - your posts, comments,
+  chat lines and pages as signed, their files, profile and groups, saved in
+  Downloads; never your keys; private posts and chats only when chosen, and then
+  the file encrypted with a passphrase typed twice.
+
 - **Notifications** (#4): when something lands in For you - private messages,
   replies, mentions - from the core (`Session.notifications`): a desktop
   notification (OSC 9 / OSC 777) in terminals that show them, else the bell, and a
