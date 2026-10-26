@@ -34,13 +34,14 @@ class RulesDialog(Dialog):
         """The rules, what is wrong in them as you type, whether they are used, Save."""
         with Vertical(classes="dialog compose"):
             yield Label("Your rules - for your feed and your groups", classes="title")
-            yield Label("Only you see them; they run here. Ctrl+S saves." +
+            yield Label("Only you see them; they run here. Ctrl+S saves, F1 or Help: the rules in short." +
                         ("" if self.text else " This is a suggestion: it is yours only if you save it."),
                         classes="hint")
             yield TextArea(self.text or EXAMPLE, id="rules", soft_wrap=False, show_line_numbers=True)
             yield Static("", id="rules-check", markup=False)
             yield Checkbox("Use my rules (off keeps them, to turn on again)", value=self.on_, id="rules-on")
             with Horizontal(classes="buttons"):
+                yield Button("Help", id="help")
                 yield Button("Cancel", id="cancel")
                 yield Button("Save", variant="primary", id="ok")
 
@@ -60,7 +61,16 @@ class RulesDialog(Dialog):
     def _changed(self) -> None:
         self._check()
 
-    BINDINGS = Dialog.BINDINGS + [("ctrl+s", "save", "Save")]
+    BINDINGS = Dialog.BINDINGS + [("ctrl+s", "save", "Save"), ("f1", "help", "Help")]
+
+    def action_help(self) -> None:
+        """F1: the language in short - the core's help, the same in every client."""
+        from .dialogs.base import InfoDialog
+        self.app.push_screen(InfoDialog("Your rules - in short", scoring.HELP))
+
+    @on(Button.Pressed, "#help")
+    def _help(self) -> None:
+        self.action_help()
 
     def action_save(self) -> None:
         """Ctrl+S: keep the rules and whether they are used."""
