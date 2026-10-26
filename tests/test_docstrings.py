@@ -16,7 +16,7 @@ def test_every_file_says_what_belongs_in_it():
     for p in files():
         if p.name in ("__init__.py", "__main__.py"):
             continue
-        doc = ast.get_docstring(ast.parse(p.read_text())) or ""
+        doc = ast.get_docstring(ast.parse(p.read_text(encoding="utf-8"))) or ""
         assert len(doc.strip()) > 40, f"{p.relative_to(PKG)}: say what belongs in this file"
 
 
@@ -30,5 +30,5 @@ def test_every_public_function_has_a_docstring():
                 elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) \
                         and not node.name.startswith("_") and not (ast.get_docstring(node) or "").strip():
                     missing.append(f"{p.relative_to(PKG)}: {where}{node.name}")
-        scan(ast.parse(p.read_text()).body, "")
+        scan(ast.parse(p.read_text(encoding="utf-8")).body, "")
     assert not missing, "public functions without a docstring: " + ", ".join(missing) + HINT
