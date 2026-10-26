@@ -148,6 +148,15 @@ class PushMixin:
              "again (a site you write in)", self.action_page_previous),
             ("Remove this page", "Remove the selected page from the site you write in",
              self.action_page_remove),
+            ("Your rules", "Your own rules for your feed and groups: what comes first, what is "
+             "hidden, folded or highlighted - only you see them", self.action_rules),
+            ("Why is this post here?", "Which of your rules gave the selected post its place",
+             self.action_why),
+            ("Watch this thread", "Keep an eye on the selected post's thread", self.action_watch_thread),
+            ("Ignore this thread", "Your rules can hide it: hide if thread in ignored",
+             self.action_ignore_thread),
+            ("Neither watch nor ignore this thread", "Undo watching or ignoring it",
+             self.action_unmark_thread),
             ("Insert emoji", "Pick an emoji by name or category - its :shortcode: goes where "
              "you write; typing :ta offers them too", self.action_insert_emoji),
             ("Publish a folder as this site", "A folder of Markdown or HTML files as the pages of "

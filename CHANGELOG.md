@@ -6,6 +6,15 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+- **Your own rules** (unseenet#615, UN-RFC 0051): *Your rules* in the palette -
+  an editor checked as you type (the line and what is wrong), a suggestion shown
+  when you have none (yours only if you save it), and *Use my rules* to turn them
+  off and keep them. With rules, a group's threads and the timeline come as they
+  say: hidden posts left out, folded ones with *▸ N folded*, dimmed and
+  highlighted ones, and each row's score; *Why is this post here?*; *Watch*,
+  *Ignore* and neither for a thread. Without rules the lists are as before.
+  What is shown is marked seen.
+
 - **Emoji** (#6), as the graphical client has them: typing `:ta` in the chat
   box or a post offers up to 8 shortcodes under it (Tab or Enter takes one, Up and
   Down choose, Esc closes; Enter does not send while they are shown), and *Insert
