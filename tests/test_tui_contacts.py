@@ -35,7 +35,8 @@ async def test_contacts_and_recipient_by_name(tmp_path, monkeypatch):
         app.action_contacts()
         assert await wait_for(pilot, lambda: isinstance(app.screen, ContactsDialog)), stack(app)
         dlg = app.screen
-        assert dlg.query_one("#find").has_focus
+        # the focus is set in the dialog's on_mount, a moment after it is on top
+        assert await wait_for(pilot, lambda: dlg.query_one("#find").has_focus), stack(app)
         await pilot.press(*"ikkel")                             # Mikkel only
         assert await wait_for(pilot, lambda: [n for _, n in dlg.shown] == ["Mikkel"], 400), \
             (dlg.query_one("#find").value, dlg.shown)
