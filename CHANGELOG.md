@@ -6,6 +6,10 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+- **UnseenetApp split into mixins by area** (#20, part 2): `app_groups.py`,
+  `app_chat.py`, ... `app_pins.py`; `app.py` (547 lines) puts the class together.
+  A pure move: the same 191 members.
+
 - **app.py split by area** (#20, part 1): `helpers.py`, `screens.py` and
   `dialogs/` (base, setup, compose, people, groups, moderation, nodes); `app.py`
   keeps `UnseenetApp` and re-exports every moved name. A pure move: the same
