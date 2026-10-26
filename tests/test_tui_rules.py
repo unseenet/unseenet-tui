@@ -80,7 +80,7 @@ async def test_a_group_as_the_rules_have_it(tmp_path, monkeypatch):
         keys = [r.value for r in table.rows]
         assert "<p@x>" not in keys and "<f2@x>" not in keys and "<k2@x>" in keys
         assert "▸ 1 folded" in str(table.get_row("<f@x>")[1])
-        assert s.seen_to(GID) == "2026-10-26T12:05:00Z"           # shown: seen
+        assert s.seen_to(GID) == "2026-10-26T12:04:00Z"           # shown: seen (not the folded reply)
         app.current_message = s.cache[GID]["<k@x>"]
         app.action_why()
         assert await wait_for(pilot, lambda: type(app.screen).__name__ == "InfoDialog"), stack(app)

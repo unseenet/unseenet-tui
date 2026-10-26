@@ -13,7 +13,7 @@ All notable changes to unseenet-tui are listed here. The format follows
   say: hidden posts left out, folded ones with *▸ N folded*, dimmed and
   highlighted ones, and each row's score; *Why is this post here?*; *Watch*,
   *Ignore* and neither for a thread. Without rules the lists are as before.
-  What is shown is marked seen.
+  While your rules are on, what is shown is marked seen.
 
 - **Emoji** (#6), as the graphical client has them: typing `:ta` in the chat
   box or a post offers up to 8 shortcodes under it (Tab or Enter takes one, Up and

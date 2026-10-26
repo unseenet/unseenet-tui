@@ -9,25 +9,13 @@ from textual.app import ComposeResult
 from textual.containers import Horizontal, Vertical
 from textual.widgets import Button, Checkbox, Label, Static, TextArea
 
+from unseenet.client import scoring
+
 from .dialogs.base import Dialog
 
-# A suggestion, shown in the editor when you have no rules, so you see what they look
-# like - it is yours only when you save it (UN-RFC 0051 section 3).
-EXAMPLE = """# Your own rules - they run only here, and go with your identity.
-# Lines starting with # are comments: take a rule out by putting # in front of it.
-# Without rules the feed is newest first and threads are as they are.
-
-[feed]
-+10 if author in following           # people I follow first
-+2  per time I reacted to author  max 20
--30 if seen                          # what I have scrolled past, further down
-+15 if new replies since seen
-sort by score, then date
-
-[groups]
-+20 if I posted in thread
-hide if thread in ignored
-"""
+# The suggestion shown in the editor when you have no rules - the core's, the same in
+# every client (UN-RFC 0051 section 3): yours only when you save it.
+EXAMPLE = scoring.SUGGESTION
 
 
 def problems_text(problems) -> str:

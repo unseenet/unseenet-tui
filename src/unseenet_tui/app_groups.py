@@ -471,7 +471,8 @@ class GroupsMixin:
                 fresh = self.messages.get(screen.msg.message_id)
                 if fresh is not None and fresh is not screen.msg:
                     screen.show(fresh, keep_place=True)
-        if gid and rows and gid not in (FOR_YOU, TIMELINE) and not gid.startswith(CONTACT):
+        if self._scores and gid not in (FOR_YOU, TIMELINE) and not gid.startswith(CONTACT):
+            # seen only while your rules are on: only they use it (UN-RFC 0044 4.5)
             newest = max((m.date for m, _ in rows if m.date), default=None)
             if newest is not None:                   # shown on the screen: seen (UN-RFC 0044 4.5)
                 s.mark_seen(gid, newest)
