@@ -2536,6 +2536,67 @@ class UnseenetApp(App):
             self.ripen_on()
         elif isinstance(event, ev.Ripening) and event.level is not None:
             self._update_subtitle()
+        elif isinstance(event, ev.Refreshed) or (isinstance(event, ev.GroupUpdated) and event.new):
+            self._notify_soon()                                  # #4: anything for you?
+
+    # --- notifications (#4): what is new comes from the core, telling is ours ---
+    def _notify_soon(self) -> None:
+        timer = getattr(self, "_notify_timer", None)
+        if timer is not None:
+            timer.stop()
+        self._notify_timer = self.set_timer(1.0, self.check_notifications)
+
+    @work(group="notify", exclusive=True, exit_on_error=False)
+    async def check_notifications(self) -> None:
+        from .identity_dialogs import on_bootable
+        from .notify import AskDialog
+        s = self.session
+        if s is None or on_bootable():
+            return
+        n = s.notifications()
+        if not n["count"] or n["settings"]["on"] is False:
+            return
+        if n["settings"]["on"] is None:
+            if getattr(self, "_notify_asked", False):
+                return
+            self._notify_asked = True
+            answer = await self.push_screen_wait(AskDialog())
+            if answer == "never":
+                s.set_notification_settings(on=False)
+                return
+            if answer != "yes":
+                return
+            n["settings"] = s.set_notification_settings(on=True)
+        self._tell(n)
+
+    def _tell(self, n: dict) -> None:
+        from .notify import desktop_terminal, on_screen, sequences, text_of
+        focused = bool(getattr(self, "app_focus", True))
+        items = [i for i in n["items"] if not on_screen(i, self.current_group, focused)]
+        if not items:
+            return
+        text = text_of({**n, "items": items})
+        driver = getattr(self, "_driver", None)
+        if desktop_terminal() and driver is not None:
+            driver.write(sequences(f"Unseenet: {text}"))
+        else:
+            self.bell()
+        self.notify(f"{text} - see For you", timeout=8)
+
+    def action_toggle_notifications(self) -> None:
+        s = self.session
+        on = s.notification_settings()["on"] is True
+        s.set_notification_settings(on=not on)
+        self.notify("No more notifications." if on else
+                    "Notifications on - they say only \"new in For you\" unless you choose otherwise.")
+
+    def action_toggle_notification_content(self) -> None:
+        s = self.session
+        content = s.notification_settings()["content"]
+        s.set_notification_settings(content=not content)
+        self.notify("Notifications say only \"new in For you\"." if content else
+                    "Notifications show who wrote and the start of the text - also on the lock "
+                    "screen and in the system's notification history.", timeout=10)
 
     @work(group="ripening", exclusive=True, exit_on_error=False)
     async def ripen_on(self) -> None:
@@ -5208,6 +5269,13 @@ class UnseenetApp(App):
              self.action_signature),
             ("Change passphrase", "A new passphrase for this vault file (copies elsewhere "
              "keep the old one)", self.action_change_passphrase),
+            ("Notifications: stop" if self.session.notification_settings()["on"] else "Notifications: tell me",
+             "A notification (or the bell) when a private message, a reply or a mention lands "
+             "in For you - only while this runs", self.action_toggle_notifications),
+            ("Notifications: hide who and what" if self.session.notification_settings()["content"]
+             else "Notifications: show who and what",
+             "Show the sender and the start of the text in notifications (they can show on the "
+             "lock screen)", self.action_toggle_notification_content),
             ("Show recovery words", "The 24 words that bring your identity back on any device "
              "- behind your passphrase" + ("" if self.session.words_written() else
                                           " (not written down yet)"), self.action_show_words),
