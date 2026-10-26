@@ -6,6 +6,9 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+- **Search engines and your site** (#5): a site's settings say whether search
+  engines may index it (UN-RFC 0035 section 3), with the warning that their
+  copies can outlive the pages - as in the graphical client.
 - **Publish a folder as a site** (#19, on unseenet#538): Ctrl+P on a site you
   write in - the folder and whether pages no longer in it go, then what would be
   sent (+ ~ = - per page, and the changes made on the way), then Publish: only

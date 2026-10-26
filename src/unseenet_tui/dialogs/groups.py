@@ -115,6 +115,13 @@ def comments_label(d: dict) -> str:
     return "anyone may comment" + (f", for {days} days after each post" if days else "")
 
 
+# whether search engines may index a site through its web form (UN-RFC 0035 section 3),
+# as in the graphical client (unseenet-gui#98)
+INDEX_CHOICES = [("Search engines: not indexed - found by its address only", "no"),
+                 ("Search engines: may be indexed - they may list its pages", "yes")]
+INDEX_WARNING = ("Copies in search engines are outside Unseenet: they can outlive the pages here, "
+                 "even after they expire or you withdraw them.")
+
 GROUP_NAME_HELP = ("Lowercase letters, digits and - _ +, parts separated by dots, "
                    "e.g. dk.snak or andlo.test. The first part is the hierarchy.")
 
@@ -321,6 +328,10 @@ class EditGroupDialog(Dialog):
                              id="reactions")
                 yield Input(value=" ".join(r) if isinstance(r, list) else "", id="reaction_set",
                             placeholder="Your own set: up to 12 emoji, e.g. 🎉 ❤️ 👏")
+            if current == "pages":                       # a site (#5, UN-RFC 0035 section 3)
+                yield Select(INDEX_CHOICES, value="yes" if d.get("index") == "yes" else "no",
+                             allow_blank=False, id="index")
+                yield Label(INDEX_WARNING, classes="hint", id="index-warning")
             if d.get("type") in FILES_GROUP_TYPES:      # #496
                 choice = file_choice(d.get("attachments"))
                 choices = FILES_CHOICES + ([("Files as they are now (limits set elsewhere)",
@@ -360,6 +371,8 @@ class EditGroupDialog(Dialog):
                 return
             changes["comments"] = self.query_one("#comments", Select).value
             changes["comment_days"] = int(days) if days else None
+        if self.query("#index"):                         # a site (#5)
+            changes["index"] = self.query_one("#index", Select).value
         if self.query("#files"):
             choice = self.query_one("#files", Select).value
             if choice != "custom":                       # custom limits are kept as they are
