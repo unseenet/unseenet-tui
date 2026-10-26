@@ -148,6 +148,8 @@ class PushMixin:
              "again (a site you write in)", self.action_page_previous),
             ("Remove this page", "Remove the selected page from the site you write in",
              self.action_page_remove),
+            ("Publish a folder as this site", "A folder of Markdown or HTML files as the pages of "
+             "the site you write in - only what changed is sent", self.action_publish_folder),
             ("Share my profile", "With one person or this closed group only - not public",
              self.action_share_profile),
             ("Take back my shared profile", "From a person or this closed group",

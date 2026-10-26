@@ -135,6 +135,42 @@ class PagesMixin:
             await s.fetch_group(gid)
         self.select_group(gid)
 
+    @work(group="post", exit_on_error=False)
+    async def action_publish_folder(self) -> None:
+        """Publish a folder of Markdown (and HTML) as the site shown (#19, unseenet#538):
+        what would be sent first, then only what changed."""
+        from .site_publish import FolderDialog, PlanDialog
+        s, gid = self.session, self.current_group or ""
+        if not self._is_site(gid) or not self._writes_pages(gid):
+            self.notify("Open a site you write in first", severity="warning")
+            return
+        choice = await self.push_screen_wait(FolderDialog(s.group_label(gid)))
+        if not choice:
+            return
+        self.set_status("Reading the folder ...")
+        try:
+            plan = await s.publish_site(gid, choice["folder"], dry_run=True, prune=choice["prune"])
+        except (SessionError, OSError, ConnectionError, NNTPError) as exc:
+            self.set_status("")
+            self.notify(f"Not published: {exc}", severity="error", timeout=8)
+            return
+        self.set_status("")
+        if not await self.push_screen_wait(PlanDialog(plan)):
+            return
+
+        def progress(done: int, total: int, path: str) -> None:
+            self.set_status(f"Publishing {done + 1} of {total}: /{path} (computing postage) ..."
+                            if path else "")
+        try:
+            out = await s.publish_site(gid, choice["folder"], prune=choice["prune"], progress=progress)
+        except (SessionError, OSError, ConnectionError, NNTPError) as exc:
+            self.set_status("")
+            self.notify(f"Not published: {exc}", severity="error", timeout=8)
+            return
+        self.set_status("")
+        self.notify(f"Published {out['sent']} page(s)", timeout=5)
+        self.select_group(gid)
+
     def _selected_page(self) -> tuple[str, Message] | None:
         gid, m = self.current_group or "", self.current_message
         if not self._is_site(gid) or m is None or not m.page:
