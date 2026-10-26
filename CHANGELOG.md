@@ -6,6 +6,11 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+- **Publish a folder as a site** (#19, on unseenet#538): Ctrl+P on a site you
+  write in - the folder and whether pages no longer in it go, then what would be
+  sent (+ ~ = - per page, and the changes made on the way), then Publish: only
+  what changed is sent, with progress.
+
 - **Docstrings** (#20, part 3): every public function and method of the
   terminal client says what it does (149 added), every file what belongs in it;
   `tests/test_docstrings.py` keeps it so, as the core's does. A Developers page
