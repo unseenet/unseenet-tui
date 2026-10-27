@@ -6,6 +6,11 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+- **For you and Show all** (#36, unseenet#629): *Show all here, for now* in the palette shows
+  the group, the timeline or For you without your rules - the title says *your rules are
+  paused* - never saved, ended when you leave. For you says what it is, counts only what
+  is new, marks what you have seen, and an entry your `[foryou]` rules quiet says *quiet*.
+
 - **Everything with a tag** (unseenet#672): `t` on a post, or *Everything with a tag* in
   the palette, shows every post with it in your groups and feeds, newest first.
 - **Who reads on this device** (unseenet#674, UN-RFC 0053 6.1): an age guide in the

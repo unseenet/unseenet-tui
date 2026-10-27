@@ -338,6 +338,8 @@ class GroupsMixin:
     @work(exclusive=True, group="fetch", exit_on_error=False)
     async def select_group(self, gid: str) -> None:
         """Show a group: its threads, chat, feed or site, read from the cache then the node."""
+        if gid != self.current_group:
+            self._show_all = None                       # Show all ends when you leave (0051 3)
         self.current_group = gid
         self.current_message = None
         self.refresh_bindings()
@@ -463,6 +465,8 @@ class GroupsMixin:
             if liked:
                 line.append("   " + liked, style="dim")
             res = self._scores.get(m.message_id)
+            if res is not None and "quiet" in res.actions:    # [foryou]: listed, not counted
+                line.append("  · quiet", style="dim italic")
             if res is not None:                              # your rules: how it is shown
                 if "highlight" in res.actions:
                     line.stylize("bold reverse")
@@ -481,6 +485,10 @@ class GroupsMixin:
                 fresh = self.messages.get(screen.msg.message_id)
                 if fresh is not None and fresh is not screen.msg:
                     screen.show(fresh, keep_place=True)
+        if gid == FOR_YOU and self.messages:            # shown in For you: seen (0051 5.5)
+            newest = max((m.date for m in self.messages.values() if m.date), default=None)
+            if newest is not None:
+                s.mark_seen(FOR_YOU, newest)
         if self._scores and gid not in (FOR_YOU, TIMELINE) and not gid.startswith(CONTACT):
             # seen only while your rules are on: only they use it (UN-RFC 0044 4.5)
             newest = max((m.date for m, _ in rows if m.date), default=None)
