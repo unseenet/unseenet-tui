@@ -102,6 +102,23 @@ class TagsMixin:
         self.refresh_view()
         return True
 
+    # --- everything with a tag (UN-RFC 0052 section 7) ---
+    @work(group="dialog", exit_on_error=False)
+    async def action_tagged(self, tag: str = "") -> None:
+        """Show every post with a tag in your groups and feeds: the selected post's tag
+        (asked for when it has several), or one you write."""
+        from .dialogs.base import InputDialog
+        m = self.current_message
+        tags = [t for t in getattr(m, "tags", ()) if t] if m else []
+        if not tag:
+            tag = await self.push_screen_wait(InputDialog(
+                "Everything with a tag", "In your groups and feeds: the authors' tags, the groups', "
+                "and topics of labellers you follow for topics.", "a tag, e.g. linux",
+                tags[0] if tags else ""))
+        tag = (tag or "").strip().lstrip("#").lower()
+        if tag:
+            await self.select_group("tag:" + tag)
+
     # --- the settings ---
     @work(group="dialog", exit_on_error=False)
     async def action_content_warnings(self) -> None:

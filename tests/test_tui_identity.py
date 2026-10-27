@@ -75,11 +75,13 @@ async def test_show_words_behind_the_passphrase_and_check_three(tmp_path):
         app.screen.query_one("#pw", Input).value = "pw"
         await press(pilot, app, "#ok")
         assert await wait_for(pilot, lambda: screen_is(app, "ShowWordsDialog"), 400), stack(app)
+        assert await wait_for(pilot, lambda: laid_out(app, "#words")), stack(app)
         shown = str(app.screen.query_one("#words", Static).render())
         assert words[0] in shown and words[23] in shown
         await press(pilot, app, "#ok")
         assert await wait_for(pilot, lambda: screen_is(app, "CheckWordsDialog")), stack(app)
         check = app.screen
+        assert await wait_for(pilot, lambda: all(laid_out(app, f"#w{p}") for p in check.positions)), stack(app)
         for p in check.positions:
             check.query_one(f"#w{p}", Input).value = "nope"
         await press(pilot, app, "#ok")
@@ -117,6 +119,7 @@ async def test_first_start_restores_from_words(tmp_path, monkeypatch):
         app.screen.query_one("#node", Input).value = "127.0.0.1:9"
         await press(pilot, app, "#ok")
         assert await wait_for(pilot, lambda: screen_is(app, "RestoreDialog")), stack(app)
+        assert await wait_for(pilot, lambda: laid_out(app, "#words")), stack(app)
         area = app.screen.query_one("#words", TextArea)
         area.text = " ".join(words[:23] + ["xyzzy"])
         await pilot.pause()
@@ -168,9 +171,11 @@ async def test_copy_to_shows_the_code_then_the_check_words(tmp_path, monkeypatch
         assert await app_ready(pilot, app), stack(app)
         app.action_copy_to()
         assert await wait_for(pilot, lambda: screen_is(app, "CopyChoiceDialog")), stack(app)
+        assert await wait_for(pilot, lambda: laid_out(app, "#secrets")), stack(app)
         app.screen.query_one("#secrets").value = False
         await press(pilot, app, "#ok")
         assert await wait_for(pilot, lambda: screen_is(app, "CopyOfferDialog")), stack(app)
+        assert await wait_for(pilot, lambda: laid_out(app, "#code")), stack(app)
         assert "7-guitar-tunnel" in str(app.screen.query_one("#code", Static).render())
         assert await wait_for(pilot, lambda: app.screen.check == ("ocean", "zebra")), stack(app)
         await press(pilot, app, "#ok")

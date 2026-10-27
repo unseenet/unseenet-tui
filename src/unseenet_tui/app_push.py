@@ -283,6 +283,8 @@ class PushMixin:
              self.action_forget_team),
             ("Who reads this inbox", "Owner of an inbox: readers with team keys - add, remove, "
              "the team's name", self.action_team_readers),
+            ("Everything with a tag", "Every post with a tag in your groups and feeds  [t]",
+             self.action_tagged),
             ("Content warnings and labels", "Show, blur or hide each warning; the labellers "
              "(UN-RFC 0053)", self.action_content_warnings),
             ("Show anyway", "The selected post is hidden by a spam report or a warning: show it here",

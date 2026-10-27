@@ -341,7 +341,7 @@ class GroupsMixin:
         self.current_group = gid
         self.current_message = None
         self.refresh_bindings()
-        if gid == FOR_YOU:
+        if gid == FOR_YOU or gid.startswith("tag:"):       # from what is fetched (0052, 7)
             self._render_threads()
             self.query_one("#threads").focus()
             return
