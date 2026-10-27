@@ -85,6 +85,11 @@ class ComposeDialog(Dialog):
             lock = "  ∩ encrypted" if self.group.type == "closed" else ""
             yield Label(self.heading or f"{kind} {self.app.session.group_label(self.group.group_id)}{lock}", classes="title",
                         markup=False)
+            yield Input(value=self.subject, placeholder="Subject", id="subject")
+            text = self.quote + (("\n" if self.quote else "\n\n") + SIG_SEPARATOR + self.signature
+                                 if self.signature else "")
+            yield EmojiTextArea(text, id="body", soft_wrap=True)     # :ta completion (#6)
+            yield Static("", id="body-emoji", markup=False)
             gid = self.group.group_id or ""
             if self.group.type != "inbox" and gid and not gid.startswith(("contact:", "inbox@")):
                 codes, why = self.app.session.suggest_languages(gid)        # UN-RFC 0052 5a
@@ -94,11 +99,6 @@ class ComposeDialog(Dialog):
                 yield Label("Language: " + {"you": "what you wrote in here last", "group": "the group's",
                                             "profile": "from your profile"}.get(why, "none is sent"),
                             classes="hint", markup=False)
-            yield Input(value=self.subject, placeholder="Subject", id="subject")
-            text = self.quote + (("\n" if self.quote else "\n\n") + SIG_SEPARATOR + self.signature
-                                 if self.signature else "")
-            yield EmojiTextArea(text, id="body", soft_wrap=True)     # :ta completion (#6)
-            yield Static("", id="body-emoji", markup=False)
             if self.files_allowed:
                 yield Input(placeholder="Files to send with it - paths, comma between: "
                             "~/garden.jpg, ~/map.pdf", id="files")

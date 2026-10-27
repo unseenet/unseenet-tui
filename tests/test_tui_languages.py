@@ -11,7 +11,7 @@ from unseenet.client.session import GroupInfo, Message, Session  # noqa: E402
 from unseenet.core.vault import Vault  # noqa: E402
 from unseenet_tui.app import UnseenetApp  # noqa: E402
 
-from tuihelp import app_ready, laid_out, stack, wait_for  # noqa: E402
+from tuihelp import app_ready, laid_out, press, stack, wait_for  # noqa: E402
 
 KDF = {"ops": 1, "mem": 8192 * 1024}
 GID = "dk.snak@abcdabcdabcdabcd"
@@ -41,6 +41,8 @@ async def test_suggested_chosen_and_shown(tmp_path, monkeypatch):
         app.push_screen(dlg, got.append)
         assert await wait_for(pilot, lambda: laid_out(app, "#lang")), stack(app)
         assert app.screen.query_one("#lang").value == "da"
+        ids = [w.id for w in app.screen.query("Input, TextArea") if w.id in ("body", "lang")]
+        assert ids == ["body", "lang"]                                  # under the text
         assert any("the group's" in str(lb.render()) for lb in app.screen.query("Label"))
         app.screen.query_one("#subject").value = "Hi"
         app.screen.query_one("#body").text = "In English\n"
@@ -56,4 +58,22 @@ async def test_suggested_chosen_and_shown(tmp_path, monkeypatch):
                      author_key="ed25519:" + "a" * 52, date=date, body="x", languages=("en",))
         assert not app.article(da)[0].endswith("·  da")                  # the group's: not said
         assert app.article(en)[0].endswith("·  en")                      # differs: said
+        await pilot.press("q")
+
+
+async def test_the_language_of_chat_lines_here(tmp_path, monkeypatch):
+    """Write in ... here: remembered for the group, used for chat lines and comments."""
+    app = await _app(tmp_path, monkeypatch)
+    async with app.run_test(size=(140, 50)) as pilot:
+        assert await app_ready(pilot, app), stack(app)
+        s = app.session
+        s.subscribe(GID)
+        s.group_entry(GID)["manifest"] = {"name": "dk.snak", "type": "open", "languages": ["da"]}
+        app.current_group = GID
+        app.action_write_language()
+        assert await wait_for(pilot, lambda: type(app.screen).__name__ == "InputDialog"), stack(app)
+        assert await wait_for(pilot, lambda: laid_out(app, "Input")), stack(app)
+        app.screen.query_one("Input").value = "en"
+        await press(pilot, app, "#ok")
+        assert await wait_for(pilot, lambda: s.suggest_languages(GID) == (["en"], "you")), stack(app)
         await pilot.press("q")

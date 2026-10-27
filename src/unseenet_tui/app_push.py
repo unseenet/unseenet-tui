@@ -287,6 +287,8 @@ class PushMixin:
              self.action_tagged),
             ("Show all here, for now", "This view without your rules, or back to them - "
              "nothing is saved (UN-RFC 0051)", self.action_show_all),
+            ("Write in … here", "The language of your chat lines and comments in this group, "
+             "remembered for it (UN-RFC 0052)", self.action_write_language),
             ("Who reads on this device", "An age guide: what is blurred and hidden, for a child "
              "say; nothing of the answer is kept (UN-RFC 0053)", self.action_age_guide),
             ("Content warnings and labels", "Show, blur or hide each warning; the labellers "
