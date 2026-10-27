@@ -7,9 +7,11 @@ set, races them - and loses on a slow CI runner. Wait for the condition instead:
 - :func:`app_ready` - the startup worker has finished, so no unlock or setup
   dialog can still appear on top of what the test opens next;
 - :func:`wait_for` - any condition, polled every 50 ms;
-- :func:`laid_out` / :func:`press` - a dialog's widget is on screen *with a place*
-  (a dialog pushed from a worker is in the DOM before its first layout, and a click
-  then lands on nothing), pressed through its own handler.
+- :func:`laid_out` / :func:`press` / :func:`click` - a dialog's widget is on screen
+  *with a place* (a dialog pushed from a worker is in the DOM before its first layout,
+  and a click then lands on nothing), pressed through its own handler or clicked;
+- :func:`drawn` - a screen of a type is on top and a widget of it laid out, before
+  a test reads or sets that widget (#29: on slow CI runners it is not yet).
 """
 
 from __future__ import annotations
@@ -57,3 +59,16 @@ async def press(pilot, app, selector: str) -> None:
     assert await wait_for(pilot, lambda: laid_out(app, selector)), stack(app)
     app.screen.query_one(selector, Button).press()
     await pilot.pause()
+
+
+async def click(pilot, app, selector: str) -> None:
+    """Click a widget of the current screen once it is laid out (#29)."""
+    assert await wait_for(pilot, lambda: laid_out(app, selector)), stack(app)
+    await pilot.click(selector)
+
+
+async def drawn(pilot, app, screen, selector: str, tries: int = 200) -> bool:
+    """True once a screen of type ``screen`` (a class or its name) is on top and its
+    ``selector`` is laid out - so a test reading or setting it does not race (#29)."""
+    name = screen if isinstance(screen, str) else screen.__name__
+    return await wait_for(pilot, lambda: type(app.screen).__name__ == name and laid_out(app, selector), tries)

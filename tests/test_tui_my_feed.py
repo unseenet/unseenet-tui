@@ -11,7 +11,7 @@ from unseenet.core.store import Store  # noqa: E402
 from unseenet.core.vault import Vault  # noqa: E402
 from unseenet.node.server import Node, NodeConfig  # noqa: E402
 
-from tuihelp import app_ready, press, stack, wait_for  # noqa: E402
+from tuihelp import app_ready, laid_out, press, stack, wait_for  # noqa: E402
 
 KDF = {"ops": 1, "mem": 8192 * 1024}
 
@@ -93,6 +93,7 @@ async def test_tui_profile_buttons_start_my_feed_and_follow(tmp_path, monkeypatc
         # your own profile: Start your feed
         app.action_show_profile(app.session.identity().key_text)
         assert await wait_for(pilot, lambda: isinstance(app.screen, ProfileDialog), 200)
+        assert await wait_for(pilot, lambda: laid_out(app, "#my-feed")), stack(app)
         assert str(app.screen.query_one("#my-feed").label) == "Start your feed"
         assert not app.screen.query("#follow")
         await press(pilot, app, "#my-feed")
@@ -109,13 +110,15 @@ async def test_tui_profile_buttons_start_my_feed_and_follow(tmp_path, monkeypatc
         # then Follow, then Following, and their feed
         app.action_show_profile(key)
         assert await wait_for(pilot, lambda: isinstance(app.screen, ProfileDialog), 200)
-        assert str(app.screen.query_one("#follow").label) == "Follow"
+        assert await wait_for(pilot, lambda: laid_out(app, "#follow")
+                              and str(app.screen.query_one("#follow").label) == "Follow"), stack(app)
         await press(pilot, app, "#follow")
         assert await wait_for(pilot, lambda: app.session.is_following(key), 400)
         assert await wait_for(pilot, lambda: feed in app.session.data["subscribed"], 200)
         app.action_show_profile(key)
         assert await wait_for(pilot, lambda: isinstance(app.screen, ProfileDialog), 200)
-        assert str(app.screen.query_one("#follow").label) == "Following"
+        assert await wait_for(pilot, lambda: laid_out(app, "#follow")
+                              and str(app.screen.query_one("#follow").label) == "Following"), stack(app)
         await press(pilot, app, "#their-feed")
         assert await wait_for(pilot, lambda: app.current_group == feed, 200)
         app.action_show_profile(key)
@@ -134,6 +137,7 @@ async def test_tui_start_my_site_at_the_top_and_on_the_profile(tmp_path, monkeyp
         assert await wait_for(pilot, lambda: START_SITE in _top(app), 200)
         app.action_show_profile(app.session.identity().key_text)
         assert await wait_for(pilot, lambda: isinstance(app.screen, ProfileDialog), 200)
+        assert await wait_for(pilot, lambda: laid_out(app, "#my-site")), stack(app)
         assert str(app.screen.query_one("#my-site").label) == "Start your site"
         await press(pilot, app, "#my-site")
         assert await wait_for(pilot, lambda: type(app.screen).__name__ == "ConfirmDialog", 100)
@@ -157,7 +161,7 @@ async def test_tui_no_feed_or_site_buttons_for_someone_without_them(tmp_path, mo
         app.action_show_profile(key)
         assert await wait_for(pilot, lambda: isinstance(app.screen, ProfileDialog), 200)
         assert not app.screen.query("#their-feed") and not app.screen.query("#their-site")
-        assert app.screen.query("#follow")
+        assert await wait_for(pilot, lambda: laid_out(app, "#follow")), stack(app)
         await pilot.press("escape")
         await pilot.press("q")
     server.close()

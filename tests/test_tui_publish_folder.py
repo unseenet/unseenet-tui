@@ -8,7 +8,7 @@ from unseenet.core.vault import Vault  # noqa: E402
 from unseenet_tui import site_publish as sp  # noqa: E402
 from unseenet_tui.app import UnseenetApp  # noqa: E402
 
-from tuihelp import app_ready, press, stack, wait_for  # noqa: E402
+from tuihelp import app_ready, laid_out, press, stack, wait_for  # noqa: E402
 
 KDF = {"ops": 1, "mem": 8192 * 1024}
 PLAN = {"changes": [{"path": "index", "title": "Hjem", "action": "changed", "source": "index.md", "files": []},
@@ -49,6 +49,7 @@ async def test_publishing_a_folder(tmp_path, monkeypatch):
         app.current_group = "site@abcdabcdabcdabcd"
         app.action_publish_folder()
         assert await wait_for(pilot, lambda: type(app.screen).__name__ == "FolderDialog"), stack(app)
+        assert await wait_for(pilot, lambda: laid_out(app, "#folder")), stack(app)
         app.screen.query_one("#folder").value = str(tmp_path / "nothing")
         await press(pilot, app, "#ok")
         assert "not a folder" in str(app.screen.query_one("#error").render())
@@ -56,6 +57,7 @@ async def test_publishing_a_folder(tmp_path, monkeypatch):
         app.screen.query_one("#prune").value = True
         await press(pilot, app, "#ok")
         assert await wait_for(pilot, lambda: type(app.screen).__name__ == "PlanDialog"), stack(app)
+        assert await wait_for(pilot, lambda: laid_out(app, "#ok")), stack(app)
         assert "Publish 2 pages" in str(app.screen.query_one("#ok").label)
         await press(pilot, app, "#ok")
         assert await wait_for(pilot, lambda: len(calls) == 2), stack(app)

@@ -6,6 +6,11 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+- **Steadier tests** (#29): every click waits until its widget is laid out
+  (`tuihelp.click`), and a widget read or set right after its dialog appeared waits
+  for it to be drawn - on CI's slow Windows runners it often was not yet, and tests
+  failed now and then. Also the page preview and the profile's Follow button.
+
 - **Publishing a spam report says so**: the issuer's postage can take minutes; the
   status line says *Publishing …* until it is done. The manual's *Reporting a post*
   is now a whole section: hidden posts, issuers, reports that reach you, becoming an

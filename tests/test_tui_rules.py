@@ -11,7 +11,7 @@ from unseenet.core.vault import Vault  # noqa: E402
 from unseenet_tui.app import UnseenetApp  # noqa: E402
 from unseenet_tui import rules_dialog as rd  # noqa: E402
 
-from tuihelp import app_ready, press, stack, wait_for  # noqa: E402
+from tuihelp import app_ready, laid_out, press, stack, wait_for  # noqa: E402
 
 KDF = {"ops": 1, "mem": 8192 * 1024}
 GID = "dk.snak@abcdabcdabcdabcd"
@@ -47,6 +47,7 @@ async def test_the_editor(tmp_path, monkeypatch):
         assert await app_ready(pilot, app), stack(app)
         app.action_rules()
         assert await wait_for(pilot, lambda: type(app.screen).__name__ == "RulesDialog"), stack(app)
+        assert await wait_for(pilot, lambda: laid_out(app, "#rules")), stack(app)
         box = app.screen.query_one("#rules")
         assert "[feed]" in box.text and "suggestion" in str(app.screen.query_one(".hint").render())
         await press(pilot, app, "#help")                               # the rules in short

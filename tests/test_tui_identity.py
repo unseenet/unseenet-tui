@@ -71,6 +71,7 @@ async def test_show_words_behind_the_passphrase_and_check_three(tmp_path):
         app.screen.query_one("#pw", Input).value = "wrong"
         await press(pilot, app, "#ok")
         assert await wait_for(pilot, lambda: bool(app.screen.query(".error"))), stack(app)
+        assert await wait_for(pilot, lambda: laid_out(app, "#pw")), stack(app)
         app.screen.query_one("#pw", Input).value = "pw"
         await press(pilot, app, "#ok")
         assert await wait_for(pilot, lambda: screen_is(app, "ShowWordsDialog"), 400), stack(app)
