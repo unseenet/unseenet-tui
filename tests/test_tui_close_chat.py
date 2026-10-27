@@ -47,7 +47,7 @@ async def two(tmp_path, monkeypatch):
 
 async def test_tui_close_chat_and_contact_from_the_profile(tmp_path, monkeypatch):
     pytest.importorskip("textual")
-    from tuihelp import app_ready, press, stack, wait_for
+    from tuihelp import app_ready, laid_out, press, stack, wait_for
     from unseenet_tui.app import CONTACT, ConfirmDialog, InputDialog, ProfileDialog, UnseenetApp
     monkeypatch.setattr(sess, "DEFAULT_POW", 8)
     node = Node(Store(), NodeConfig(min_pow=8, forward_delay=(0, 0)))
@@ -73,6 +73,7 @@ async def test_tui_close_chat_and_contact_from_the_profile(tmp_path, monkeypatch
         assert await wait_for(pilot, lambda: isinstance(app.screen, ProfileDialog), 200)
         await press(pilot, app, "#contact")
         assert await wait_for(pilot, lambda: isinstance(app.screen, InputDialog), 100)
+        assert await wait_for(pilot, lambda: laid_out(app, "#value")), stack(app)
         app.screen.query_one("#value").value = "Sonia"
         await press(pilot, app, "#ok")
         assert await wait_for(pilot, lambda: app.session.contact_name(key) == "Sonia", 100)
@@ -83,6 +84,7 @@ async def test_tui_close_chat_and_contact_from_the_profile(tmp_path, monkeypatch
         assert key not in app.session.chat_partners()
         app.action_show_profile(key)                       # Remove contact, after asking
         assert await wait_for(pilot, lambda: isinstance(app.screen, ProfileDialog), 200)
+        assert await wait_for(pilot, lambda: laid_out(app, "#contact")), stack(app)
         assert str(app.screen.query_one("#contact").label) == "Remove contact"
         await press(pilot, app, "#contact")
         assert await wait_for(pilot, lambda: isinstance(app.screen, ConfirmDialog), 100)

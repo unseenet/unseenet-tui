@@ -10,7 +10,7 @@ from unseenet.core.vault import Vault  # noqa: E402
 from unseenet_tui import export_dialog as ed  # noqa: E402
 from unseenet_tui.app import UnseenetApp  # noqa: E402
 
-from tuihelp import app_ready, press, stack, wait_for  # noqa: E402
+from tuihelp import app_ready, laid_out, press, stack, wait_for  # noqa: E402
 
 KDF = {"ops": 1, "mem": 8192 * 1024}
 
@@ -42,6 +42,7 @@ async def test_export_and_the_passphrase(tmp_path, monkeypatch):
         assert "export.json" in zipfile.ZipFile(out).namelist()
         app.action_export()                                 # with private: a passphrase twice
         assert await wait_for(pilot, lambda: type(app.screen).__name__ == "ExportDialog"), stack(app)
+        assert await wait_for(pilot, lambda: laid_out(app, "#private")), stack(app)
         app.screen.query_one("#private").value = True
         app.screen.query_one("#pw").value = "lang sætning"
         app.screen.query_one("#pw2").value = "en anden"

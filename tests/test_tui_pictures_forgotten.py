@@ -53,7 +53,7 @@ def _with_blobs(node):
 
 async def test_tui_create_group_with_pictures_and_attach_to_a_chat_line(tmp_path, monkeypatch):
     pytest.importorskip("textual")
-    from tuihelp import app_ready, press, stack, wait_for
+    from tuihelp import app_ready, laid_out, press, stack, wait_for
     from unseenet_tui.app import CreateGroupDialog, UnseenetApp
     node, server, addr = await _node(monkeypatch)
     s = _session(tmp_path, addr)
@@ -67,6 +67,7 @@ async def test_tui_create_group_with_pictures_and_attach_to_a_chat_line(tmp_path
         assert await app_ready(pilot, app), stack(app)
         app.action_create_group()
         assert await wait_for(pilot, lambda: isinstance(app.screen, CreateGroupDialog), 100)
+        assert await wait_for(pilot, lambda: laid_out(app, "#name")), stack(app)
         app.screen.query_one("#name").value = "dk.foto.chat"
         app.screen.query_one("#view").value = "chat"
         app.screen.query_one("#files").value = "pictures"

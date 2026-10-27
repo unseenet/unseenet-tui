@@ -16,7 +16,7 @@ from unseenet.node.server import Node, NodeConfig  # noqa: E402
 KDF = {"ops": 1, "mem": 8192 * 1024}
 
 
-from tuihelp import app_ready, laid_out, press, stack, wait_for  # noqa: E402,F401
+from tuihelp import app_ready, click, laid_out, press, stack, wait_for  # noqa: E402,F401
 
 
 async def test_tui_create_group_and_post(tmp_path, monkeypatch):
@@ -36,15 +36,15 @@ async def test_tui_create_group_and_post(tmp_path, monkeypatch):
         assert await app_ready(pilot, app), stack(app)
         app.action_create_group()          # only in the command palette, no key
         await pilot.pause(0.2)
-        await pilot.click("#name")
+        await click(pilot, app, "#name")
         await pilot.press(*"dk.test")
-        await pilot.click("#ok")
+        await click(pilot, app, "#ok")
         assert await wait_for(pilot, lambda: app.current_group and app.current_group.startswith("dk.test@"))
 
         await pilot.press("n")
         await pilot.pause(0.2)
         await pilot.press(*"Hej")
-        await pilot.click("#body")
+        await click(pilot, app, "#body")
         await pilot.press(*"Fra TUI'en")
         await pilot.press("ctrl+s")
         gid = app.current_group
@@ -138,16 +138,16 @@ async def test_tui_inbox_and_operator_contact(tmp_path, monkeypatch):
         from unseenet_tui.app import NodeInfoDialog, NodesDialog
         await pilot.press("o")
         assert await wait_for(pilot, lambda: isinstance(app.screen, NodesDialog))
-        await pilot.click("#info")                    # details of the selected node
+        await click(pilot, app, "#info")                    # details of the selected node
         assert await wait_for(pilot, lambda: isinstance(app.screen, NodeInfoDialog))
-        await pilot.click("#ok")                      # "Write to operator"
+        await click(pilot, app, "#ok")                      # "Write to operator"
         from unseenet_tui.app import ComposeDialog
         # the dialog comes from a worker that may first read the inbox's manifest (#497)
         assert await wait_for(pilot, lambda: isinstance(app.screen, ComposeDialog)
                               and laid_out(app, "#subject"), 300), stack(app)
         app.screen.query_one("#subject").focus()
         await pilot.press(*"Hej")
-        await pilot.click("#body")
+        await click(pilot, app, "#body")
         await pilot.press(*"Tak for noden")
         await pilot.press("ctrl+s")
         assert await wait_for(pilot, lambda: len(node.store.numbers(contact.group)) == 2, 400)
@@ -179,7 +179,7 @@ async def test_tui_signature_added_and_not_quoted(tmp_path, monkeypatch):
         await pilot.press("n")
         await pilot.pause(0.3)
         await pilot.press(*"Emne")
-        await pilot.click("#body")
+        await click(pilot, app, "#body")
         await pilot.press("ctrl+home")
         await pilot.press(*"Teksten")
         await pilot.press("ctrl+s")
@@ -218,7 +218,7 @@ async def test_tui_create_group_rejects_bad_name_and_keeps_dialog(tmp_path, monk
         app.action_create_group()          # only in the command palette, no key
         await pilot.pause(0.3)
         await pilot.press(*"andlo,test")
-        await pilot.click("#ok")
+        await click(pilot, app, "#ok")
         await pilot.pause(0.3)
         assert isinstance(app.screen, CreateGroupDialog)          # still open
         assert app.screen.query_one("#name").value == "andlo,test"  # nothing lost
@@ -226,7 +226,7 @@ async def test_tui_create_group_rejects_bad_name_and_keeps_dialog(tmp_path, monk
         name = app.screen.query_one("#name")
         name.value = "andlo.test"
         await pilot.pause(0.3)          # the help text changes, and the buttons move
-        await pilot.click("#ok")
+        await click(pilot, app, "#ok")
         assert await wait_for(pilot, lambda: any(g.startswith("andlo.test@") for g in app.groups), 300)
         await pilot.press("q")
     server.close()
@@ -255,12 +255,12 @@ async def test_tui_contact_conversation(tmp_path, monkeypatch):
         app.query_one("#threads").focus()
         await pilot.press("a")                      # add the sender as a contact
         await pilot.pause(0.3)
-        await pilot.click("#ok")                    # key pre-filled
+        await click(pilot, app, "#ok")                    # key pre-filled
         await pilot.pause(0.3)
         name = app.screen.query_one("#value")
         assert name.value == "Sonia"                # name suggested
         name.value = "Sonia (datter)"
-        await pilot.click("#ok")
+        await click(pilot, app, "#ok")
         assert await wait_for(pilot, lambda: bool(app.session.contacts()), 100)
         key = b.identity().key_text
         app.select_group("contact:" + key)
@@ -424,8 +424,8 @@ async def test_tui_about_screen(tmp_path, monkeypatch):
         assert await app_ready(pilot, app), stack(app)
         await pilot.press("f1")
         assert await wait_for(pilot, lambda: isinstance(app.screen, AboutDialog))
-        await pilot.click("#repo")
-        await pilot.click("#docs")
+        await click(pilot, app, "#repo")
+        await click(pilot, app, "#docs")
         await pilot.pause(0.1)
         assert opened == [REPO_URL, DOCS_URL]
         await pilot.press("escape")
@@ -460,10 +460,11 @@ async def test_tui_nodes_add_default_remove(tmp_path, monkeypatch):
         assert await wait_for(pilot, lambda: app._inbox_ready, 300)
         await pilot.press("o")
         assert await wait_for(pilot, lambda: isinstance(app.screen, NodesDialog))
-        await pilot.click("#add")
+        await click(pilot, app, "#add")
         from textual.widgets import Select
         from unseenet_tui.app import OTHER_NODE, AddNodeDialog
         assert await wait_for(pilot, lambda: isinstance(app.screen, AddNodeDialog))
+        assert await wait_for(pilot, lambda: laid_out(app, "#known")), stack(app)
         app.screen.query_one("#known", Select).value = OTHER_NODE     # not a known node
         await pilot.pause(0.2)
         app.screen.query_one("#node").focus()
@@ -474,6 +475,7 @@ async def test_tui_nodes_add_default_remove(tmp_path, monkeypatch):
         # the other node's group can be browsed and subscribed, and is read from there
         await pilot.press("g")
         assert await wait_for(pilot, lambda: isinstance(app.screen, BrowseDialog), 300)
+        assert await wait_for(pilot, lambda: laid_out(app, "#browse-tree")), stack(app)
         tree = app.screen.query_one("#browse-tree")
         leaf = next(n for n in _all_nodes(tree.root) if getattr(n.data, "group_id", None) == gid)
         tree.select_node(leaf)
@@ -486,7 +488,7 @@ async def test_tui_nodes_add_default_remove(tmp_path, monkeypatch):
         await pilot.press("o")
         assert await wait_for(pilot, lambda: isinstance(app.screen, NodesDialog))
         await pilot.press("down")
-        await pilot.click("#default")
+        await click(pilot, app, "#default")
         assert await wait_for(pilot, lambda: app.session.node == addrs[1])
         await pilot.press("escape")
         await pilot.press("q")
@@ -522,7 +524,7 @@ async def test_tui_bridges_dialog(tmp_path, monkeypatch):
         await pilot.pause(0.2)
         assert app.screen.query_one("#lines").display
         app.screen.query_one("#lines", TextArea).text = "obfs4 192.0.2.1:443 ABCD cert=x iat-mode=0\n"
-        await pilot.click("#ok")
+        await click(pilot, app, "#ok")
         assert await wait_for(pilot, lambda: app.session.bridge_setting()["mode"] == "custom")
         assert app.session.bridge_setting()["custom"] == ["obfs4 192.0.2.1:443 ABCD cert=x iat-mode=0"]
         await pilot.press("q")
@@ -548,7 +550,7 @@ async def test_tui_first_start_offers_known_nodes(tmp_path, monkeypatch):
         assert chosen in [n.address for n in KNOWN_NODES]
         assert not app.screen.query_one("#node").display          # only for another node
         app.screen.query_one("#display", Input).value = "Andreas"
-        await pilot.click("#ok")
+        await click(pilot, app, "#ok")
         others = [n.address for n in KNOWN_NODES if n.address != chosen]
         assert await wait_for(pilot, lambda: app.session.nodes == [chosen, *others])
         await pilot.press("q")
@@ -576,7 +578,7 @@ async def test_tui_browse_and_nodes_fit_small_terminal(tmp_path, monkeypatch):
         text = str(dialog.query_one("#group-details").render())
         assert "dk.gruppe" in text and "open" in text and "Owner:  you" in text
         app.save_screenshot(str(tmp_path / "browse.svg"))
-        await pilot.click("#cancel")             # OK closed it twice: ScreenStackError
+        await click(pilot, app, "#cancel")             # OK closed it twice: ScreenStackError
         await pilot.pause(0.3)
         assert not isinstance(app.screen, BrowseDialog) and app.is_running
         app.action_node_info()
@@ -586,7 +588,7 @@ async def test_tui_browse_and_nodes_fit_small_terminal(tmp_path, monkeypatch):
         assert ok.region.bottom <= 20 and ok.region.height > 0
         assert "Address:" in str(app.screen.query_one("#node-details").render())
         app.save_screenshot(str(tmp_path / "nodes.svg"))
-        await pilot.click("#cancel")
+        await click(pilot, app, "#cancel")
         await pilot.pause(0.3)
         assert not isinstance(app.screen, NodesDialog) and app.is_running
         await pilot.pause(0.2)
@@ -678,7 +680,7 @@ async def test_tui_browse_hides_data_groups(tmp_path, monkeypatch):
         await pilot.pause(0.2)
         assert "Data for programs" in str(dialog.query_one("#group-details").render())
         assert "¤" in str(dialog._label(leaf.data))
-        await pilot.click("#cancel")
+        await click(pilot, app, "#cancel")
         await pilot.pause(0.2)
         edit = EditGroupDialog({"name": "dk.list", "view": "data"})
         app.push_screen(edit)
@@ -746,6 +748,7 @@ async def test_tui_sent_private_messages_and_full_screen(tmp_path, monkeypatch):
         first = app.current_message
         await pilot.press("enter")
         assert await wait_for(pilot, lambda: isinstance(app.screen, ReadScreen), 50)
+        assert await wait_for(pilot, lambda: laid_out(app, "#read-head")), stack(app)
         assert first.subject in str(app.screen.query_one("#read-head").render())
         await pilot.press("n")
         await pilot.pause(0.3)
@@ -867,6 +870,7 @@ async def test_tui_names_dialog(tmp_path, monkeypatch):
         assert await app_ready(pilot, app), stack(app)
         await pilot.press("@")
         assert await wait_for(pilot, lambda: isinstance(app.screen, NamesDialog), 300)
+        assert await wait_for(pilot, lambda: laid_out(app, "#names-details")), stack(app)
         assert "no names yet" in str(app.screen.query_one("#names-details").render())
         app.screen.query_one("#value").value = "Lorensen"
         await pilot.press("enter")
@@ -893,7 +897,7 @@ async def test_tui_withdraw_own_post(tmp_path, monkeypatch):
         await pilot.press("D")
         assert await wait_for(pilot, lambda: isinstance(app.screen, ConfirmDialog), 100)
         assert "not deleted" in " ".join(str(w.render()) for w in app.screen.query("Static"))
-        await pilot.click("#ok")
+        await click(pilot, app, "#ok")
         assert await wait_for(pilot, lambda: not app.session.cache.get(gid), 300)
         await pilot.press("q")
     server.close()
@@ -1278,7 +1282,7 @@ async def test_tui_mention_notice(tmp_path, monkeypatch):
         await pilot.press("n")
         await pilot.pause(0.3)
         await pilot.press(*"Marsvin")
-        await pilot.click("#body")
+        await click(pilot, app, "#body")
         await pilot.press("ctrl+home")
         await pilot.press(*"Hej @sonia")
         await pilot.pause(0.2)
@@ -1481,6 +1485,7 @@ async def test_tui_pauses_and_resumes_ripening(tmp_path, monkeypatch):
         assert "(ripening paused)" in app.sub_title or "key level" not in app.sub_title
         app.action_ripening()
         assert await wait_for(pilot, lambda: app.screen.__class__.__name__ == "ConfirmDialog", 100)
+        assert await wait_for(pilot, lambda: laid_out(app, "#ok")), stack(app)
         app.screen.query_one("#ok").press()
         assert await wait_for(pilot, lambda: not app.runtime.ripening_paused, 400)
         await pilot.press("q")
@@ -1542,6 +1547,7 @@ async def test_tui_keeps_your_state_local_when_asked(tmp_path, monkeypatch):
         assert not app.session.state_kept_local()
         app.action_state_where()
         assert await wait_for(pilot, lambda: app.screen.__class__.__name__ == "ConfirmDialog", 100)
+        assert await wait_for(pilot, lambda: laid_out(app, "#ok")), stack(app)
         app.screen.query_one("#ok").press()
         assert await wait_for(pilot, lambda: app.session.state_kept_local(), 400)
 async def test_tui_follows_a_person_and_shows_the_timeline_and_a_feed(tmp_path, monkeypatch):
@@ -1562,8 +1568,9 @@ async def test_tui_follows_a_person_and_shows_the_timeline_and_a_feed(tmp_path, 
         assert await app_ready(pilot, app), stack(app)
         app.action_follow()
         assert await wait_for(pilot, lambda: app.screen.__class__.__name__ == "InputDialog", 100)
+        assert await wait_for(pilot, lambda: laid_out(app, "#value")), stack(app)
         app.screen.query_one("#value").value = key
-        await pilot.click("#ok")
+        await click(pilot, app, "#ok")
         assert await wait_for(pilot, lambda: TIMELINE in [n.data for n in app.query_one("#groups").root.children], 400)
         app.select_group(TIMELINE)
         assert await wait_for(pilot, lambda: [m.subject for m in app.messages.values()] == ["Første indlæg"], 400)
@@ -1612,6 +1619,7 @@ async def test_tui_sends_a_picture_cleaned_of_its_metadata(tmp_path, monkeypatch
         assert await wait_for(pilot, lambda: gid in app.groups, 300)
         app.compose_post(app.groups[gid])
         assert await wait_for(pilot, lambda: isinstance(app.screen, ComposeDialog), 100)
+        assert await wait_for(pilot, lambda: laid_out(app, "#subject")), stack(app)
         app.screen.query_one("#subject").value = "Haven"
         app.screen.query_one("#body").text = "Se her\n"
         app.screen.query_one("#files").value = str(tmp_path / "have.jpg")
@@ -1653,8 +1661,10 @@ async def test_tui_publishes_a_profile_picture(tmp_path, monkeypatch):
         assert await app_ready(pilot, app), stack(app)
         app.action_edit_profile()
         assert await wait_for(pilot, lambda: isinstance(app.screen, ConfirmDialog), 100)
+        assert await wait_for(pilot, lambda: laid_out(app, "#ok")), stack(app)
         app.screen.query_one("#ok").press()                       # the profile is public
         assert await wait_for(pilot, lambda: isinstance(app.screen, EditProfileDialog), 100)
+        assert await wait_for(pilot, lambda: laid_out(app, "#about")), stack(app)
         app.screen.query_one("#about").text = "Hej"
         app.screen.query_one("#picture").value = str(tmp_path / "me.png")
         app.screen.query_one("#ok").press()
@@ -1748,9 +1758,11 @@ async def test_tui_copies_and_opens_addresses(tmp_path, monkeypatch):
         assert await app_ready(pilot, app), stack(app)
         app.action_open_address()
         assert await wait_for(pilot, lambda: isinstance(app.screen, InputDialog), 100)
+        assert await wait_for(pilot, lambda: laid_out(app, "#value")), stack(app)
         app.screen.query_one("#value").value = link
         app.screen.query_one("#ok").press()
         assert await wait_for(pilot, lambda: isinstance(app.screen, ConfirmDialog), 200)
+        assert await wait_for(pilot, lambda: laid_out(app, "#ok")), stack(app)
         app.screen.query_one("#ok").press()                    # follow the group
         assert await wait_for(pilot, lambda: app.current_group == gid and len(app.messages) == 2, 400)
         table = app.query_one("#threads")

@@ -9,7 +9,7 @@ from unseenet.core.vault import Vault  # noqa: E402
 from unseenet_tui import emoji as em  # noqa: E402
 from unseenet_tui.app import UnseenetApp  # noqa: E402
 
-from tuihelp import app_ready, stack, wait_for  # noqa: E402
+from tuihelp import app_ready, laid_out, stack, wait_for  # noqa: E402
 
 KDF = {"ops": 1, "mem": 8192 * 1024}
 
@@ -72,6 +72,7 @@ async def test_the_picker_inserts_where_you_write(tmp_path, monkeypatch):
         box = app.query_one("#chat-input")
         app.action_insert_emoji()
         assert await wait_for(pilot, lambda: type(app.screen).__name__ == "EmojiPickerDialog"), stack(app)
+        assert await wait_for(pilot, lambda: laid_out(app, "#emoji-search")), stack(app)
         app.screen.query_one("#emoji-search").value = "tada"
         await pilot.pause(0.1)
         await pilot.press("enter")

@@ -60,8 +60,8 @@ async def test_tui_writes_pages(tmp_path, monkeypatch):
         app.screen.query_one("#title", Input).value = "Om os"
         app.screen.query_one("#body", TextArea).text = "# Om os\n\nVi er en lille landsby.\n"
         await press(pilot, app, "#preview")                     # as readers will see it
-        assert await wait_for(pilot, lambda: isinstance(app.screen, PreviewDialog)), stack(app)
-        assert "Vi er en lille landsby" in str(app.screen.rendered)
+        assert await wait_for(pilot, lambda: isinstance(app.screen, PreviewDialog)
+                              and "Vi er en lille landsby" in str(getattr(app.screen, "rendered", ""))), stack(app)
         await press(pilot, app, "#cancel")
         assert await wait_for(pilot, lambda: isinstance(app.screen, PageDialog)), stack(app)
         await press(pilot, app, "#ok")

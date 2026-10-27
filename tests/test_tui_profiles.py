@@ -51,6 +51,7 @@ async def test_tui_publish_and_show_profile(tmp_path, monkeypatch):
         p = await app.session.profile_of(key)
         app.push_screen(ProfileDialog(key, "Andreas", p, mine=True))
         assert await wait_for(pilot, lambda: bool(app.screen.query("#profile-text")))
+        assert await wait_for(pilot, lambda: laid_out(app, "#profile-text")), stack(app)
         text = str(app.screen.query_one("#profile-text").render())
         assert "Laver Unseenet" in text and "github: andlo  (code)" in text
         await pilot.press("escape")
