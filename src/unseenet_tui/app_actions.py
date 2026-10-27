@@ -153,6 +153,12 @@ class ActionsMixin:
                 self.notify("Anonymous message - there is nobody to reply to", severity="warning")
                 return
             key = crypto.key_from_text(m.sender_key) if m.sender_key and not m.reply_inbox else None
+            team = self.team_of(self.current_group)       # a team inbox: answer as the team (0047)
+            if team:
+                self.compose_private(target, f"Reply as {team['name']}", subject, quote,
+                                     owner_key=key, references=[*m.references, m.message_id],
+                                     as_team=team["group"])
+                return
             self.compose_private(target, f"Private reply to {m.from_name}", subject, quote,
                                  owner_key=key, references=[*m.references, m.message_id])
             return
@@ -161,13 +167,15 @@ class ActionsMixin:
     @work(group="post", exit_on_error=False)
     async def compose_private(self, target: str, heading: str, subject: str = "", quote: str = "",
                               owner_key: bytes | None = None,
-                              references: list[str] | None = None) -> None:
+                              references: list[str] | None = None, as_team: str | None = None) -> None:
         """The compose window for a private post or reply to an inbox, then send it sealed
-        (UN-RFC 0009)."""
+        (UN-RFC 0009). ``as_team``: on a team inbox's behalf, without your signature,
+        which would say who wrote it (UN-RFC 0047 section 8)."""
         g = GroupInfo(target, type="inbox")
         dlg = ComposeDialog(
             g, subject, quote, bool(references), heading=heading + "  @ only they can read it",
-            signature=self.session.signature(), files_allowed=await self._inbox_takes_files(target))
+            signature="" if as_team else self.session.signature(),
+            files_allowed=await self._inbox_takes_files(target))
         result = await self.push_screen_wait(dlg)
         if not result:
             return
@@ -177,7 +185,7 @@ class ActionsMixin:
             files = (self.session.prepare_files([Path(p).expanduser() for p in dlg.files])
                      if dlg.files else None)          # encrypted with the post (#497)
             await self.session.send_private(target, subject, body, owner_key=owner_key,
-                                            references=references, files=files)
+                                            references=references, files=files, as_team=as_team)
         except (SessionError, OSError, ConnectionError, ValueError) as exc:
             self.notify(f"Not sent: {exc}", severity="error", timeout=8)
             return
