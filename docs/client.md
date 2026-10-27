@@ -390,6 +390,21 @@ If the owner removes you, the title says so; **Forget this team inbox** removes
 its key. As the owner of an inbox, **Who reads this inbox** adds readers by
 their key, removes them, and sets the name replies go out as.
 
+## Tags and content warnings
+
+Authors tag their own posts, and labellers you choose can label them
+([how it works](https://unseenet.org/guide/spam/)). A **warning** - spoiler,
+profanity, sexual, nudity, violence, gore - is shown as `▌spoiler` in its own colour,
+before the subject in the list and over it in the reader, with who set it. A post you
+chose to blur says *Ctrl+P: Show anyway* in place of its text; one you chose to hide
+is a quiet line, `⊘ Hidden: gore, from …`. Nothing is covered silently, and your own
+posts and your contacts' never are. Choose per warning, and see the labellers, with
+**Content warnings and labels** in the command palette.
+
+When you write, put tags in the **Tags** field - a warning such as `spoiler`, or your
+own words - or write `#word` in the text. A group's owner gives a group tags in
+**Edit group**.
+
 ## Ignoring someone
 
 Select a post by the person and choose **Ignore this person** in the

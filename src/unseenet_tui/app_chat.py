@@ -130,6 +130,13 @@ class ChatMixin:
                 line.append(f"{who}: {HIDDEN_MARK} {reported_text(m)}  (Ctrl+P: Show anyway)", style="dim italic")
                 log.write(line)
                 continue
+            if self.label_covered(m):                        # a warning you blur or hide (0053)
+                line = Text(f"{when} ", style="dim")
+                line.append(f"{who}: ", style="bold")
+                line.append_text(self.warning_text(m) or Text())
+                line.append("  (Ctrl+P: Show anyway)", style="dim italic")
+                log.write(line)
+                continue
             line = Text(f"{when} ", style="dim")
             line.append(who, style="bold green" if own else "bold")
             if not own and self.session.contact_name(m.author_key):
@@ -501,10 +508,19 @@ class ChatMixin:
                 msg.group, reply_to=msg, kind=None).code == "comments_closed":
             note += "\n✕ Comments closed"                  # where Reply would be (#181)
         head = f"[b]{escape(msg.subject)}[/b]\nFrom: {who}\nDate: {date}{note}"
+        flags = self.warning_text(msg)                       # warnings over the subject (0053)
+        if flags is not None:
+            head = flags.markup + "\n" + head
         if getattr(msg, "reported", None):                  # hidden by a report (UN-RFC 0045, 7.3)
             head = f"[b]{HIDDEN_MARK} {escape(reported_text(msg))}[/b]\nFrom: {who}\nDate: {date}"
             return head, Text("\nAn issuer you follow reports this post, so it is hidden.\n"
                               "Ctrl+P: Show anyway - or Stop following this report issuer.", style="dim")
+        if msg.readable and self.label_covered(msg):         # blurred or hidden, as you chose
+            st = self.label_state(msg)
+            words = ", ".join(w["warning"] for w in st["warnings"]) or "your rules"
+            body = Text(f"\nText and pictures are hidden: {words}.\n", style="dim")
+            body.append("Ctrl+P: Show anyway", style="bold")
+            return head, body
         if msg.readable:
             text, sig = split_signature(msg.body)
             # Markdown or plain, as the message says (UN-RFC 0031); the signature never is
@@ -516,6 +532,10 @@ class ChatMixin:
             if msg.attachments:                              # UN-RFC 0027 section 9.2
                 body.append("\n\n")
                 body.append(attachments_text(msg.attachments))
+            topics = self.topics_line(msg)                    # tags and topics (UN-RFC 0052)
+            if topics is not None:
+                body.append("\n\n")
+                body.append(topics)
             liked = self._reactions_line(msg)                # UN-RFC 0048 section 7.2
             may = self.session.react_permission(msg.group, msg)    # private too (#9)
             if liked or may:

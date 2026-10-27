@@ -268,6 +268,8 @@ class GroupInfoDialog(Dialog):
         if found:                                  # UN-RFC 0023 3.5: always shown
             lines += ["", "Also published outside Tor, through portals:"]
             lines += ["  " + line for line in _portals.describe(found).splitlines()]
+        if d.get("tags"):                          # the group's tags (UN-RFC 0052 section 5)
+            lines.append("Tags:      " + ", ".join(d["tags"]) + "  (every post here has them)")
         if d.get("description"):
             lines += ["", d["description"]]
         if d.get("type") != "inbox":              # how to report here, and who acts (#74, 0045)
@@ -343,6 +345,10 @@ class EditGroupDialog(Dialog):
                 yield Select(choices, value=choice, allow_blank=False, id="files")
             yield Input(value=str(d.get("min_pow", 0)), placeholder="Minimum postage in bits (16-24)",
                         id="min_pow")
+            if d.get("type") != "inbox":                 # the group's tags (UN-RFC 0052 section 5)
+                yield Input(value=", ".join(d.get("tags", [])), id="gtags",
+                            placeholder="The group's tags: every post here has them - film, serier, "
+                                        "or a warning such as sexual for an adult group")
             if d.get("type") != "inbox":                 # UN-RFC 0045 section 7.5
                 yield Label("Spam reports here: issuers your readers follow by default (each "
                             "reader can turn them off). Keys, separated by spaces:", classes="hint")
@@ -389,6 +395,11 @@ class EditGroupDialog(Dialog):
             choice = self.query_one("#files", Select).value
             if choice != "custom":                       # custom limits are kept as they are
                 changes["attachments"] = FILE_CHOICES[choice]
+        if self.query("#gtags"):                         # UN-RFC 0052 section 5
+            from unseenet.core import tags as _tg
+            tags = _tg.normalize(self.query_one("#gtags", Input).value.replace(",", " ").split())
+            if tags != list(self.data.get("tags", [])):
+                changes["tags"] = tags or None
         if self.query("#report_issuers"):                # UN-RFC 0045 section 7.5
             keys = list(dict.fromkeys(self.query_one("#report_issuers", Input).value.replace(",", " ").split()))
             try:

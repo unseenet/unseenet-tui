@@ -6,6 +6,14 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+- **Tags and content warnings** (#50, UN-RFC 0052, 0053): `▌spoiler` in the warning's own
+  colour before the subject in the threads list and over it in the reader, with who set
+  it; a post you chose to blur shows *Ctrl+P: Show anyway* in place of its text, one you
+  chose to hide is a quiet line `⊘ Hidden: gore, from …` - never silently, never your
+  own or your contacts'; a rule's `blur` the same. Tags and topics in a grey line under
+  the text. A tags field when writing (`#words` in the text count too). *Content
+  warnings and labels* in the palette; the group's tags in *Edit group* and *About*.
+
 - **`!` for groups** (unseenet#666): `!dk.snak` names a group, and `!` on a post goes to
   it (was `#`); `#word` in what you write is a tag now.
 

@@ -36,8 +36,10 @@ class ReportsMixin:
     def action_show_reported(self) -> None:
         """Show the selected post anyway, though a report hides it (on this device)."""
         m = self.current_message
+        if m is not None and not getattr(m, "reported", None) and self.show_labelled(m):
+            return                                       # a warning, shown here (UN-RFC 0053)
         if m is None or not getattr(m, "reported", None):
-            self.notify("Select a post hidden by a report first", severity="warning")
+            self.notify("Select a hidden or blurred post first", severity="warning")
             return
         self.session.show_reported(m.message_id)
         self.refresh_view()

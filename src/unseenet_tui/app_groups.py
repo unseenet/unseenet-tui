@@ -430,6 +430,8 @@ class GroupsMixin:
                 subject = ("  " * (depth - 1) + "└ " if depth else "") + title
             if getattr(m, "reported", None):            # hidden by a report: never its subject (0045)
                 subject = ("  " * (depth - 1) + "└ " if depth else "") + f"{HIDDEN_MARK} {reported_text(m)}"
+            elif self.hidden_text(m):                    # a warning you hide: a quiet line (0053)
+                subject = ("  " * (depth - 1) + "└ " if depth else "") + self.hidden_text(m)
             if m.message_id in page_of:                 # a page: its title and its path
                 path = page_of[m.message_id]
                 subject = ("⌂ " if path == home else "  ") + (m.subject or path) + f"   /{path}"
@@ -451,7 +453,10 @@ class GroupsMixin:
             elif gid == TIMELINE:
                 subject += f"  ({s.group_label(m.group)})"
             date = m.date.astimezone().strftime("%d %b %H:%M") if m.date else ""
-            line = Text(subject)
+            stripe = None if getattr(m, "reported", None) else self.warning_stripe(m)   # 0053
+            line = Text.assemble(stripe, " ", subject) if stripe is not None else Text(subject)
+            if self.hidden_text(m) and not getattr(m, "reported", None):
+                line.stylize("dim italic")
             if getattr(m, "origin_network", ""):                 # UN-RFC 0049 section 5.1
                 line.append(f"  {ORIGIN_MARK} {network_name(m.origin_network)}", style="dim italic")
             liked = self._reactions_line(m, counted)
