@@ -6,6 +6,9 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+- **Publish as the issuer beside you** (unseenet#654): *Publish a spam report* works
+  with an issuer beside your own identity in the vault, and says as whom.
+
 - **A report sent to you says what to do** (unseenet#650): *Ctrl+P Open reported post*,
   and for an issuer *Publish a spam report*; becoming an issuer asks where reports
   sent to you land - your inbox or a team inbox you read.
