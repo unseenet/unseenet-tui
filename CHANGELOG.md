@@ -6,6 +6,9 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+- **Report reasons from the core's one list** (unseenet#659): *Threats or harassment*
+  is `harassment`, readers can report *Phishing* and *Malware*.
+
 - **Steadier tests** (#29): every click waits until its widget is laid out
   (`tuihelp.click`), and a widget read or set right after its dialog appeared waits
   for it to be drawn - on CI's slow Windows runners it often was not yet, and tests

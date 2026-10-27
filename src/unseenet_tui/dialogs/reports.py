@@ -16,8 +16,7 @@ from unseenet.core.reports import REASONS
 from ..emoji import EmojiTextArea
 from .base import Dialog
 
-REASON_TEXT = {"spam": "Spam", "flood": "Flooding", "phishing": "Phishing", "malware": "Malware",
-               "illegal": "Illegal", "other": "Other"}
+from unseenet.core.reports import REASON_LABELS as REASON_TEXT  # noqa: E402 - one list (unseenet#659)
 MARKDOWN_HINT = "Markdown: *emphasis*, **strong**, - lists, > quotes, links."
 
 
