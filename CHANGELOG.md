@@ -6,6 +6,10 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+- **Languages where they belong** (unseenet#671): the *Language* field under the text -
+  chosen after writing; *Write in … here* in the palette sets the language of your chat
+  lines and comments in a group, remembered for it.
+
 - **Proven from an older key** (unseenet#684, UN-RFC 0049 7.3): *proven from the key …* by a
   post's origin, only when its proof holds.
 
