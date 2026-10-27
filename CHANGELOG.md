@@ -6,6 +6,11 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+- **Publishing a spam report says so**: the issuer's postage can take minutes; the
+  status line says *Publishing …* until it is done. The manual's *Reporting a post*
+  is now a whole section: hidden posts, issuers, reports that reach you, becoming an
+  issuer, team inboxes.
+
 - **Publish as the issuer beside you** (unseenet#654): *Publish a spam report* works
   with an issuer beside your own identity in the vault, and says as whom.
 

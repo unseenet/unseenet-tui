@@ -143,10 +143,16 @@ class ReportsMixin:
         reason, with_key, days, note = got
         from datetime import datetime, timedelta, timezone
         until = None if days >= 365 else datetime.now(timezone.utc) + timedelta(days=days)
+        # the issuer's postage (and the first time its ripening) can take minutes: say so
+        self.notify("Publishing the report - the issuer's postage can take a few minutes, the first "
+                    "time longer. You can go on.", timeout=8)
+        self.set_status("Publishing the spam report ...")
         try:
             await s.publish_report([(mid, gid, reason)],
-                                   [(author, reason, until)] if with_key else [], note)
+                                   [(author, reason, until)] if with_key else [], note, issuer)
         except (SessionError, OSError, ConnectionError) as exc:
+            self.set_status("")
             self.notify(f"Not published: {exc}", severity="error", timeout=8)
             return
-        self.notify("Report published.")
+        self.set_status("")
+        self.notify("Spam report published.")
