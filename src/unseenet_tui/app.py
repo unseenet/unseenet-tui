@@ -87,9 +87,10 @@ from .app_pins import PinsMixin  # noqa: E402 - the app's parts by area (#20)
 from .app_rules import RulesMixin  # noqa: E402 - your own rules (UN-RFC 0051)
 from .app_reports import ReportsMixin, reported_text, HIDDEN_MARK  # noqa: E402,F401 - spam reports (0045)
 from .app_teams import TeamsMixin  # noqa: E402 - team inboxes (UN-RFC 0047)
+from .app_tags import TagsMixin  # noqa: E402 - tags and content labels (UN-RFC 0052, 0053)
 
 
-class UnseenetApp(GroupsMixin, ChatMixin, ActionsMixin, FeedsMixin, AddressesMixin, IdentityMixin, PagesMixin, PushMixin, NamesMixin, PinsMixin, RulesMixin, ReportsMixin, TeamsMixin, App):
+class UnseenetApp(GroupsMixin, ChatMixin, ActionsMixin, FeedsMixin, AddressesMixin, IdentityMixin, PagesMixin, PushMixin, NamesMixin, PinsMixin, RulesMixin, ReportsMixin, TeamsMixin, TagsMixin, App):
     TITLE = "unseenet"
     CSS = CSS + console_css()
 

@@ -73,6 +73,7 @@ class ComposeDialog(Dialog):
         self.heading, self.signature, self.has_rules = heading, signature, has_rules
         self.files_allowed = files_allowed       # the group takes files (UN-RFC 0027)
         self.files: list[str] = []               # what to send with it, read after dismiss
+        self.tags: list[str] = []                # the author's tags (UN-RFC 0052), after dismiss
 
     def compose(self) -> ComposeResult:
         """The compose window: where it goes, the subject, the text with the quote and
@@ -92,6 +93,9 @@ class ComposeDialog(Dialog):
                             "~/garden.jpg, ~/map.pdf", id="files")
                 yield Label("Pictures are cleaned of their metadata - place, camera, time - "
                             "before they are sent.", classes="hint")
+            if self.group.type != "inbox":                  # tags, warnings first (UN-RFC 0052)
+                yield Input(placeholder="Tags - spoiler, profanity, sexual, nudity, violence, gore, or "
+                            "your own words; #words in the text count too", id="tags")
             if self._notices():
                 yield Checkbox("Tell the people you mention (a notice in their inbox)",
                                value=self.app.session.notice_settings()["send"], id="notify")
@@ -159,6 +163,8 @@ class ComposeDialog(Dialog):
         if self.files_allowed:
             self.files = [p.strip() for p in self.query_one("#files", Input).value.split(",")
                           if p.strip()]
+        if self.query("#tags"):                           # the core normalises them, adds #words
+            self.tags = [t for t in self.query_one("#tags", Input).value.replace(",", " ").split() if t]
         self.dismiss((subject, body, keys))
 
 
