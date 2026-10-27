@@ -268,6 +268,8 @@ class GroupInfoDialog(Dialog):
         if found:                                  # UN-RFC 0023 3.5: always shown
             lines += ["", "Also published outside Tor, through portals:"]
             lines += ["  " + line for line in _portals.describe(found).splitlines()]
+        if d.get("languages"):                     # its languages (UN-RFC 0052 section 5a)
+            lines.append("Languages: " + ", ".join(d["languages"]))
         if d.get("tags"):                          # the group's tags (UN-RFC 0052 section 5)
             lines.append("Tags:      " + ", ".join(d["tags"]) + "  (every post here has them)")
         if d.get("description"):
@@ -345,6 +347,9 @@ class EditGroupDialog(Dialog):
                 yield Select(choices, value=choice, allow_blank=False, id="files")
             yield Input(value=str(d.get("min_pow", 0)), placeholder="Minimum postage in bits (16-24)",
                         id="min_pow")
+            if d.get("type") != "inbox":                 # its languages (UN-RFC 0052 section 5a)
+                yield Input(value=", ".join(d.get("languages", [])), id="glangs",
+                            placeholder="Languages written here, the first the main one: da, or en, da")
             if d.get("type") != "inbox":                 # the group's tags (UN-RFC 0052 section 5)
                 yield Input(value=", ".join(d.get("tags", [])), id="gtags",
                             placeholder="The group's tags: every post here has them - film, serier, "
@@ -395,6 +400,11 @@ class EditGroupDialog(Dialog):
             choice = self.query_one("#files", Select).value
             if choice != "custom":                       # custom limits are kept as they are
                 changes["attachments"] = FILE_CHOICES[choice]
+        if self.query("#glangs"):                        # UN-RFC 0052 section 5a
+            from unseenet.core import tags as _tl
+            langs = _tl.normalize_languages(self.query_one("#glangs", Input).value.replace(",", " ").split())
+            if langs != list(self.data.get("languages", [])):
+                changes["languages"] = langs or None
         if self.query("#gtags"):                         # UN-RFC 0052 section 5
             from unseenet.core import tags as _tg
             tags = _tg.normalize(self.query_one("#gtags", Input).value.replace(",", " ").split())

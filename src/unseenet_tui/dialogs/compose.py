@@ -74,6 +74,8 @@ class ComposeDialog(Dialog):
         self.files_allowed = files_allowed       # the group takes files (UN-RFC 0027)
         self.files: list[str] = []               # what to send with it, read after dismiss
         self.tags: list[str] = []                # the author's tags (UN-RFC 0052), after dismiss
+        self.languages: list[str] | None = None  # what it is written in (0052 5a), after dismiss
+        self._suggested: list[str] = []
 
     def compose(self) -> ComposeResult:
         """The compose window: where it goes, the subject, the text with the quote and
@@ -83,6 +85,15 @@ class ComposeDialog(Dialog):
             lock = "  ∩ encrypted" if self.group.type == "closed" else ""
             yield Label(self.heading or f"{kind} {self.app.session.group_label(self.group.group_id)}{lock}", classes="title",
                         markup=False)
+            gid = self.group.group_id or ""
+            if self.group.type != "inbox" and gid and not gid.startswith(("contact:", "inbox@")):
+                codes, why = self.app.session.suggest_languages(gid)        # UN-RFC 0052 5a
+                self._suggested = codes
+                yield Input(value=", ".join(codes), id="lang",
+                            placeholder="Language: none - e.g. da or en (remembered for this group)")
+                yield Label("Language: " + {"you": "what you wrote in here last", "group": "the group's",
+                                            "profile": "from your profile"}.get(why, "none is sent"),
+                            classes="hint", markup=False)
             yield Input(value=self.subject, placeholder="Subject", id="subject")
             text = self.quote + (("\n" if self.quote else "\n\n") + SIG_SEPARATOR + self.signature
                                  if self.signature else "")
@@ -163,6 +174,10 @@ class ComposeDialog(Dialog):
         if self.files_allowed:
             self.files = [p.strip() for p in self.query_one("#files", Input).value.split(",")
                           if p.strip()]
+        if self.query("#lang"):                           # chosen; cleared: [] forgets it here
+            from unseenet.core.tags import normalize_languages
+            chosen = normalize_languages(self.query_one("#lang", Input).value.replace(",", " ").split())
+            self.languages = chosen if (chosen or self._suggested) else None
         if self.query("#tags"):                           # the core normalises them, adds #words
             self.tags = [t for t in self.query_one("#tags", Input).value.replace(",", " ").split() if t]
         self.dismiss((subject, body, keys))

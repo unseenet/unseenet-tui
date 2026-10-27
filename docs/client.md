@@ -401,7 +401,8 @@ is a quiet line, `⊘ Hidden: gore, from …`. Nothing is covered silently, and 
 posts and your contacts' never are. Choose per warning, and see the labellers, with
 **Content warnings and labels** in the command palette.
 
-When you write, put tags in the **Tags** field - a warning such as `spoiler`, or your
+The **Language** field says what you write in - suggested from what you used last
+in the group, or the group's own - and is remembered per group. When you write, put tags in the **Tags** field - a warning such as `spoiler`, or your
 own words - or write `#word` in the text. A group's owner gives a group tags in
 **Edit group**. Press `t` on a post to see everything with its tag in your groups and
 feeds (or **Everything with a tag** in the palette).

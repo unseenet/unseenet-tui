@@ -382,7 +382,8 @@ class IdentityMixin:
         self.set_status("Sending (computing postage) ...")
         try:
             msgid = await self.session.post(g.group_id, subject, body, references, files=files,
-                                            tags=dlg.tags or None)        # UN-RFC 0052
+                                            tags=dlg.tags or None,         # UN-RFC 0052
+                                            languages=dlg.languages)       # and 5a
         except (SessionError, OSError, ConnectionError) as exc:
             self.notify(f"Not sent: {exc}", severity="error", timeout=8)
             return

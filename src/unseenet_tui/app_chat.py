@@ -490,6 +490,10 @@ class ChatMixin:
                     "[dim](the date it was first published is the poster's claim)[/dim]")
         if msg.edited:                                       # UN-RFC 0042, 4.2
             date += f"  (edited {edited_when(msg)})"
+        langs = list(getattr(msg, "languages", ()))           # only where it differs (0052 5a)
+        main = list(self.session.group_info(msg.group).languages) if msg.group and not msg.private else []
+        if langs and not (main and all(x in main for x in langs)):
+            date += "  ·  " + " · ".join(langs)
         if msg.to_key:
             who = f"you  ·  to [b]{escape(self._key_label(msg.to_key))}[/b]"
         elif msg.private and msg.readable and not msg.sender_key:
