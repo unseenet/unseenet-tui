@@ -6,6 +6,9 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+- **Proven from an older key** (unseenet#684, UN-RFC 0049 7.3): *proven from the key …* by a
+  post's origin, only when its proof holds.
+
 - **The language of what you write** (#57, unseenet#671): a *Language* field in the compose
   window, filled with what the core suggests and saying why - what you wrote in here
   last, the group's, or your profile's; what you choose is remembered for the group.
