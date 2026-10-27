@@ -289,7 +289,7 @@ class PushMixin:
              "(also one your hierarchy names)", self.action_stop_following_issuer),
             ("Spam reports", "The issuers whose reports hide posts for you: on, off, add one "
              "(UN-RFC 0045)", self.action_report_issuers),
-            ("Your spam reports" if self.session.is_issuer() else "Become a spam report issuer",
+            ("Your spam reports" if self.session.issuer_names() else "Become a spam report issuer",
              "Publish reports of spam that others may choose to follow", self.action_issuing),
             ("Publish a spam report", "Issuers: report the selected post, or the one a report "
              "sent to you names - publicly, signed by you", self.action_publish_report),

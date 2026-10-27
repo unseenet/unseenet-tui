@@ -96,7 +96,7 @@ class ReportsMixin:
     @work(exclusive=True, group="dialog", exit_on_error=False)
     async def _issuing(self) -> None:
         s = self.session
-        if not s.is_issuer():
+        if not s.issuer_names():
             got = await self.push_screen_wait(StartIssuerDialog([t for t in s.team_inboxes() if t["reader"]]))
             if not got:
                 return
@@ -119,9 +119,12 @@ class ReportsMixin:
     @work(exclusive=True, group="dialog", exit_on_error=False)
     async def _publish_report(self) -> None:
         s, m = self.session, self.current_message
-        if not s.is_issuer():
+        if not s.issuer_names():              # you, or an issuer beside you in the vault
             self.notify("Become a spam report issuer first (in the palette)", severity="warning")
             return
+        issuer = s.issuer_for()
+        as_ = "" if issuer == s.default_identity_name() else \
+            s.identity_label(s.identity(issuer).key_text, s.display_name(issuer))
         if m is None:
             self.notify("Select a post first", severity="warning")
             return
@@ -133,16 +136,23 @@ class ReportsMixin:
         else:
             self.notify("Select someone else's post, or a report sent to you", severity="warning")
             return
-        got = await self.push_screen_wait(PublishReportDialog(what or mid, bool(author), reason))
+        got = await self.push_screen_wait(PublishReportDialog((what or mid) + (f"  -  as {as_}" if as_ else ""),
+                                                              bool(author), reason))
         if not got:
             return
         reason, with_key, days, note = got
         from datetime import datetime, timedelta, timezone
         until = None if days >= 365 else datetime.now(timezone.utc) + timedelta(days=days)
+        # the issuer's postage (and the first time its ripening) can take minutes: say so
+        self.notify("Publishing the report - the issuer's postage can take a few minutes, the first "
+                    "time longer. You can go on.", timeout=8)
+        self.set_status("Publishing the spam report ...")
         try:
             await s.publish_report([(mid, gid, reason)],
-                                   [(author, reason, until)] if with_key else [], note)
+                                   [(author, reason, until)] if with_key else [], note, issuer)
         except (SessionError, OSError, ConnectionError) as exc:
+            self.set_status("")
             self.notify(f"Not published: {exc}", severity="error", timeout=8)
             return
-        self.notify("Report published.")
+        self.set_status("")
+        self.notify("Spam report published.")

@@ -324,19 +324,69 @@ for real crimes, contact the police.
 
 ## Reporting a post
 
-If a post breaks the group's rules or the law - threats, plans for
-violence, abuse - select it and choose **Report post** in the command
-palette. Tick who should get it: the group's owner, its moderators, the
-maintainer of its hierarchy and the operator of the node you read it
-from, and add a note. They get the post and your note as a private
-message, and can withdraw the post, ban or block its author. A report can
-be anonymous; then they cannot answer you.
+If a post breaks the group's rules or the law - spam, threats, abuse - select
+it and choose **Report post** in the command palette (in a chat, where no line
+is selected, it lets you choose the line). The report window shows the post;
+choose what is wrong, tick who should get it - the group's owner and
+moderators, the maintainer of its hierarchy, the operator of the node you read
+it from, and the spam report issuers that apply to the group - write what you
+want them to know (Markdown), and give paths to screenshots or PDFs. They are
+sent encrypted, each receiver gets a sealed copy, and that takes a minute or
+two of postage each; the status line says when it is done. A report can be
+anonymous; then nobody can answer you.
 
-If you receive a report, select it and choose **Open reported post** to
-go to the post it is about.
+How spam and reports work, and why nobody gets power over anyone by them, is in
+the guide: [Spam and reports](https://unseenet.org/guide/spam/).
 
 In an emergency, contact the police. Nobody on Unseenet - not the node
 operators, not the project - can see who anyone is.
+
+### Posts hidden by reports
+
+Your client hides what the spam report issuers you follow report - never
+silently. The list says **⊘ Hidden by reports@unseenet: spam** in the post's
+place, the reader says the same, and the group's title says how many are
+hidden. **Show anyway** in the command palette shows the selected one;
+**Stop following this report issuer** stops that issuer hiding anything for
+you. Your own posts and your contacts' are never hidden.
+
+**Spam reports** in the palette lists the issuers that hide posts for you, and
+where each is named - by a hierarchy (*named for unseenet.\**), by a group's
+owner (*named for alt.space.nasa*) or by you. Untick one to turn it off, or
+paste a key to follow another in every group.
+
+### When a report reaches you
+
+A report is a private post - in **Private posts**, or in a team inbox you read
+(below). The reader says what you can do: **Open reported post** goes to the
+post it is about; if you are an issuer, or an issuer is beside you in your
+vault, **Publish a spam report** publishes it - also its author's key, for up
+to a year - with the reporter's reason. What you publish is public and signed
+by the issuer; the person who told you is never named in it. Otherwise act as
+far as your role reaches: withdraw the post or ban its author in your group,
+block them in your hierarchy, or drop the group from your node.
+
+### Becoming an issuer
+
+**Become a spam report issuer** in the palette: say what you report and how,
+and where reports sent to you land - your own inbox, or a team inbox you read.
+For an organisation, make the issuer a separate identity: `unseenet id-new
+reports --display "Example spam reports"` beside yours, then **Become a spam
+report issuer** acting as it (`-i reports` on the command line). To share it
+with a colleague, **Copy to another device** with only that identity ticked;
+their client finds by itself that it is an issuer.
+
+For a group you own, **Edit group** has *Spam reports here*: the keys of the
+issuers your readers follow there by default, separated by spaces.
+
+### Team inboxes
+
+The post that adds you as a reader of a team inbox says *Ctrl+P: Read this
+inbox with the team*. The inbox is then listed under its name, and `r` there
+answers as the team - *Reply as Unseenet (operator)* - without your signature.
+If the owner removes you, the title says so; **Forget this team inbox** removes
+its key. As the owner of an inbox, **Who reads this inbox** adds readers by
+their key, removes them, and sets the name replies go out as.
 
 ## Ignoring someone
 
