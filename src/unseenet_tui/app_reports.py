@@ -17,8 +17,8 @@ from unseenet.client.session import SessionError
 
 from .dialogs.reports import IssuersDialog, PublishReportDialog, StartIssuerDialog
 
-REASON_TEXT = {"spam": "spam", "flood": "flooding", "phishing": "phishing", "malware": "malware",
-               "illegal": "illegal", "other": "other"}
+from unseenet.core.reports import REASON_LABELS as _LABELS  # noqa: E402 - one list (unseenet#659)
+REASON_TEXT = {k: v.split(" - ")[0].lower() for k, v in _LABELS.items()}
 HIDDEN_MARK = "⊘"
 
 

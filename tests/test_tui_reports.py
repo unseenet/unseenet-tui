@@ -106,7 +106,7 @@ async def test_the_report_window(tmp_path, monkeypatch):
         assert await wait_for(pilot, lambda: type(app.screen).__name__ == "ReportDialog"), stack(app)
         await pilot.pause(0.2)
         scr = app.screen
-        scr.query_one("#reason").value = "threats"
+        scr.query_one("#reason").value = "harassment"
         scr.query_one("#t1").value = False
         scr.query_one("#note").load_text("Se **skærmbilledet**.\n\n- truslen")
         assert scr.query_one("#note").size.height >= 5                  # room to write
@@ -115,7 +115,7 @@ async def test_the_report_window(tmp_path, monkeypatch):
         await press(pilot, app, "#ok")
         assert await wait_for(pilot, lambda: bool(got)), stack(app)
         chosen, note, anonymous, reason, files = got[0]
-        assert [t[0] for t in chosen] == ["The group's owner"] and reason == "threats"
+        assert [t[0] for t in chosen] == ["The group's owner"] and reason == "harassment"
         assert note.startswith("Se **") and files == ["~/skaerm.png"] and anonymous is False
         await pilot.press("q")
 
