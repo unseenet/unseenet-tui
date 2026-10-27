@@ -80,7 +80,8 @@ NEEDS_NETWORK = frozenset({
     "Name your posts show", "Report post", "Open reported post", "Moderation queue", "Make moderator",
     "Make poster", "Moderators and posters", "Members of closed group", "Ban from group",
     "Block in hierarchy", "Banned from group", "Withdraw (delete) post", "Pin or unpin post",
-    "Remove group from the network"})
+    "Remove group from the network", "Spam reports", "Become a spam report issuer",
+    "Your spam reports", "Publish a spam report"})
 
 
 class PushMixin:
@@ -275,6 +276,16 @@ class PushMixin:
              "about a post that breaks the rules or the law", self.action_report),
             ("Open reported post", "From a report you received: go to the post it is about",
              self.action_open_reported),
+            ("Show anyway", "The selected post is hidden by a spam report: show it here",
+             self.action_show_reported),
+            ("Stop following this report issuer", "Its reports hide nothing for you any more "
+             "(also one your hierarchy names)", self.action_stop_following_issuer),
+            ("Spam reports", "The issuers whose reports hide posts for you: on, off, add one "
+             "(UN-RFC 0045)", self.action_report_issuers),
+            ("Your spam reports" if self.session.is_issuer() else "Become a spam report issuer",
+             "Publish reports of spam that others may choose to follow", self.action_issuing),
+            ("Publish a spam report", "Issuers: report the selected post, or the one a report "
+             "sent to you names - publicly, signed by you", self.action_publish_report),
             ("Moderation queue", "Moderators: posts waiting for approval in groups you "
              "moderate", self.action_moderation),
             ("Make moderator", "Owner: let someone approve and withdraw posts in this group",

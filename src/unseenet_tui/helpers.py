@@ -267,6 +267,13 @@ ModalScreen { align: center middle; }
 .dialog .buttons { height: auto; align-horizontal: right; dock: bottom; }
 .dialog Button { margin-left: 1; min-width: 8; width: auto; }
 .dialog .hint { color: $text-muted; }
+.dialog.report { width: 96; max-width: 100%; height: 94%; overflow-y: hidden; }
+.dialog.report VerticalScroll, .dialog.issuers VerticalScroll { height: 1fr; }
+.dialog.report #note { height: 8; min-height: 5; }
+.dialog.report > .hint { margin-bottom: 1; }
+.dialog.report Checkbox, .dialog.issuers Checkbox { margin: 0; }
+.dialog.issuers { width: 96; max-width: 100%; height: 80%; overflow-y: hidden; }
+.dialog #policy { height: 6; margin-bottom: 1; }
 .dialog .error { color: $error; }
 #groups { padding: 0 1; }
 """

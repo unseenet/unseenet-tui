@@ -67,6 +67,9 @@ from .dialogs.nodes import NodesDialog, AddNodeDialog, NodeInfoDialog  # noqa: F
 from .screens import ChatBox, attachments_text, save_name, ReadScreen, AboutDialog  # noqa: F401
 
 
+from .app_reports import HIDDEN_MARK, reported_text  # noqa: E402
+
+
 class ChatMixin:
 
     # --- chat view (UN-RFC 0008 section 5) ---
@@ -122,6 +125,11 @@ class ChatMixin:
                                      if m.author_key else "anonymous")
             when = m.date.astimezone().strftime("%H:%M") if m.date else "     "
             text = split_signature(m.body)[0].rstrip() if m.readable else f"({m.subject})"
+            if getattr(m, "reported", None):                # hidden by a report (UN-RFC 0045)
+                line = Text(f"{when} ", style="dim")
+                line.append(f"{who}: {HIDDEN_MARK} {reported_text(m)}  (Ctrl+P: Show anyway)", style="dim italic")
+                log.write(line)
+                continue
             line = Text(f"{when} ", style="dim")
             line.append(who, style="bold green" if own else "bold")
             if not own and self.session.contact_name(m.author_key):
@@ -441,6 +449,8 @@ class ChatMixin:
         name = self._group_label(g).strip() if g else gid
         fast = "  ·  fast delivery" if self.session.manifest_data(gid).get("low_latency") else ""
         rules = "  ·  ? rules" if self.session.manifest_data(gid).get("rules") else ""
+        reported = sum(n for _, _, n in self.session.hidden_by_reports(gid))
+        rules += f"  ·  {reported} hidden by reports (Ctrl+P: Show anyway)" if reported else ""
         hidden = self.session.hidden_by_blocks(gid)
         blocked = ("  ·  " + "; ".join(f"{n} hidden: blocked in {h}.*: {r}" for h, r, n in hidden[:2])
                    if hidden else "")
@@ -474,6 +484,10 @@ class ChatMixin:
                 msg.group, reply_to=msg, kind=None).code == "comments_closed":
             note += "\n✕ Comments closed"                  # where Reply would be (#181)
         head = f"[b]{escape(msg.subject)}[/b]\nFrom: {who}\nDate: {date}{note}"
+        if getattr(msg, "reported", None):                  # hidden by a report (UN-RFC 0045, 7.3)
+            head = f"[b]{HIDDEN_MARK} {escape(reported_text(msg))}[/b]\nFrom: {who}\nDate: {date}"
+            return head, Text("\nAn issuer you follow reports this post, so it is hidden.\n"
+                              "Ctrl+P: Show anyway - or Stop following this report issuer.", style="dim")
         if msg.readable:
             text, sig = split_signature(msg.body)
             # Markdown or plain, as the message says (UN-RFC 0031); the signature never is
