@@ -98,13 +98,17 @@ class EmojiCompletion:
 
 
 class EmojiPickerDialog(Dialog):
-    """Insert emoji (the palette): search by name, or browse the categories; returns the
-    shortcode chosen, or None."""
+    """Insert emoji (the palette), or one for a group's own set of reactions (#45): search
+    by name, or browse the categories; returns the shortcode chosen, or None."""
+
+    def __init__(self, title: str = "Insert emoji"):
+        super().__init__()
+        self.title_ = title
 
     def compose(self) -> ComposeResult:
         """A search field and the list: the matches, or every category's emoji."""
         with Vertical(classes="dialog list"):
-            yield Label("Insert emoji", classes="title")
+            yield Label(self.title_, classes="title", markup=False)
             yield Input(placeholder="Search, e.g. heart, party, cat", id="emoji-search")
             yield OptionList(id="emoji-list")
 
