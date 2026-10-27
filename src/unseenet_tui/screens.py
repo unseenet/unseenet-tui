@@ -219,8 +219,11 @@ class ReadScreen(Screen):
             path.write_bytes(octets)
             saved.append(path.name)
         if saved:
+            pdf = any("pdf" in (a.get("type") or "") for a in self.msg.attachments)
             self.app.notify(f"Saved in {folder}: {', '.join(saved)}. Opening them in another "
-                            "program happens outside Unseenet and Tor.", timeout=10)
+                            "program happens outside Unseenet and Tor."
+                            + (" A PDF can carry harmful content and no node could check it: "
+                               "open it only if you trust who sent it." if pdf else ""), timeout=12)
 
     def action_reply(self) -> None:
         """r: reply to the post read."""
