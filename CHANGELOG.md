@@ -8,6 +8,9 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 - **Everything with a tag** (unseenet#672): `t` on a post, or *Everything with a tag* in
   the palette, shows every post with it in your groups and feeds, newest first.
+- **Who reads on this device** (unseenet#674, UN-RFC 0053 6.1): an age guide in the
+  palette sets what is blurred and hidden; nothing of the answer is kept, and it says it
+  covers only what is marked.
 
 - **Tags and content warnings** (#50, UN-RFC 0052, 0053): `▌spoiler` in the warning's own
   colour before the subject in the threads list and over it in the reader, with who set

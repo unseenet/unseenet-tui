@@ -61,3 +61,36 @@ class ContentWarningsDialog(Dialog):
                       "follow": self.query_one("#key", Input).value.strip(),
                       "label": self.query_one("#label", Input).value.strip(),
                       "topics": self.query_one("#topics", Checkbox).value})
+
+
+class AgeGuideDialog(Dialog):
+    """Who reads on this device (UN-RFC 0053 6.1): dismissed with a profile's id, or None.
+    Nothing of the answer is kept - only the settings it gives."""
+
+    def __init__(self, profiles: dict, labels: dict):
+        super().__init__()
+        self.profiles, self.labels = profiles, labels
+
+    def compose(self) -> ComposeResult:
+        """The profiles, what each does, and what the guide cannot do."""
+        with Vertical(classes="dialog wide"):
+            yield Label("Who reads on this device?", classes="title")
+            yield Label("This sets what is blurred and hidden. Nothing about the answer is saved or "
+                        "sent anywhere - only the settings it gives, which you can change later under "
+                        "Content warnings and labels.", classes="hint")
+            yield Select([(f"{self.labels[k]}  -  " + ", ".join(f"{w} {c}" for w, c in v.items()), k)
+                          for k, v in self.profiles.items()], prompt="Choose who reads here", id="age")
+            yield Label("It can only cover what is marked. Today few posts are: authors warn about "
+                        "their own, and labellers are still few. It is not a filter that finds "
+                        "everything, so for a child, stay near and use groups you know.", classes="hint")
+            with Horizontal(classes="buttons"):
+                yield Button("Not now", id="cancel")
+                yield Button("Use these settings", variant="primary", id="ok")
+
+    @on(Button.Pressed, "#ok")
+    def _ok(self) -> None:
+        v = self.query_one("#age", Select).value
+        if isinstance(v, str):
+            self.dismiss(v)
+        else:
+            self.app.notify("Choose who reads here first", severity="warning")
