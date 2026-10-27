@@ -97,7 +97,7 @@ class ReportsMixin:
     async def _issuing(self) -> None:
         s = self.session
         if not s.is_issuer():
-            got = await self.push_screen_wait(StartIssuerDialog())
+            got = await self.push_screen_wait(StartIssuerDialog([t for t in s.team_inboxes() if t["reader"]]))
             if not got:
                 return
             try:
