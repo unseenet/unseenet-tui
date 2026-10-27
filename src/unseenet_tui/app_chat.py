@@ -402,6 +402,9 @@ class ChatMixin:
             return "You"
         if not m.author_key:
             return m.from_name or "anonymous"
+        t = self.session.team_sender(m) if m.private else None    # on an inbox's behalf (0047, 8)
+        if t:
+            return (t["name"] or "a team inbox") + ("" if t["verified"] else " (not verified)")
         # your petname, else a registered name, else what they call themselves (UN-RFC 0019)
         who = self.session.identity_label(m.author_key, m.from_name)
         # a key whose profile says it posts automatically (UN-RFC 0030 section 6)
@@ -449,6 +452,10 @@ class ChatMixin:
         name = self._group_label(g).strip() if g else gid
         fast = "  ·  fast delivery" if self.session.manifest_data(gid).get("low_latency") else ""
         rules = "  ·  ? rules" if self.session.manifest_data(gid).get("rules") else ""
+        team = self.team_of(gid)                            # a team inbox you read (0047)
+        if team:
+            rules += ("  ·  you reply as the team" if team["reader"] else
+                      "  ·  the owner removed you as a reader (Ctrl+P: Forget this team inbox)")
         reported = sum(n for _, _, n in self.session.hidden_by_reports(gid))
         rules += f"  ·  {reported} hidden by reports (Ctrl+P: Show anyway)" if reported else ""
         hidden = self.session.hidden_by_blocks(gid)
@@ -469,6 +476,11 @@ class ChatMixin:
             who = f"you  ·  to [b]{escape(self._key_label(msg.to_key))}[/b]"
         elif msg.private and msg.readable and not msg.sender_key:
             who = "anonymous (the sender did not identify themselves)"
+        elif msg.private and self.session.team_sender(msg):    # never shown as a person (0047, 8)
+            t = self.session.team_sender(msg)
+            who = (f"[b]{escape(t['name'] or 'a team inbox')}[/b]  ·  "
+                   + ("written on the inbox's behalf, verified" if t["verified"]
+                      else "claims to write for an inbox - not verified"))
         else:
             petname = self.session.contact_name(msg.author_key)
             registered = " ".join("@" + c.name for c in naming.names_of(self.session, msg.author_key))
@@ -476,6 +488,8 @@ class ChatMixin:
                    + ("  ·  verified" if msg.sender_key else "")
                    + (f"  ·  registered [b]{escape(registered)}[/b]" if registered else "")
                    + (f"  ·  your contact [b]{escape(petname)}[/b]" if petname else ""))
+        if getattr(msg, "team_invite", None):              # a team key for you (0047, 6)
+            date += "\n[b]Ctrl+P: Read this inbox with the team[/b]"
         note = ("\n@ private message you sent - only they can read the copy on the node"
                 if msg.to_key else
                 "\n@ private message - only you can read it" if msg.private

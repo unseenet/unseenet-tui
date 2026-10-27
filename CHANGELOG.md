@@ -6,6 +6,14 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+- **Team inboxes** (#13, unseenet#341, UN-RFC 0047), as in the graphical client: the
+  post that adds you as a reader says *Ctrl+P: Read this inbox with the team*; a
+  team inbox is listed under its name; `r` there answers as the team - "Reply as
+  Unseenet (operator)" - without your signature; a message on an inbox's behalf
+  shows the team, verified or not, never the person. A removed reader is told in
+  the title, with *Forget this team inbox*. The owner has *Who reads this inbox*:
+  untick to remove, add by key, the team's name.
+
 - **Spam reports** (#11, unseenet#122, UN-RFC 0045), as in the graphical client: a
   post hidden by a report keeps its place and says so - *⊘ Hidden by Spamjægeren:
   spam* in the list, the reader and the chat, the count in the group's title - with

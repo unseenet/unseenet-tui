@@ -81,7 +81,8 @@ NEEDS_NETWORK = frozenset({
     "Make poster", "Moderators and posters", "Members of closed group", "Ban from group",
     "Block in hierarchy", "Banned from group", "Withdraw (delete) post", "Pin or unpin post",
     "Remove group from the network", "Spam reports", "Become a spam report issuer",
-    "Your spam reports", "Publish a spam report"})
+    "Your spam reports", "Publish a spam report", "Read this inbox with the team",
+    "Who reads this inbox"})
 
 
 class PushMixin:
@@ -276,6 +277,12 @@ class PushMixin:
              "about a post that breaks the rules or the law", self.action_report),
             ("Open reported post", "From a report you received: go to the post it is about",
              self.action_open_reported),
+            ("Read this inbox with the team", "The selected post adds you as a reader of a team "
+             "inbox: accept, and reply as the team (UN-RFC 0047)", self.action_accept_team),
+            ("Forget this team inbox", "Remove your team key for it from your vault",
+             self.action_forget_team),
+            ("Who reads this inbox", "Owner of an inbox: readers with team keys - add, remove, "
+             "the team's name", self.action_team_readers),
             ("Show anyway", "The selected post is hidden by a spam report: show it here",
              self.action_show_reported),
             ("Stop following this report issuer", "Its reports hide nothing for you any more "
