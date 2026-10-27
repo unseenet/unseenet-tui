@@ -98,3 +98,29 @@ async def test_a_group_as_the_rules_have_it(tmp_path, monkeypatch):
         app._render_threads()
         assert [r.value for r in table.rows] == plain                 # off: as before
         await pilot.press("q")
+
+
+async def test_show_all_is_a_look(tmp_path, monkeypatch):
+    """#36, UN-RFC 0051 section 3: Show all shows the group without your rules, says so,
+    saves nothing, and ends when you leave the group."""
+    app = await _app(tmp_path, monkeypatch)
+    async with app.run_test(size=(140, 50)) as pilot:
+        assert await app_ready(pilot, app), stack(app)
+        s = app.session
+        s.subscribe(GID)
+        s.cache[GID] = {1: msg(1, "<k@x>", "kage"), 2: msg(2, "<p@x>", "politik", minutes=1)}
+        s.set_feed_rules('[groups]\nhide if subject matches "politik"\n')
+        app.current_group = GID
+        app._render_threads()
+        assert "<p@x>" not in app.messages                                 # the rule hides it
+        app.action_show_all()
+        await pilot.pause(0.1)
+        assert "<p@x>" in app.messages                                     # shown, for now
+        assert "your rules are paused" in str(app.query_one("#threads-title").render())
+        assert 'hide if subject matches "politik"' in s.feed_rules()       # nothing changed
+        app.select_group("for-you:")
+        assert await wait_for(pilot, lambda: app.current_group == "for-you:"), stack(app)
+        app.select_group(GID)
+        assert await wait_for(pilot, lambda: app.current_group == GID and "<k@x>" in app.messages), stack(app)
+        assert "<p@x>" not in app.messages                                 # ended on leaving
+        await pilot.press("q")

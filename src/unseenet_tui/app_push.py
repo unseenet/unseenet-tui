@@ -285,6 +285,8 @@ class PushMixin:
              "the team's name", self.action_team_readers),
             ("Everything with a tag", "Every post with a tag in your groups and feeds  [t]",
              self.action_tagged),
+            ("Show all here, for now", "This view without your rules, or back to them - "
+             "nothing is saved (UN-RFC 0051)", self.action_show_all),
             ("Who reads on this device", "An age guide: what is blurred and hidden, for a child "
              "say; nothing of the answer is kept (UN-RFC 0053)", self.action_age_guide),
             ("Content warnings and labels", "Show, blur or hide each warning; the labellers "

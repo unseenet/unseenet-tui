@@ -431,11 +431,14 @@ class ChatMixin:
         gid = self.current_group
         if not gid:
             return
+        paused = ("  ·  [b]showing all - your rules are paused here[/b] (Ctrl+P: Show all again to go back)"
+                  if getattr(self, "_show_all", None) == gid else "")
         if gid == FOR_YOU:
             c = self.session.for_you_counts()
             self.query_one("#threads-title", Static).update(
-                f"{REPLY_MARK} For you  ·  {REPLY_MARK} {c.replies} unread replies to your posts, "
-                f"{MENTION_MARK} {c.mentions} unread posts that name you  ·  from all your groups")
+                f"{REPLY_MARK} For you: replies to you and posts that name you  ·  "
+                f"{REPLY_MARK} {c.replies} new replies, {MENTION_MARK} {c.mentions} new mentions  ·  "
+                f"from all your groups{paused}")
             return
         if gid.startswith("tag:"):                           # everything with a tag (0052, 7)
             n = len(self.messages)
@@ -474,8 +477,10 @@ class ChatMixin:
         hidden = self.session.hidden_by_blocks(gid)
         blocked = ("  ·  " + "; ".join(f"{n} hidden: blocked in {h}.*: {r}" for h, r, n in hidden[:2])
                    if hidden else "")
+        paused = ("  ·  [b]showing all - your rules are paused[/b] (Ctrl+P: Show all again)"
+                  if getattr(self, "_show_all", None) == gid else "")
         self.query_one("#threads-title", Static).update(
-            f"{name}  ·  {kind}{fast}  ·  {total} posts, {unread} unread{rules}{blocked}")
+            f"{name}  ·  {kind}{fast}  ·  {total} posts, {unread} unread{rules}{blocked}{paused}")
 
     def article(self, msg: Message) -> tuple[str, Text]:
         """The header (markup) and the body of a message, as the reader shows them."""

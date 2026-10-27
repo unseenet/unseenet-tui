@@ -19,13 +19,16 @@ class RulesMixin:
         rows left out, the replies under a folded post left out, "mark read" done. Without
         rules (or for chats, For you and private posts) the rows as they are and {}."""
         s = self.session
-        if not gid or not s.rule_set() or gid == FOR_YOU or gid.startswith(CONTACT) \
+        if not gid or not s.rule_set() or gid.startswith(CONTACT) \
                 or gid == getattr(s, "my_inbox", None):
             return rows, {}
-        if gid == TIMELINE:
-            got = [(m, 0, r) for m, r in s.scored_timeline(200)]
+        rules = getattr(self, "_show_all", None) != gid        # Show all: a look (0051 3)
+        if gid == FOR_YOU:                                     # only [foryou] rules (0051 5.5)
+            got = [(m, 0, r) for m, r in s.scored_for_you(rules=rules)[:200]]
+        elif gid == TIMELINE:
+            got = [(m, 0, r) for m, r in s.scored_timeline(200, rules=rules)]
         else:
-            got = s.scored_threads(gid)
+            got = s.scored_threads(gid, rules=rules)
         out, results, marked = [], {}, False
         folded = None                                  # (depth, Message-ID) of a folded post
         self._folded = {}                              # Message-ID -> replies folded under it
@@ -47,6 +50,17 @@ class RulesMixin:
         if marked:
             s.save()
         return out, results
+
+    def action_show_all(self) -> None:
+        """Show all here, for now: this view without your rules, or back to them (UN-RFC
+        0051 section 3). Never saved; it ends when you leave the view."""
+        gid = self.current_group
+        if not gid:
+            return
+        self._show_all = None if getattr(self, "_show_all", None) == gid else gid
+        self.refresh_view()
+        self.notify("Showing all - your rules are paused here" if self._show_all
+                    else "Your rules again", timeout=3)
 
     def action_rules(self) -> None:
         """Your rules (UN-RFC 0051): edit them, checked as you type, and turn them on or off."""
