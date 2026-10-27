@@ -102,3 +102,18 @@ async def test_writing_and_the_settings(tmp_path, monkeypatch):
         assert await wait_for(pilot, lambda: bool(choices)), stack(app)
         assert choices[0]["choices"]["spoiler"] == "show" and choices[0]["choices"]["gore"] == "hide"
         await pilot.press("q")
+
+
+async def test_everything_with_a_tag(tmp_path, monkeypatch):
+    app = await _app(tmp_path, monkeypatch)
+    async with app.run_test(size=(140, 50)) as pilot:
+        assert await app_ready(pilot, app), stack(app)
+        _labelled(app.session)
+        app.current_group = GID
+        app._render_threads()
+        app.current_message = app.messages["<c@x>"]
+        app.action_tagged("serier")
+        assert await wait_for(pilot, lambda: app.current_group == "tag:serier"), stack(app)
+        assert set(app.messages) == {"<a@x>", "<c@x>"}
+        assert "# serier" in str(app.query_one("#threads-title").render())
+        await pilot.press("q")

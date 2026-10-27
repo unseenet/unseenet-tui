@@ -403,7 +403,8 @@ posts and your contacts' never are. Choose per warning, and see the labellers, w
 
 When you write, put tags in the **Tags** field - a warning such as `spoiler`, or your
 own words - or write `#word` in the text. A group's owner gives a group tags in
-**Edit group**.
+**Edit group**. Press `t` on a post to see everything with its tag in your groups and
+feeds (or **Everything with a tag** in the palette).
 
 ## Ignoring someone
 

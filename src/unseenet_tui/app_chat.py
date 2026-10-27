@@ -437,6 +437,12 @@ class ChatMixin:
                 f"{REPLY_MARK} For you  ·  {REPLY_MARK} {c.replies} unread replies to your posts, "
                 f"{MENTION_MARK} {c.mentions} unread posts that name you  ·  from all your groups")
             return
+        if gid.startswith("tag:"):                           # everything with a tag (0052, 7)
+            n = len(self.messages)
+            self.query_one("#threads-title", Static).update(
+                f"# {gid[4:]}  ·  {n} post{'s' if n != 1 else ''} tagged so in your groups and feeds, "
+                "newest first  ·  the authors' tags, the groups', labellers' topics")
+            return
         if gid == TIMELINE:
             n = len(self.session.feeds_followed())
             self.query_one("#threads-title", Static).update(
