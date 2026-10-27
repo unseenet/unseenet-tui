@@ -128,18 +128,19 @@ class TagsMixin:
         if not gid or gid.startswith(("contact:", "for-you:", "timeline:", "tag:")):
             self.notify("Open a group first", severity="warning")
             return
-        codes, why = self.session.suggest_languages(gid)
+        codes, why = self.session.suggest_languages(gid, kind="chat")
         got = await self.push_screen_wait(InputDialog(
             "What you write in here", "Language codes for your chat lines and comments here, "
             "e.g. da or en; empty sends none. Now: " + (", ".join(codes) or "none") + " ("
-            + {"you": "your last choice here", "group": "the group's", "profile": "your profile's"}.get(why, "nothing")
+            + {"chosen": "your choice", "conversation": "the conversation's", "you": "your last choice here",
+               "group": "the group's", "profile": "your profile's"}.get(why, "nothing")
             + ").", "da", ", ".join(codes)))
         if got is None:
             return
         from unseenet.core.tags import normalize_languages
-        self.session.remember_languages(gid, normalize_languages(got.replace(",", " ").split()))
-        self.session.save()
-        self.notify("Your lines here: " + (", ".join(self.session.suggest_languages(gid)[0]) or "no language"))
+        self.session.choose_chat_language(gid, normalize_languages(got.replace(",", " ").split()))
+        self.notify("Your lines here: " + (", ".join(self.session.suggest_languages(gid, kind="chat")[0])
+                                           or "no language"))
 
     # --- the age guide (UN-RFC 0053 section 6.1) ---
     @work(group="dialog", exit_on_error=False)

@@ -357,8 +357,9 @@ class IdentityMixin:
                            references: list[str] | None = None) -> None:
         """The compose window for a post or reply in a group, then send it."""
         data = self.session.manifest_data(g.group_id)
+        answered = self.messages.get(references[-1]) if references else None   # its language (#686)
         dlg = ComposeDialog(
-            g, subject, quote, bool(references), signature=self.session.signature(),
+            g, subject, quote, bool(references), signature=self.session.signature(), reply_to=answered,
             has_rules=bool(data.get("rules")),
             files_allowed=bool(data.get("attachments")) and g.type != "inbox"
             and (g.type != "closed" or bool(self.session.group_entry(g.group_id).get("keys"))))
