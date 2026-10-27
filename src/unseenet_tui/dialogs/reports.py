@@ -71,6 +71,36 @@ class ReportDialog(Dialog):
                       reason if isinstance(reason, str) else "", files))
 
 
+class ChooseLineDialog(Dialog):
+    """In a chat, where no line is selected: choose the line to report. Dismissed with
+    its Message-ID."""
+
+    def __init__(self, lines: list[tuple[str, str, str]]):
+        super().__init__()
+        self.lines = lines                      # (Message-ID, label, its text)
+
+    def compose(self) -> ComposeResult:
+        """The latest lines by others, newest first, with the one chosen shown whole."""
+        with Vertical(classes="dialog list"):
+            yield Label("Report a chat line", classes="title")
+            yield Label("Choose the line - the newest by others first.", classes="hint")
+            yield Select([(label, mid) for mid, label, _ in self.lines], prompt="Choose a line", id="which")
+            yield Label("", id="preview", classes="details", markup=False)
+            with Horizontal(classes="buttons"):
+                yield Button("Cancel", id="cancel")
+                yield Button("Report…", variant="error", id="ok")
+
+    @on(Select.Changed, "#which")
+    def _show(self, event: Select.Changed) -> None:
+        self.query_one("#preview", Label).update(next((t for m, _, t in self.lines if m == event.value), ""))
+
+    @on(Button.Pressed, "#ok")
+    def _ok(self) -> None:
+        which = self.query_one("#which", Select).value
+        if isinstance(which, str):
+            self.dismiss(which)
+
+
 class IssuersDialog(Dialog):
     """The spam report issuers that hide posts for you: those your hierarchies name (on or
     off) and your own, and following one by its key. Dismissed with ``(changes, key,

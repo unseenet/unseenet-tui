@@ -270,6 +270,10 @@ class GroupInfoDialog(Dialog):
             lines += ["  " + line for line in _portals.describe(found).splitlines()]
         if d.get("description"):
             lines += ["", d["description"]]
+        if d.get("type") != "inbox":              # how to report here, and who acts (#74, 0045)
+            lines += ["", "Reporting: select a post (in a chat: Ctrl+P, Report post, and choose the "
+                      "line) - it goes to the owner and moderators, the hierarchy's maintainer, your "
+                      "node's operator and the spam report issuers you follow."]
         with Vertical(classes="dialog"):
             yield Label(("Before you post - the rules of " if self.first_time and d.get("rules")
                          else "About ") + (d.get("title") or self.gid.rpartition("@")[0]),

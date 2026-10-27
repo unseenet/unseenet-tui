@@ -83,7 +83,8 @@ async def test_stop_following_and_the_issuers_dialog(tmp_path, monkeypatch):
         app.current_message = app.messages["<s@x>"]
         app.action_stop_following_issuer()
         await pilot.pause(0.1)
-        assert s.report_issuers() == [] and app.messages["<s@x>"].reported is None
+        assert not any(i["key"] == ISSUER.key_text for i in s.report_issuers())
+        assert app.messages["<s@x>"].reported is None
         app.push_screen(IssuersDialog([{"key": ISSUER.key_text, "label": "Spamjægeren", "yours": False,
                                         "hierarchies": ["dk"], "on": False}]))
         assert await wait_for(pilot, lambda: type(app.screen).__name__ == "IssuersDialog"), stack(app)
@@ -121,3 +122,31 @@ async def test_the_report_window(tmp_path, monkeypatch):
 def test_the_palette_offers_reports(tmp_path, monkeypatch):
     from unseenet_tui import app_push
     assert {"Spam reports", "Publish a spam report"} <= app_push.NEEDS_NETWORK
+
+
+async def test_report_a_chat_line_where_none_is_selected(tmp_path, monkeypatch):
+    """Asked for by the maintainer: in a chat, Report post lets you choose the line."""
+    app = await _app(tmp_path, monkeypatch)
+    async with app.run_test(size=(140, 50)) as pilot:
+        assert await app_ready(pilot, app), stack(app)
+        s = app.session
+        s.subscribe(GID)
+        s.group_entry(GID)["view"] = "chat"
+        s.set_view(GID, "chat")
+        s.cache[GID] = {1: msg(1, "<a@x>", "hej alle", 1), 2: msg(2, "<b@x>", "køb billige ure", 2)}
+        app.current_group = GID
+        app._render_threads()
+        app.current_message = None
+        app.action_report()
+        assert await wait_for(pilot, lambda: type(app.screen).__name__ == "ChooseLineDialog"), stack(app)
+        await pilot.pause(0.2)
+        options = [label for _, label, _ in app.screen.lines]
+        assert len(options) == 2 and "køb billige ure" in options[0]          # newest first
+        app.pop_screen()
+        await pilot.press("q")
+
+
+def test_the_group_info_says_how_to_report():
+    import inspect
+    from unseenet_tui.dialogs import groups
+    assert "Reporting: select a post" in inspect.getsource(groups.GroupInfoDialog)

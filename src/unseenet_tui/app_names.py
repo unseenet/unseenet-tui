@@ -200,6 +200,21 @@ class NamesMixin:
     async def action_report(self) -> None:
         """Report the selected post to the group's moderators."""
         m, s = self.current_message, self.session
+        gid = self.current_group
+        if gid and self.view_of(gid) == "chat" and not gid.startswith(CONTACT):   # no line selected
+            from .dialogs.reports import ChooseLineDialog
+            me = s.identity().key_text
+            lines = [(x.message_id, f"{self._who(x)}: {(x.body or '').strip().splitlines()[0][:60] if x.body.strip() else '…'}",
+                      x.body.strip()) for x, _ in sorted(s.threads(gid), key=lambda r: (r[0].date is None, r[0].date),
+                                                        reverse=True)
+                     if x.readable and not x.private and x.author_key != me][:40]
+            if not lines:
+                self.notify("Nothing here by others to report", severity="warning")
+                return
+            mid = await self.push_screen_wait(ChooseLineDialog(lines))
+            if not mid:
+                return
+            m = next(x for x, _ in s.threads(gid) if x.message_id == mid)
         if m is None or m.private or not m.readable:
             self.notify("Select the post you want to report", severity="warning")
             return
