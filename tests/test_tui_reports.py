@@ -83,12 +83,14 @@ async def test_stop_following_and_the_issuers_dialog(tmp_path, monkeypatch):
         app.current_message = app.messages["<s@x>"]
         app.action_stop_following_issuer()
         await pilot.pause(0.1)
-        assert s.report_issuers() == [] and app.messages["<s@x>"].reported is None
+        assert not any(i["key"] == ISSUER.key_text for i in s.report_issuers())
+        assert app.messages["<s@x>"].reported is None
         app.push_screen(IssuersDialog([{"key": ISSUER.key_text, "label": "Spamjægeren", "yours": False,
-                                        "hierarchies": ["dk"], "on": False}]))
+                                        "hierarchies": ["dk"], "groups": ["alt.space.nasa@abcd"], "on": False}],
+                                      lambda g: g.split("@")[0]))
         assert await wait_for(pilot, lambda: type(app.screen).__name__ == "IssuersDialog"), stack(app)
         await pilot.pause(0.2)
-        assert "named for dk.*" in str(app.screen.query_one("#i0").label)
+        assert "named for dk.*, alt.space.nasa" in str(app.screen.query_one("#i0").label)
         app.pop_screen()
         await pilot.press("q")
 

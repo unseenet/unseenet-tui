@@ -66,7 +66,7 @@ class ReportsMixin:
     @work(exclusive=True, group="dialog", exit_on_error=False)
     async def _report_issuers(self) -> None:
         s = self.session
-        got = await self.push_screen_wait(IssuersDialog(s.report_issuers()))
+        got = await self.push_screen_wait(IssuersDialog(s.report_issuers(), s.group_label))
         if not got:
             return
         changes, key, label = got
