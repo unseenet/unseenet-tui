@@ -6,6 +6,9 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+- **`!` for groups** (unseenet#666): `!dk.snak` names a group, and `!` on a post goes to
+  it (was `#`); `#word` in what you write is a tag now.
+
 - **Report reasons from the core's one list** (unseenet#659): *Threats or harassment*
   is `harassment`, readers can report *Phishing* and *Malware*.
 

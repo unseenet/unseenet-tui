@@ -213,7 +213,7 @@ class ChatMixin:
                 name, fp = split_group_id(gid)
             except ValueError:
                 return
-            self.action_group_ref(f"#{name}@{fp}")
+            self.action_group_ref(f"!{name}@{fp}")
             return
         self.select_group(gid)
         for _ in range(100):

@@ -253,8 +253,8 @@ class PushMixin:
             ("Stop showing mention notices" if self.session.notice_settings()["receive"]
              else "Show mention notices", "Others' notices that a post in a group you do not "
              "follow names you", self.action_toggle_notices_receive),
-            ("Go to a #group in this post", "Open a group the selected post names, such as "
-             "#dk.snak, or subscribe to it  [#]", self.action_group_ref),
+            ("Go to a !group in this post", "Open a group the selected post names, such as "
+             "!dk.snak, or subscribe to it  [!]", self.action_group_ref),
             ("Switch chat / threads", "Show the current group as a chat or as threads  [v]",
              self.action_toggle_view),
             ("Edit group", "Owner: change title, description, rules, view and delivery",

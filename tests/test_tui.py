@@ -1203,7 +1203,7 @@ async def test_tui_for_you(tmp_path, monkeypatch):
 
 
 async def test_tui_group_ref(tmp_path, monkeypatch):
-    """#172: # on a post naming #dk.marsvin asks before subscribing, then opens it."""
+    """#172: ! on a post naming !dk.marsvin asks before subscribing, then opens it."""
     from unseenet_tui.app import ConfirmDialog
     app, server = await _app_with_groups(tmp_path, monkeypatch, ["dk.snak"])
     addr = f"127.0.0.1:{server.sockets[0].getsockname()[1]}"
@@ -1214,7 +1214,7 @@ async def test_tui_group_ref(tmp_path, monkeypatch):
         assert await wait_for(pilot, lambda: len(app.groups) == 2, 300)
         s = app.session
         gid = next(g for g in app.groups if g.startswith("dk.snak@"))
-        await s.post(gid, "Marsvin?", "Du får nok bedre svar i #dk.marsvin.\n")
+        await s.post(gid, "Marsvin?", "Du får nok bedre svar i !dk.marsvin.\n")
         app.select_group(gid)
         assert await wait_for(pilot, lambda: len(app.messages) == 1, 300)
         await pilot.pause(0.3)
@@ -1238,7 +1238,7 @@ async def test_tui_group_ref(tmp_path, monkeypatch):
 
 
 async def test_tui_group_ref_link(tmp_path, monkeypatch):
-    """#172: clicking a #group link runs group_ref with that reference."""
+    """#172: clicking a !group link runs group_ref with that reference."""
     from unseenet_tui.app import ConfirmDialog
     app, server = await _app_with_groups(tmp_path, monkeypatch, ["dk.snak"])
     addr = f"127.0.0.1:{server.sockets[0].getsockname()[1]}"
@@ -1247,7 +1247,7 @@ async def test_tui_group_ref_link(tmp_path, monkeypatch):
     await other.create_group("dk.marsvin", "open", min_pow=10)
     async with app.run_test(size=(140, 40)) as pilot:
         assert await wait_for(pilot, lambda: len(app.groups) == 2, 300)
-        await app.run_action("app.group_ref('#dk.marsvin')")
+        await app.run_action("app.group_ref('!dk.marsvin')")
         assert await wait_for(pilot, lambda: isinstance(app.screen, ConfirmDialog), 300)
         assert await wait_for(pilot, lambda: laid_out(app, "Label")), stack(app)   # #231
         assert "dk.marsvin" in str(app.screen.query_one("Label").render())

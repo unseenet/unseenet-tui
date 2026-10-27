@@ -118,7 +118,7 @@ else is in the command palette, ++ctrl+p++:
 | ++shift+d++ | Withdraw the selected post (yours, or in a group you own or moderate) |
 | ++v++ | Switch between chat and threads for the current group |
 | ++question-mark++ | About this group: its rules, type, owner and node |
-| `#` | Go to a group the selected post names, such as `#dk.snak` |
+| `!` | Go to a group the selected post names, such as `!dk.snak` |
 | ++f1++ | About Unseenet, with links to the source and these pages |
 | ++ctrl+p++ | Command palette: everything above, by name, plus what is used less often, like creating a group or inviting someone to a closed group |
 
@@ -183,17 +183,19 @@ and *Stop showing mention notices* turns them off.
 
 ## Pointing to another group
 
-Write `#` and a group's name to point someone to it: *you'll probably get
-better answers in #dk.snak.marsvin*. References are shown underlined; click
-one, or press `#` on a post (or in the full-screen view), to go there: a group you follow opens, and for one you
+Write `!` and a group's name to point someone to it: *you'll probably get
+better answers in !dk.snak.marsvin* - as Lemmy writes `!community`. (`#word`
+is a tag: your client puts it in the post's tags when you send it.)
+References are shown underlined; click one, or press `!` on a post (or in
+the full-screen view), to go there: a group you follow opens, and for one you
 do not follow, the client shows what it is and asks before subscribing. If
 a post names several groups, you choose one; if several groups have the same
 name (with different owners), you choose by fingerprint, and you can write
-one yourself, as in `#dk.snak@abcd`.
+one yourself, as in `!dk.snak@abcd`.
 
-Group names are `a-z`, digits, `+`, `_`, `-` and dots, so `#dk.snak.` at the
-end of a sentence means `dk.snak`, while `# Heading` (with a space) and
-`#170` are not groups.
+Group names are `a-z`, digits, `+`, `_`, `-` and dots, so `!dk.snak.` at the
+end of a sentence means `dk.snak`, while *Hello!*, a picture `![...]` and
+`!170` are not groups.
 
 ## Chat
 
