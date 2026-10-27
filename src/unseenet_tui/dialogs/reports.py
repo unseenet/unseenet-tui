@@ -146,26 +146,38 @@ class IssuersDialog(Dialog):
 
 
 class StartIssuerDialog(Dialog):
-    """Becoming a spam report issuer: what you report, where to object. Dismissed with
+    """Becoming a spam report issuer: what you report, where reports sent to you land
+    (your inbox or a team inbox you read), where to object. Dismissed with
     ``(policy, contact)``."""
 
+    def __init__(self, teams: list[dict] | None = None):
+        super().__init__()
+        self.teams = teams or []                        # team inboxes you read
+
     def compose(self) -> ComposeResult:
-        """What you report and how, and where to object."""
+        """What you report and how, where reports land, and where to object."""
         with Vertical(classes="dialog"):
             yield Label("Become a spam report issuer", classes="title")
             yield Label("Your reports are public and signed with your key. They hide posts only "
                         "for those who choose to follow you.", classes="hint")
             yield Label("What you report, and how")
             yield TextArea("", id="policy", soft_wrap=True)
-            yield Input(placeholder="Where to object: an inbox or a web address (optional)", id="contact")
+            yield Select([("Your own inbox (Private posts)", "")]
+                         + [(f"{t['name']} - a team inbox you read", t["group"]) for t in self.teams],
+                         value="", allow_blank=False, id="land")
+            yield Label("Where reports sent to you land. A team inbox lets others read and answer "
+                        "them with you; it is also where people object to your reports.", classes="hint")
+            yield Input(placeholder="Or where to object, if not there: a web address (optional)", id="contact")
             with Horizontal(classes="buttons"):
                 yield Button("Cancel", id="cancel")
                 yield Button("Start", variant="primary", id="ok")
 
     @on(Button.Pressed, "#ok")
     def _ok(self) -> None:
+        land = self.query_one("#land", Select).value
         self.dismiss((self.query_one("#policy", TextArea).text.strip(),
-                      self.query_one("#contact", Input).value.strip()))
+                      (land if isinstance(land, str) and land else "")
+                      or self.query_one("#contact", Input).value.strip()))
 
 
 class PublishReportDialog(Dialog):

@@ -6,6 +6,10 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+- **A report sent to you says what to do** (unseenet#650): *Ctrl+P Open reported post*,
+  and for an issuer *Publish a spam report*; becoming an issuer asks where reports
+  sent to you land - your inbox or a team inbox you read.
+
 - **Report from a chat too** (asked for by the maintainer): in a chat, where no line is
   selected, *Report post* lets you choose the line, newest by others first; a
   group's *?* says how to report there and who acts on it.

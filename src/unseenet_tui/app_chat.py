@@ -488,6 +488,9 @@ class ChatMixin:
                    + ("  ·  verified" if msg.sender_key else "")
                    + (f"  ·  registered [b]{escape(registered)}[/b]" if registered else "")
                    + (f"  ·  your contact [b]{escape(petname)}[/b]" if petname else ""))
+        if msg.private and msg.readable and self.session.received_report(msg):   # a report to you
+            date += ("\n[b]A report: Ctrl+P Open reported post"
+                     + (", or Publish a spam report[/b]" if self.session.is_issuer() else "[/b]"))
         if getattr(msg, "team_invite", None):              # a team key for you (0047, 6)
             date += "\n[b]Ctrl+P: Read this inbox with the team[/b]"
         note = ("\n@ private message you sent - only they can read the copy on the node"

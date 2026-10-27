@@ -151,3 +151,27 @@ def test_the_group_info_says_how_to_report():
     import inspect
     from unseenet_tui.dialogs import groups
     assert "Reporting: select a post" in inspect.getsource(groups.GroupInfoDialog)
+
+
+async def test_an_issuer_chooses_a_team_inbox_and_a_report_says_what_to_do(tmp_path, monkeypatch):
+    from unseenet.client.session import REPORT_MD_TYPE
+    from unseenet_tui.dialogs.reports import StartIssuerDialog
+    app = await _app(tmp_path, monkeypatch)
+    got = []
+    async with app.run_test(size=(140, 50)) as pilot:
+        assert await app_ready(pilot, app), stack(app)
+        app.push_screen(StartIssuerDialog([{"group": "contact@proj", "name": "Unseenet (operator)", "reader": True}]),
+                        got.append)
+        assert await wait_for(pilot, lambda: type(app.screen).__name__ == "StartIssuerDialog"), stack(app)
+        await pilot.pause(0.2)
+        app.screen.query_one("#land").value = "contact@proj"
+        await press(pilot, app, "#ok")
+        assert await wait_for(pilot, lambda: bool(got)), stack(app)
+        assert got[0] == ("", "contact@proj")
+        report = Message(number=9, message_id="<r@x>", group=app.session.my_inbox, subject="Report: Ure",
+                         from_name="Sonia", author_key=ISSUER.key_text, sender_key=ISSUER.key_text,
+                         private=True, content_type=REPORT_MD_TYPE, date=NOW,
+                         body=f"**Report of a post**\n\nGroup: `{GID}`  \nMessage-ID: `<s@x>`\n")
+        head, _ = app.article(report)
+        assert "Ctrl+P Open reported post" in head
+        await pilot.press("q")
