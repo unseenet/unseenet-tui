@@ -6,6 +6,11 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+- **The language from your text** (unseenet#686): at a pause in writing, the *Language* field
+  takes what the core tells from the text, until you change it yourself; a reply starts
+  from the post it answers. *Write in … here* is now a choice for your chat lines and
+  comments in the group that wins over the suggestion (unseenet#692).
+
 - **Languages where they belong** (unseenet#671): the *Language* field under the text -
   chosen after writing; *Write in … here* in the palette sets the language of your chat
   lines and comments in a group, remembered for it.

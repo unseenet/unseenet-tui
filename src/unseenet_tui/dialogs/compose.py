@@ -67,9 +67,13 @@ class ComposeDialog(Dialog):
 
     def __init__(self, group: GroupInfo, subject: str = "", quote: str = "", is_reply: bool = False,
                  heading: str | None = None, signature: str = "", has_rules: bool = False,
-                 files_allowed: bool = False):
+                 files_allowed: bool = False, reply_to=None):
         super().__init__()
         self.group, self.subject, self.quote, self.is_reply = group, subject, quote, is_reply
+        self.reply_to = reply_to                 # the Message answered: its language first (#686)
+        self._lang_touched = False               # the language field is yours once you type in it
+        self._lang_setting = False
+        self._lang_timer = None
         self.heading, self.signature, self.has_rules = heading, signature, has_rules
         self.files_allowed = files_allowed       # the group takes files (UN-RFC 0027)
         self.files: list[str] = []               # what to send with it, read after dismiss
@@ -92,13 +96,13 @@ class ComposeDialog(Dialog):
             yield Static("", id="body-emoji", markup=False)
             gid = self.group.group_id or ""
             if self.group.type != "inbox" and gid and not gid.startswith(("contact:", "inbox@")):
-                codes, why = self.app.session.suggest_languages(gid)        # UN-RFC 0052 5a
+                codes, why = self.app.session.suggest_languages(gid, reply_to=self.reply_to)  # 0052 5a
                 self._suggested = codes
                 yield Input(value=", ".join(codes), id="lang",
                             placeholder="Language: none - e.g. da or en (remembered for this group)")
                 yield Label("Language: " + {"you": "what you wrote in here last", "group": "the group's",
                                             "profile": "from your profile"}.get(why, "none is sent"),
-                            classes="hint", markup=False)
+                            classes="hint", markup=False, id="lang-why")
             if self.files_allowed:
                 yield Input(placeholder="Files to send with it - paths, comma between: "
                             "~/garden.jpg, ~/map.pdf", id="files")
@@ -126,6 +130,39 @@ class ComposeDialog(Dialog):
     def _mentioned(self) -> list[tuple[str, str]]:
         return self.app.session.mentioned(self.query_one("#subject", Input).value,
                                           self.query_one("#body", TextArea).text)
+
+    @on(Input.Changed, "#lang")
+    def _lang_by_hand(self, event: Input.Changed) -> None:
+        # yours only when it differs from what was put there (its first value included)
+        if not self._lang_setting and event.value != getattr(self, "_lang_auto", ", ".join(self._suggested)):
+            self._lang_touched = True
+
+    @on(TextArea.Changed)
+    @on(Input.Changed, "#subject")
+    def _ask_language(self) -> None:
+        """At a pause in writing, what the text is in (unseenet#686) - into the field,
+        unless you typed in it yourself."""
+        if not self.query("#lang") or self._lang_touched:
+            return
+        if self._lang_timer is not None:
+            self._lang_timer.stop()
+        self._lang_timer = self.set_timer(0.6, self._suggest_language)
+
+    def _suggest_language(self) -> None:
+        if self._lang_touched or not self.query("#lang"):
+            return
+        text = self.query_one("#subject", Input).value + "\n" + self.query_one("#body", TextArea).text
+        codes, why = self.app.session.suggest_languages(self.group.group_id, text=text,
+                                                        reply_to=self.reply_to)
+        self._lang_setting = True
+        self._lang_auto = ", ".join(codes)
+        self.query_one("#lang", Input).value = self._lang_auto
+        self._lang_setting = False
+        hint = self.query("#lang-why")
+        if hint:
+            hint.first().update("Language: " + {"text": "from your text", "answered": "the post you answer",
+                                                "you": "what you wrote in here last", "group": "the group's",
+                                                "profile": "from your profile"}.get(why, "none is sent"))
 
     @on(TextArea.Changed)
     @on(Input.Changed, "#subject")

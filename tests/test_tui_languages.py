@@ -75,5 +75,28 @@ async def test_the_language_of_chat_lines_here(tmp_path, monkeypatch):
         assert await wait_for(pilot, lambda: laid_out(app, "Input")), stack(app)
         app.screen.query_one("Input").value = "en"
         await press(pilot, app, "#ok")
-        assert await wait_for(pilot, lambda: s.suggest_languages(GID) == (["en"], "you")), stack(app)
+        assert await wait_for(pilot, lambda: s.suggest_languages(GID, kind="chat") == (["en"], "chosen")), stack(app)
+        await pilot.press("q")
+
+
+async def test_the_language_follows_the_text_until_you_choose(tmp_path, monkeypatch):
+    """unseenet#686: at a pause the field takes the text's language - until you type in it."""
+    from unseenet_tui.dialogs.compose import ComposeDialog
+    app = await _app(tmp_path, monkeypatch)
+    async with app.run_test(size=(140, 60)) as pilot:
+        assert await app_ready(pilot, app), stack(app)
+        s = app.session
+        s.subscribe(GID)
+        s.group_entry(GID)["manifest"] = {"name": "dk.snak", "type": "open", "languages": ["da"]}
+        app.push_screen(ComposeDialog(GroupInfo(GID, type="open")))
+        assert await wait_for(pilot, lambda: laid_out(app, "#lang")), stack(app)
+        app.screen.query_one("#body").text = "I am a bit busy, and this is something we could pick up later if you would like"
+        assert await wait_for(pilot, lambda: app.screen.query_one("#lang").value == "en", 100), stack(app)
+        assert "from your text" in str(app.screen.query_one("#lang-why").render())
+        app.screen.query_one("#lang").value = "da"                    # yours now
+        await pilot.pause(0.1)
+        app.screen.query_one("#body").text = "And this is more of the English text, which you would like"
+        await pilot.pause(1.0)
+        assert app.screen.query_one("#lang").value == "da"
+        await pilot.press("escape")
         await pilot.press("q")
