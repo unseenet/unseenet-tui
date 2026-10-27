@@ -6,6 +6,12 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+- **The language of what you write** (#57, unseenet#671): a *Language* field in the compose
+  window, filled with what the core suggests and saying why - what you wrote in here
+  last, the group's, or your profile's; what you choose is remembered for the group.
+  Chat lines get the suggestion by themselves. The reader shows a post's language only
+  where it differs from its group's. *Edit group* and *About*: the group's languages.
+
 - **For you and Show all** (#36, unseenet#629): *Show all here, for now* in the palette shows
   the group, the timeline or For you without your rules - the title says *your rules are
   paused* - never saved, ended when you leave. For you says what it is, counts only what
