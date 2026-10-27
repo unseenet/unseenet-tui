@@ -6,6 +6,10 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+- **Report from a chat too** (asked for by the maintainer): in a chat, where no line is
+  selected, *Report post* lets you choose the line, newest by others first; a
+  group's *?* says how to report there and who acts on it.
+
 - **PDFs in private posts and reports** (unseenet#637): every inbox takes PDFs now;
   the report window says *Screenshots or PDFs*, and saving a PDF warns that it can
   carry harmful content no node could check. PDFs are never shown in the terminal.
