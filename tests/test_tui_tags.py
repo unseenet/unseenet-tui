@@ -116,4 +116,17 @@ async def test_everything_with_a_tag(tmp_path, monkeypatch):
         assert await wait_for(pilot, lambda: app.current_group == "tag:serier"), stack(app)
         assert set(app.messages) == {"<a@x>", "<c@x>"}
         assert "# serier" in str(app.query_one("#threads-title").render())
+async def test_the_age_guide(tmp_path, monkeypatch):
+    """UN-RFC 0053 6.1: a profile's choices become yours; nothing of the answer is kept."""
+    import json
+    app = await _app(tmp_path, monkeypatch)
+    async with app.run_test(size=(140, 50)) as pilot:
+        assert await app_ready(pilot, app), stack(app)
+        app.action_age_guide()
+        assert await wait_for(pilot, lambda: laid_out(app, "#age")), stack(app)
+        assert "only cover what is marked" in str(app.screen.query("Label").last().render())
+        app.screen.query_one("#age").value = "13-17"
+        await press(pilot, app, "#ok")
+        assert await wait_for(pilot, lambda: app.session.warning_choices()["sexual"] == "hide"), stack(app)
+        assert "13-17" not in json.dumps(app.session.data)
         await pilot.press("q")

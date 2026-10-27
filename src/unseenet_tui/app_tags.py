@@ -118,6 +118,19 @@ class TagsMixin:
         tag = (tag or "").strip().lstrip("#").lower()
         if tag:
             await self.select_group("tag:" + tag)
+    # --- the age guide (UN-RFC 0053 section 6.1) ---
+    @work(group="dialog", exit_on_error=False)
+    async def action_age_guide(self) -> None:
+        """Who reads on this device: the core's suggestions per warning, taken as your
+        choices; nothing of the answer is kept."""
+        from unseenet.core.labels import AGE_PROFILE_LABELS, AGE_PROFILES
+        from .dialogs.tags import AgeGuideDialog
+        got = await self.push_screen_wait(AgeGuideDialog(AGE_PROFILES, AGE_PROFILE_LABELS))
+        if not got:
+            return
+        self.session.apply_age_profile(got)
+        self.notify("Set. Change it any time under Content warnings and labels.")
+        self.refresh_view()
 
     # --- the settings ---
     @work(group="dialog", exit_on_error=False)
