@@ -122,7 +122,7 @@ class UnseenetApp(GroupsMixin, ChatMixin, ActionsMixin, FeedsMixin, AddressesMix
         Binding("e", "edit", "Edit", show=False),
         Binding("u", "show_profile", "Profile", show=False),   # the author's (#506)
         Binding("question_mark", "group_info", "About group"),
-        Binding("number_sign", "group_ref", "Go to #group", show=False),
+        Binding("exclamation_mark", "group_ref", "Go to !group", show=False),   # unseenet#666
         Binding("space", "next_unread", "Next unread"),
         Binding("f", "read", "Read"),
         Binding("v", "toggle_view", "View"),          # threads, feed, chat; or pages (#490)
