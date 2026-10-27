@@ -41,7 +41,7 @@ async def test_suggested_chosen_and_shown(tmp_path, monkeypatch):
         app.push_screen(dlg, got.append)
         assert await wait_for(pilot, lambda: laid_out(app, "#lang")), stack(app)
         assert app.screen.query_one("#lang").value == "da"
-        ids = [w.id for w in app.screen.query("Input, TextArea") if w.id in ("body", "lang")]
+        ids = [w.id for w in app.screen.query("Input, TextArea, Select") if w.id in ("body", "lang")]
         assert ids == ["body", "lang"]                                  # under the text
         assert any("the group's" in str(lb.render()) for lb in app.screen.query("Label"))
         app.screen.query_one("#subject").value = "Hi"
@@ -71,9 +71,10 @@ async def test_the_language_of_chat_lines_here(tmp_path, monkeypatch):
         s.group_entry(GID)["manifest"] = {"name": "dk.snak", "type": "open", "languages": ["da"]}
         app.current_group = GID
         app.action_write_language()
-        assert await wait_for(pilot, lambda: type(app.screen).__name__ == "InputDialog"), stack(app)
-        assert await wait_for(pilot, lambda: laid_out(app, "Input")), stack(app)
-        app.screen.query_one("Input").value = "en"
+        assert await wait_for(pilot, lambda: type(app.screen).__name__ == "LanguageDialog"), stack(app)
+        assert await wait_for(pilot, lambda: laid_out(app, "#lang")), stack(app)
+        assert ("EN  English", "en") in [(str(p), v) for p, v in app.screen.query_one("#lang")._options]  # own names
+        app.screen.query_one("#lang").value = "en"
         await press(pilot, app, "#ok")
         assert await wait_for(pilot, lambda: s.suggest_languages(GID, kind="chat") == (["en"], "chosen")), stack(app)
         await pilot.press("q")

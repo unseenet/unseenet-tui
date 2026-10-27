@@ -62,6 +62,17 @@ from .base import Dialog
 from ..emoji import EmojiTextArea  # noqa: E402 - #6
 
 
+def language_options(first, group) -> list[tuple[str, str]]:
+    """The choices of the language list: what is suggested and the group's first, then
+    the languages a text can be told in, then the rest - each by its code and own name
+    (the core's list, no flags) - and None."""
+    from unseenet.core import languages as langs
+    listed = langs.as_list()
+    order = list(dict.fromkeys([*first, *group, *[x["code"] for x in listed if x["recognised"]],
+                                *[x["code"] for x in listed]]))
+    return [(f"{c.upper():<3} {langs.name(c)}", c) for c in order] + [("None - no language is sent", "")]
+
+
 class ComposeDialog(Dialog):
     BINDINGS = [Binding("escape", "cancel", "Cancel"), Binding("ctrl+s", "send", "Send")]
 
@@ -98,8 +109,9 @@ class ComposeDialog(Dialog):
             if self.group.type != "inbox" and gid and not gid.startswith(("contact:", "inbox@")):
                 codes, why = self.app.session.suggest_languages(gid, reply_to=self.reply_to)  # 0052 5a
                 self._suggested = codes
-                yield Input(value=", ".join(codes), id="lang",
-                            placeholder="Language: none - e.g. da or en (remembered for this group)")
+                yield Select(language_options(codes, self.app.session.manifest_data(gid).get("languages") or []),
+                             value=codes[0] if codes else "", allow_blank=False, id="lang",
+                             prompt="Language")
                 yield Label("Language: " + {"you": "what you wrote in here last", "group": "the group's",
                                             "profile": "from your profile"}.get(why, "none is sent"),
                             classes="hint", markup=False, id="lang-why")
@@ -131,10 +143,11 @@ class ComposeDialog(Dialog):
         return self.app.session.mentioned(self.query_one("#subject", Input).value,
                                           self.query_one("#body", TextArea).text)
 
-    @on(Input.Changed, "#lang")
-    def _lang_by_hand(self, event: Input.Changed) -> None:
+    @on(Select.Changed, "#lang")
+    def _lang_by_hand(self, event: Select.Changed) -> None:
         # yours only when it differs from what was put there (its first value included)
-        if not self._lang_setting and event.value != getattr(self, "_lang_auto", ", ".join(self._suggested)):
+        auto = getattr(self, "_lang_auto", self._suggested[0] if self._suggested else "")
+        if not self._lang_setting and event.value != auto:
             self._lang_touched = True
 
     @on(TextArea.Changed)
@@ -154,9 +167,13 @@ class ComposeDialog(Dialog):
         text = self.query_one("#subject", Input).value + "\n" + self.query_one("#body", TextArea).text
         codes, why = self.app.session.suggest_languages(self.group.group_id, text=text,
                                                         reply_to=self.reply_to)
+        sel = self.query_one("#lang", Select)
+        want = codes[0] if codes else ""
+        if want and want not in {v for _, v in sel._options}:     # a language not listed yet
+            sel.set_options(language_options([want] + list(self._suggested), []))
         self._lang_setting = True
-        self._lang_auto = ", ".join(codes)
-        self.query_one("#lang", Input).value = self._lang_auto
+        self._lang_auto = want
+        sel.value = want
         self._lang_setting = False
         hint = self.query("#lang-why")
         if hint:
@@ -212,8 +229,8 @@ class ComposeDialog(Dialog):
             self.files = [p.strip() for p in self.query_one("#files", Input).value.split(",")
                           if p.strip()]
         if self.query("#lang"):                           # chosen; cleared: [] forgets it here
-            from unseenet.core.tags import normalize_languages
-            chosen = normalize_languages(self.query_one("#lang", Input).value.replace(",", " ").split())
+            value = self.query_one("#lang", Select).value
+            chosen = [value] if isinstance(value, str) and value else []
             self.languages = chosen if (chosen or self._suggested) else None
         if self.query("#tags"):                           # the core normalises them, adds #words
             self.tags = [t for t in self.query_one("#tags", Input).value.replace(",", " ").split() if t]
