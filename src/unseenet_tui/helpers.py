@@ -182,6 +182,8 @@ def origin_text(m: Message) -> str:
     if m.origin_date:
         d = m.origin_date.astimezone()
         text += f" · originally {d.day} {d.strftime('%B %Y')}"
+    if getattr(m, "origin_proven", ""):           # the old key, proven (UN-RFC 0049 7.3)
+        text += f" · proven from the key {m.origin_proven[:20]}…"
     return text
 
 
