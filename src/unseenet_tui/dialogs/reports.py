@@ -76,9 +76,9 @@ class IssuersDialog(Dialog):
     off) and your own, and following one by its key. Dismissed with ``(changes, key,
     label)``: changes ``{key: on}`` for the boxes changed, and a key to follow or ""."""
 
-    def __init__(self, issuers: list[dict]):
+    def __init__(self, issuers: list[dict], label=str):
         super().__init__()
-        self.issuers = issuers
+        self.issuers, self.label = issuers, label          # label: a Group ID as shown
 
     def compose(self) -> ComposeResult:
         """A box for each issuer, with where it is named; then a key to follow."""
@@ -92,9 +92,12 @@ class IssuersDialog(Dialog):
                     yield Label("You follow no issuers, and the hierarchies of your groups name none.",
                                 classes="hint")
                 for i, it in enumerate(self.issuers):
-                    where = ("named for " + ", ".join(h + ".*" for h in it["hierarchies"])
+                    # named by hierarchies' maintainers and groups' owners (0045, 7.1, 7.5)
+                    named = ([h + ".*" for h in it["hierarchies"]]
+                             + [self.label(g) for g in it.get("groups", [])])
+                    where = ("named for " + ", ".join(named)
                              + (", and followed by you everywhere" if it["yours"] else "")
-                             if it["hierarchies"] else "followed by you, in every group")
+                             if named else "followed by you, in every group")
                     yield Checkbox(f"{it['label']}  -  {where}", value=it["on"], id=f"i{i}")
                 yield Label("Follow an issuer")
                 yield Input(placeholder="Its key: ed25519:...", id="key")
