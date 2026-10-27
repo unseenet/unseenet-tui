@@ -210,14 +210,20 @@ class NamesMixin:
             self.notify("Nobody to report this to: the group has no owner, moderator, "
                         "maintainer or node operator you can reach", severity="warning", timeout=8)
             return
-        result = await self.push_screen_wait(ReportDialog(m.subject or "(no subject)", targets))
+        from unseenet.client.session import REPORT_REASONS
+        who = s.identity_label(m.author_key, m.from_name) if m.author_key else "anonymous"
+        first = (m.body or "").strip().split("\n", 1)[0][:100] if m.readable else ""
+        post = f"{who}: {m.subject or '(no subject)'}" + (f"\n{first}" if first else "")
+        result = await self.push_screen_wait(ReportDialog(post, targets, REPORT_REASONS))
         if not result:
             return
-        chosen, note, anonymous = result
+        chosen, note, anonymous, reason, paths = result
         self.set_status("Sending the report ...")
         try:
-            n = await s.report(m, chosen, note, anonymous)
-        except (SessionError, OSError, ConnectionError) as exc:
+            from pathlib import Path
+            files = s.prepare_files([Path(p).expanduser() for p in paths]) if paths else None
+            n = await s.report(m, chosen, note, anonymous, files=files, reason=reason)
+        except (SessionError, OSError, ConnectionError, ValueError) as exc:
             self.set_status("")
             self.notify(f"Not sent: {exc}", severity="error", timeout=8)
             return

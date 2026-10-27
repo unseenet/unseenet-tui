@@ -85,9 +85,10 @@ from .app_push import PushMixin  # noqa: E402 - the app's parts by area (#20)
 from .app_names import NamesMixin  # noqa: E402 - the app's parts by area (#20)
 from .app_pins import PinsMixin  # noqa: E402 - the app's parts by area (#20)
 from .app_rules import RulesMixin  # noqa: E402 - your own rules (UN-RFC 0051)
+from .app_reports import ReportsMixin, reported_text, HIDDEN_MARK  # noqa: E402,F401 - spam reports (0045)
 
 
-class UnseenetApp(GroupsMixin, ChatMixin, ActionsMixin, FeedsMixin, AddressesMixin, IdentityMixin, PagesMixin, PushMixin, NamesMixin, PinsMixin, RulesMixin, App):
+class UnseenetApp(GroupsMixin, ChatMixin, ActionsMixin, FeedsMixin, AddressesMixin, IdentityMixin, PagesMixin, PushMixin, NamesMixin, PinsMixin, RulesMixin, ReportsMixin, App):
     TITLE = "unseenet"
     CSS = CSS + console_css()
 

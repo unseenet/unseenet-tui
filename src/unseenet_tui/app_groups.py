@@ -67,6 +67,9 @@ from .dialogs.nodes import NodesDialog, AddNodeDialog, NodeInfoDialog  # noqa: F
 from .screens import ChatBox, attachments_text, save_name, ReadScreen, AboutDialog  # noqa: F401
 
 
+from .app_reports import HIDDEN_MARK, reported_text  # noqa: E402
+
+
 class GroupsMixin:
 
     # --- groups ---
@@ -425,6 +428,8 @@ class GroupsMixin:
                 subject = "  " * depth + "↳ " + title
             else:
                 subject = ("  " * (depth - 1) + "└ " if depth else "") + title
+            if getattr(m, "reported", None):            # hidden by a report: never its subject (0045)
+                subject = ("  " * (depth - 1) + "└ " if depth else "") + f"{HIDDEN_MARK} {reported_text(m)}"
             if m.message_id in page_of:                 # a page: its title and its path
                 path = page_of[m.message_id]
                 subject = ("⌂ " if path == home else "  ") + (m.subject or path) + f"   /{path}"

@@ -57,40 +57,7 @@ from unseenet.client.runtime import ClientRuntime
 from unseenet.client import events as ev
 
 from .base import Dialog
-
-
-class ReportDialog(Dialog):
-    """Report a post to the people who can act on it (#74)."""
-
-    def __init__(self, subject: str, targets: list[tuple[str, str, str]]):
-        super().__init__()
-        self.subject, self.targets = subject, targets
-
-    def compose(self) -> ComposeResult:
-        """Reporting a post to the group's moderators: why, and Send."""
-        with Vertical(classes="dialog"):
-            yield Label(f"Report \"{self.subject}\"", classes="title", markup=False)
-            yield Label("For posts that break the group's rules or the law. The people you "
-                        "choose get the post and your note as a private message. In an "
-                        "emergency, contact the police: nobody on Unseenet can see who anyone is.",
-                        classes="hint")
-            for i, (who, _, _) in enumerate(self.targets):
-                yield Checkbox(who, value=True, id=f"t{i}")
-            yield Input(placeholder="What is wrong with it? (optional)", id="note")
-            yield Checkbox("Anonymous - they cannot see who reported it or answer you",
-                           value=False, id="anon")
-            with Horizontal(classes="buttons"):
-                yield Button("Cancel", id="cancel")
-                yield Button("Report", variant="error", id="ok")
-
-    @on(Button.Pressed, "#ok")
-    def _ok(self) -> None:
-        chosen = [t for i, t in enumerate(self.targets) if self.query_one(f"#t{i}", Checkbox).value]
-        if not chosen:
-            self.app.notify("Choose at least one", severity="warning")
-            return
-        self.dismiss((chosen, self.query_one("#note", Input).value,
-                      self.query_one("#anon", Checkbox).value))
+from .reports import ReportDialog  # noqa: F401 - moved there with spam reports (#11)
 
 
 class ModerationDialog(Dialog):

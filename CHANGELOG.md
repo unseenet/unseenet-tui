@@ -6,6 +6,18 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+- **Spam reports** (#11, unseenet#122, UN-RFC 0045), as in the graphical client: a
+  post hidden by a report keeps its place and says so - *⊘ Hidden by Spamjægeren:
+  spam* in the list, the reader and the chat, the count in the group's title - with
+  *Show anyway* and *Stop following this report issuer* in the palette; never your
+  own or a contact's. *Spam reports* in the palette: the issuers that hide posts for
+  you (those your hierarchies name, on or off) and following one by its key. As an
+  issuer: *Become a spam report issuer*, and *Publish a spam report* on a post or on
+  a report sent to you (also its author, for up to a year).
+- **A report window that is one** (as unseenet-gui#70): the post in short, what is
+  wrong as a choice, who gets it, a real field for the note in Markdown, and
+  screenshots by path, sent encrypted to each receiver.
+
 - **The palette says what waits for the network**: while Unseenet is not
   connected yet, what needs it says *Waiting for the network* in the palette and,
   chosen, says so instead of failing - ready by itself once connected. What works
