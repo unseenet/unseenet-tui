@@ -94,3 +94,29 @@ class AgeGuideDialog(Dialog):
             self.dismiss(v)
         else:
             self.app.notify("Choose who reads here first", severity="warning")
+
+
+class LanguageDialog(Dialog):
+    """What you write your chat lines and comments in, in a group: a list of languages by
+    their own names. Dismissed with a code, "" for none, or None."""
+
+    def __init__(self, current: list[str], group: list[str], note: str):
+        super().__init__()
+        self.current, self.group, self.note = current, group, note
+
+    def compose(self) -> ComposeResult:
+        """The list, the suggestion and the group's first."""
+        from .compose import language_options
+        with Vertical(classes="dialog"):
+            yield Label("What you write in here", classes="title")
+            yield Label(self.note + ". Remembered for your lines in this group.", classes="hint", markup=False)
+            yield Select(language_options(self.current, self.group), value=self.current[0] if self.current else "",
+                         allow_blank=False, id="lang")
+            with Horizontal(classes="buttons"):
+                yield Button("Cancel", id="cancel")
+                yield Button("Use", variant="primary", id="ok")
+
+    @on(Button.Pressed, "#ok")
+    def _ok(self) -> None:
+        v = self.query_one("#lang", Select).value
+        self.dismiss(v if isinstance(v, str) else "")

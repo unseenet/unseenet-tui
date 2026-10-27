@@ -123,22 +123,19 @@ class TagsMixin:
     async def action_write_language(self) -> None:
         """The language of your chat lines and comments in this group: what the core
         suggests, changed here and remembered for the group (posts ask each time)."""
-        from .dialogs.base import InputDialog
+        from .dialogs.tags import LanguageDialog
         gid = self.current_group
         if not gid or gid.startswith(("contact:", "for-you:", "timeline:", "tag:")):
             self.notify("Open a group first", severity="warning")
             return
         codes, why = self.session.suggest_languages(gid, kind="chat")
-        got = await self.push_screen_wait(InputDialog(
-            "What you write in here", "Language codes for your chat lines and comments here, "
-            "e.g. da or en; empty sends none. Now: " + (", ".join(codes) or "none") + " ("
-            + {"chosen": "your choice", "conversation": "the conversation's", "you": "your last choice here",
-               "group": "the group's", "profile": "your profile's"}.get(why, "nothing")
-            + ").", "da", ", ".join(codes)))
+        got = await self.push_screen_wait(LanguageDialog(
+            codes, self.session.manifest_data(gid).get("languages") or [],
+            "Now: " + {"chosen": "your choice", "conversation": "the conversation's", "you": "your last choice here",
+                       "group": "the group's", "profile": "your profile's"}.get(why, "none")))
         if got is None:
             return
-        from unseenet.core.tags import normalize_languages
-        self.session.choose_chat_language(gid, normalize_languages(got.replace(",", " ").split()))
+        self.session.choose_chat_language(gid, [got] if got else [])
         self.notify("Your lines here: " + (", ".join(self.session.suggest_languages(gid, kind="chat")[0])
                                            or "no language"))
 

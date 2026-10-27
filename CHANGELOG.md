@@ -6,6 +6,10 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+- **Choosing a language from a list** (asked for by the maintainer): the *Language* field and
+  *Write in … here* are lists of the languages by code and own name (the core's list,
+  unseenet#694) - the suggestion and the group's first - and None.
+
 - **The language from your text** (unseenet#686): at a pause in writing, the *Language* field
   takes what the core tells from the text, until you change it yourself; a reply starts
   from the post it answers. *Write in … here* is now a choice for your chat lines and
