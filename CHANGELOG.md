@@ -6,6 +6,10 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+- **PDFs in private posts and reports** (unseenet#637): every inbox takes PDFs now;
+  the report window says *Screenshots or PDFs*, and saving a PDF warns that it can
+  carry harmful content no node could check. PDFs are never shown in the terminal.
+
 - **Team inboxes** (#13, unseenet#341, UN-RFC 0047), as in the graphical client: the
   post that adds you as a reader says *Ctrl+P: Read this inbox with the team*; a
   team inbox is listed under its name; `r` there answers as the team - "Reply as

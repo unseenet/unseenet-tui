@@ -45,7 +45,8 @@ class ReportDialog(Dialog):
                 yield Label("Tell them more (optional)")
                 yield EmojiTextArea("", id="note", soft_wrap=True)
                 yield Label(MARKDOWN_HINT, classes="hint")
-                yield Input(placeholder="Screenshots: paths, separated by commas, e.g. ~/skaerm.png",
+                yield Input(placeholder="Screenshots or PDFs: paths, separated by commas, "
+                                        "e.g. ~/skaerm.png, ~/anmeldelse.pdf",
                             id="files")
                 yield Checkbox("Anonymous - they cannot see who reported it or answer you",
                                value=False, id="anon")
