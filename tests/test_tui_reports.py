@@ -175,3 +175,29 @@ async def test_an_issuer_chooses_a_team_inbox_and_a_report_says_what_to_do(tmp_p
         head, _ = app.article(report)
         assert "Ctrl+P Open reported post" in head
         await pilot.press("q")
+
+
+async def test_the_owner_sets_the_issuers_readers_follow_here(tmp_path, monkeypatch):
+    """UN-RFC 0045 7.5 in Edit group: the keys, separated by spaces; a bad one refused."""
+    from unseenet_tui.dialogs.groups import EditGroupDialog
+    app = await _app(tmp_path, monkeypatch)
+    got = []
+    other = crypto.Identity.generate().key_text
+    data = {"v": 1, "name": "alt.snak", "type": "open", "owner": "ed25519:x", "serial": 1,
+            "report_issuers": [ISSUER.key_text]}
+    async with app.run_test(size=(140, 60)) as pilot:
+        assert await app_ready(pilot, app), stack(app)
+        app.push_screen(EditGroupDialog(data), got.append)
+        assert await wait_for(pilot, lambda: type(app.screen).__name__ == "EditGroupDialog"), stack(app)
+        await pilot.pause(0.2)
+        box = app.screen.query_one("#report_issuers")
+        assert box.value == ISSUER.key_text
+        box.value = "nonsense"
+        await press(pilot, app, "#ok")
+        await pilot.pause(0.2)
+        assert not got                                         # refused, the dialog stays
+        box.value = f"{ISSUER.key_text} {other}"
+        await press(pilot, app, "#ok")
+        assert await wait_for(pilot, lambda: bool(got)), stack(app)
+        assert got[0]["report_issuers"] == [ISSUER.key_text, other]
+        await pilot.press("q")

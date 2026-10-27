@@ -343,6 +343,14 @@ class EditGroupDialog(Dialog):
                 yield Select(choices, value=choice, allow_blank=False, id="files")
             yield Input(value=str(d.get("min_pow", 0)), placeholder="Minimum postage in bits (16-24)",
                         id="min_pow")
+            if d.get("type") != "inbox":                 # UN-RFC 0045 section 7.5
+                yield Label("Spam reports here: issuers your readers follow by default (each "
+                            "reader can turn them off). Keys, separated by spaces:", classes="hint")
+                yield Input(value=" ".join(d.get("report_issuers", [])), id="report_issuers",
+                            placeholder="ed25519:... (empty: none)")
+            else:                                        # a team inbox (UN-RFC 0047)
+                yield Input(value=d.get("team_name", ""), id="team_name", max_length=64,
+                            placeholder="The name replies go out as, e.g. Example (operator)")
             yield Label("Rules - shown to people before their first post:", classes="hint")
             yield TextArea(d.get("rules", ""), id="body", soft_wrap=True)
             yield Checkbox(MARKDOWN_HINT, id="markdown",
@@ -381,6 +389,24 @@ class EditGroupDialog(Dialog):
             choice = self.query_one("#files", Select).value
             if choice != "custom":                       # custom limits are kept as they are
                 changes["attachments"] = FILE_CHOICES[choice]
+        if self.query("#report_issuers"):                # UN-RFC 0045 section 7.5
+            keys = list(dict.fromkeys(self.query_one("#report_issuers", Input).value.replace(",", " ").split()))
+            try:
+                for k in keys:
+                    crypto.key_from_text(k)
+            except crypto.CryptoError:
+                self.app.notify("Spam reports here: keys like ed25519:..., with spaces between",
+                                severity="error")
+                return
+            if len(keys) > 16:
+                self.app.notify("Spam reports here: at most 16 issuers", severity="error")
+                return
+            if keys != list(self.data.get("report_issuers", [])):
+                changes["report_issuers"] = keys or None
+        if self.query("#team_name"):                     # UN-RFC 0047 section 3
+            name = self.query_one("#team_name", Input).value.strip()
+            if name != self.data.get("team_name", ""):
+                changes["team_name"] = name or None
         if self.query("#reactions"):                     # UN-RFC 0048 section 4.1
             choice = self.query_one("#reactions", Select).value
             if choice == "custom":
