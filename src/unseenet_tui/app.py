@@ -392,6 +392,10 @@ class UnseenetApp(GroupsMixin, ChatMixin, ActionsMixin, FeedsMixin, AddressesMix
         elif isinstance(event, ev.Refreshed) or (isinstance(event, ev.GroupUpdated) and event.new):
             if isinstance(event, ev.Refreshed):                  # the network reached, or not
                 self._connected = not event.error
+                slow = tuple(getattr(event, "slow", ()))        # a slow node answered (#70):
+                if getattr(self, "_slow", ()) and not slow:     # its groups into the list
+                    self.refresh_groups()
+                self._slow = slow
             self._notify_soon()                                  # #4: anything for you?
 
     # --- notifications (#4): what is new comes from the core, telling is ours ---
