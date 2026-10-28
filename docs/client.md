@@ -266,7 +266,17 @@ the group has some.
 
 Owners change the title, description, rules, view and delivery with
 **Edit group** in the command palette (or the button in the ++question-mark++
-window). Every node gets the new version.
+window). Every node gets the new version. **Help** (or F1) in Edit group says,
+for each setting, what it does, whom it affects and what changing it later
+does - the same words as in the graphical client.
+
+An open, moderated or channel group can have **its own emoji**, up to 16 small
+pictures with a name: **The group's emoji** in the command palette lets the
+owner add one from a picture file (it is made 32 by 32 and saved again without
+metadata), rename, describe or remove them. Write `:marsvin:` in the group, and
+graphical clients show its picture; this client shows `:marsvin:` as written.
+The pictures are public, and only nodes that turn them on carry them
+([UN-RFC 0056](https://unseenet.org/spec/un-rfc-0056/)).
 
 Rules can be [Markdown](#formatting-markdown-and-emoji) - tick *Markdown*
 under the text - so a charter can have headings such as "Allowed" and

@@ -320,6 +320,49 @@ def settings_help_text(keys: list[str]) -> str | None:
     return "\n\n".join(parts)
 
 
+class GroupEmojiDialog(Dialog):
+    """The group's own emoji (#10, as unseenet-gui#67, UN-RFC 0056): owner - each by its
+    :name: and description, with Add, Rename, Describe and Remove. A terminal shows them
+    as :name:; graphical clients show the pictures. Dismissed with ``(action, name)``."""
+
+    def __init__(self, emoji: dict, max_: int = 16, warning: str = ""):
+        super().__init__()
+        self.emoji, self.max, self.warning = emoji, max_, warning
+        self.names = sorted(emoji)
+
+    def compose(self) -> ComposeResult:
+        """The list, how many of the 16, what publishing means, and the actions."""
+        with Vertical(classes="dialog"):
+            yield Label("The group's emoji", classes="title")
+            yield Static(f"Write :name: in this group, and graphical clients show its picture. "
+                         f"{len(self.names)} of {self.max} used.", classes="hint", markup=False)
+            if self.names:
+                yield OptionList(*[Option(f":{n}:  {self.emoji[n].get('alt') or '(no description)'}", id=n)
+                                   for n in self.names], id="gemoji")
+            else:
+                yield Static("No emoji yet.", markup=False)
+                if self.warning:
+                    yield Static(self.warning, classes="hint", markup=False)
+            with Horizontal(classes="buttons"):
+                yield Button("Close", id="cancel")
+                if self.names:
+                    yield Button("Remove", variant="error", id="remove")
+                    yield Button("Rename", id="rename")
+                    yield Button("Describe", id="describe")
+                if len(self.names) < self.max:
+                    yield Button("Add…", variant="primary", id="add")
+
+    def _chosen(self) -> str | None:
+        if not self.names:
+            return None
+        at = self.query_one("#gemoji", OptionList).highlighted
+        return self.names[at] if at is not None else self.names[0]
+
+    @on(Button.Pressed, "#add, #remove, #rename, #describe")
+    def _act(self, event: Button.Pressed) -> None:
+        self.dismiss((event.button.id, None if event.button.id == "add" else self._chosen()))
+
+
 class SettingsHelpDialog(Dialog):
     """What the settings of Edit group do (#83, as unseenet-gui#178), to read and close."""
 
