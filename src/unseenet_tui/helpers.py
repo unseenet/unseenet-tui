@@ -61,6 +61,7 @@ REFRESH_SECONDS = 60           # a fallback; new posts normally arrive by push (
 REPO_URL, DOCS_URL = about.REPO_URL, about.DOCS_URL
 ACROSS = (FOR_YOU, TIMELINE)             # views across groups: act in the post's own group
 FEED_MARK = "≡"                          # the timeline in the group list (UN-RFC 0034)
+TIMELINE_MARK = "•"                      # a group whose entries come into it (0034 6.2)
 START_FEED = ("action", "start-feed")    # "Start your feed" at the top of the group list (#495)
 START_SITE = ("action", "start-site")    # ... and "Start your site", the same way
 SITE_MARK = "▤"                          # your site in the group list (UN-RFC 0035)
@@ -158,7 +159,7 @@ ICONS = {"threads": "≡", "chat": "»", "data": "¤", "moderated": "√", "chan
 _ONION = re.compile(r"^[a-z2-7]{56}\.onion(:\d{1,5})?$")   # what an n= hint may be
 PIN_MARK = "[P]"                 # a pinned post (UN-RFC 0033 section 7.2): no emoji in WGL4
 ICON_LEGEND = ("≡ posts  » chat  ¤ data for programs  √ moderated  ► channel  ∩ closed  "
-               "@ inbox  ⌂ local (one node)  · not known yet")
+               "@ inbox  ⌂ local (one node)  · not known yet  • in your timeline")
 
 
 ORIGIN_MARK = "←"               # first published elsewhere (UN-RFC 0049); in WGL4

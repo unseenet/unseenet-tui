@@ -56,7 +56,7 @@ from unseenet.client.session import (MAX_SIG_LINES, SIG_SEPARATOR, GroupInfo, Me
 from unseenet.client.threads import CONTACT, FOR_YOU, TIMELINE   # the session's pseudo groups (#139)
 from unseenet.client.runtime import ClientRuntime
 from unseenet.client import events as ev
-from .helpers import REFRESH_SECONDS, REPO_URL, DOCS_URL, ACROSS, FEED_MARK, START_FEED, START_SITE, SITE_MARK, REPLY_MARK, MENTION_MARK, for_you_marks, for_you_news, sess_default_pow, group_name_problem, GROUP_KINDS, known_node_details, node_details, ICONS, _ONION, PIN_MARK, ICON_LEGEND, ORIGIN_MARK, NETWORK_NAMES, network_name, origin_text, edited_when, group_icons, is_personal_inbox, by_hierarchy, CSS  # noqa: F401
+from .helpers import REFRESH_SECONDS, REPO_URL, DOCS_URL, ACROSS, FEED_MARK, TIMELINE_MARK, START_FEED, START_SITE, SITE_MARK, REPLY_MARK, MENTION_MARK, for_you_marks, for_you_news, sess_default_pow, group_name_problem, GROUP_KINDS, known_node_details, node_details, ICONS, _ONION, PIN_MARK, ICON_LEGEND, ORIGIN_MARK, NETWORK_NAMES, network_name, origin_text, edited_when, group_icons, is_personal_inbox, by_hierarchy, CSS  # noqa: F401
 from .dialogs.base import Dialog, InputDialog, InfoDialog, ConfirmDialog, KeyListDialog  # noqa: F401
 from .dialogs.setup import UnlockDialog, ChangePassphraseDialog, OTHER_NODE, SetupDialog, BridgesDialog  # noqa: F401
 from .dialogs.compose import ComposeDialog, PageDialog, PreviewDialog, SignatureDialog, PinDialog, ReactDialog, reactions_text  # noqa: F401
@@ -256,6 +256,28 @@ class ChatMixin:
         self.notify("You write Markdown: *emphasis*, **strong**, `code`, lists, :tada:" if on
                     else "You write plain text: it is sent and shown exactly as you type it")
 
+    def action_toggle_timeline(self) -> None:
+        """Put the group shown into your timeline or take it out (UN-RFC 0034 section 6.2):
+        a setting on what you follow, apart from the view you read it in."""
+        gid = self.current_group
+        if not gid or gid not in self.session.data["subscribed"]:
+            self.notify("Follow the group first", severity="warning")
+            return
+        if not self.session.timeline_possible(gid):
+            self.notify("Chats and inboxes are never in the timeline", severity="warning")
+            return
+        try:
+            on = self.session.set_in_timeline(gid, not self.session.in_timeline(gid))
+        except SessionError as exc:
+            self.notify(str(exc), severity="error")
+            return
+        name = self.session.group_label(gid)
+        self.notify(f"{name} is in your timeline now: each new "
+                    f"{'entry' if self.session.view_of(gid) == 'feed' else 'thread'}, answers under it"
+                    if on else f"{name} is no longer in your timeline")
+        self.refresh_groups()
+        self._render_title()
+
     def action_toggle_view(self) -> None:
         """Show the group as threads or as a chat, for you."""
         gid = self.current_group
@@ -447,9 +469,9 @@ class ChatMixin:
                 "newest first  ·  the authors' tags, the groups', labellers' topics")
             return
         if gid == TIMELINE:
-            n = len(self.session.feeds_followed())
+            n = len(self.session.timeline_groups())
             self.query_one("#threads-title", Static).update(
-                f"{FEED_MARK} Timeline  ·  {n} feed{'s' if n != 1 else ''} you follow, newest first, "
+                f"{FEED_MARK} Timeline  ·  {n} group{'s' if n != 1 else ''} in it, newest first, "
                 "nothing reordered  ·  r comments in the post's own feed")
             return
         if gid.startswith(CONTACT):
@@ -468,6 +490,8 @@ class ChatMixin:
         name = self._group_label(g).strip() if g else gid
         fast = "  ·  fast delivery" if self.session.manifest_data(gid).get("low_latency") else ""
         rules = "  ·  ? rules" if self.session.manifest_data(gid).get("rules") else ""
+        if self.session.in_timeline(gid):                   # UN-RFC 0034 section 6.2
+            fast += f"  ·  {TIMELINE_MARK} in your timeline"
         team = self.team_of(gid)                            # a team inbox you read (0047)
         if team:
             rules += ("  ·  you reply as the team" if team["reader"] else
