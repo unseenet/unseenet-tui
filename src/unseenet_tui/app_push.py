@@ -61,7 +61,7 @@ from .dialogs.base import Dialog, InputDialog, InfoDialog, ConfirmDialog, KeyLis
 from .dialogs.setup import UnlockDialog, ChangePassphraseDialog, OTHER_NODE, SetupDialog, BridgesDialog  # noqa: F401
 from .dialogs.compose import ComposeDialog, PageDialog, PreviewDialog, SignatureDialog, PinDialog, ReactDialog, reactions_text  # noqa: F401
 from .dialogs.people import ContactsDialog, ChatsDialog, PersonPicker, NamesDialog, PROFILE_WARNING, identicon_text, MARKDOWN_HINT, manifest_text, profiles_clean, writes_markdown, ProfileDialog, EditProfileDialog  # noqa: F401
-from .dialogs.groups import DELIVERY_CHOICES, DELIVERY, SITE_CHOICE, KINDS_CHOICES, KINDS, REACTIONS_CHOICES, reactions_choice, COMMENTS_CHOICES, FILES_CHOICES, FILES_GROUP_TYPES, reactions_label, comments_label, GROUP_NAME_HELP, CreateGroupDialog, GroupInfoDialog, EditGroupDialog, BrowseTree, NO_SELECT_ON_FOCUS, BrowseDialog  # noqa: F401
+from .dialogs.groups import DELIVERY_CHOICES, DELIVERY, SITE_CHOICE, KINDS_CHOICES, KINDS, REACTIONS_CHOICES, reactions_choice, COMMENTS_CHOICES, FILES_CHOICES, FILES_GROUP_TYPES, reactions_label, comments_label, GROUP_NAME_HELP, CreateGroupDialog, GroupInfoDialog, EditGroupDialog, BrowseTree, NO_SELECT_ON_FOCUS, BrowseDialog, GroupEmojiDialog  # noqa: F401
 from .dialogs.moderation import ReportDialog, ModerationDialog  # noqa: F401
 from .dialogs.nodes import NodesDialog, AddNodeDialog, NodeInfoDialog  # noqa: F401
 from .screens import ChatBox, attachments_text, save_name, ReadScreen, AboutDialog  # noqa: F401
@@ -76,7 +76,7 @@ NEEDS_NETWORK = frozenset({
     "Share your profile", "Take back your shared profile", "Open address", "Browse groups",
     "Create group", "Invite to closed group", "Join group or open an address", "Profile of this author (u)",
     "Your profile", "Names", "Copy to another device", "Get identity from another device", "Edit group",
-    "Ask for a name under someone's name", "Give a name under yours", "Name requests", "Names you gave",
+    "Ask for a name under someone's name", "The group's emoji", "Give a name under yours", "Name requests", "Names you gave",
     "Name your posts show", "Report post", "Open reported post", "Moderation queue", "Make moderator",
     "Make poster", "Moderators and posters", "Members of closed group", "Ban from group",
     "Block in hierarchy", "Banned from group", "Withdraw (delete) post", "Pin or unpin post",
@@ -265,6 +265,8 @@ class PushMixin:
              self.action_toggle_view),
             ("Edit group", "Owner: change title, description, rules, view and delivery",
              self.action_edit_group),
+            ("The group's emoji", "Owner: the group's own emoji, written :name: (UN-RFC 0056)",
+             self.action_group_emoji),
             ("Add contact", "Give the selected author, or any key, a name of your own  [a]",
              self.action_add_contact),
             ("Ignore this person", "Hide everything the selected post's author writes - only "
@@ -422,6 +424,81 @@ class PushMixin:
         self.session.mark_rules_seen(g.group_id)
         self.notify("Group updated")
         self._render_threads()
+
+    @work(group="dialog", exit_on_error=False)
+    async def action_group_emoji(self) -> None:
+        """The owner's own emoji for the group shown (#10, UN-RFC 0056): add one from a
+        picture file, rename, describe or remove - each publishes the whole set."""
+        g, s = self._need_group(), self.session
+        if not g:
+            return
+        if not hasattr(s, "set_group_emoji"):
+            self.notify("Group emoji need a newer Unseenet core", severity="warning")
+            return
+        if not s.group_entry(g.group_id).get("owner"):
+            self.notify("Only the group's owner can give it emoji", severity="warning")
+            return
+        if not s.group_emoji_possible(g.group_id):
+            self.notify("This group cannot have its own emoji (closed, local or personal)",
+                        severity="warning")
+            return
+        from unseenet.core import group_emoji as ge
+        self.set_status("Reading the group's emoji ...")
+        emoji = dict(await s.fetch_group_emoji(g.group_id))
+        self.set_status("")
+        while True:
+            got = await self.push_screen_wait(GroupEmojiDialog(emoji, ge.MAX_EMOJI, ge.WARNING))
+            if not got:
+                return
+            what, name = got
+            new = dict(emoji)
+            try:
+                if what == "add":
+                    path = await self.push_screen_wait(InputDialog(
+                        "A picture for the new emoji", "Any picture: it is made 32 by 32 and "
+                        "saved again without metadata.", "~/marsvin.png"))
+                    if not path:
+                        continue
+                    octets = Path(path.strip()).expanduser().read_bytes()
+                    code = await self.push_screen_wait(InputDialog(
+                        "Its name", "Written :name: - a-z, 0-9, _, + and -; not a standard emoji.",
+                        "marsvin", value=Path(path).stem.lower()[:32]))
+                    if not code:
+                        continue
+                    alt = await self.push_screen_wait(InputDialog(
+                        "A description", "For people who cannot see it.", "A guinea pig"))
+                    if not emoji and not await self.push_screen_wait(ConfirmDialog(
+                            "Publish the group's first emoji?", ge.WARNING, "Publish")):
+                        continue
+                    new[ge.check_name(code.strip(":").strip())] = s.make_group_emoji(octets, alt or "")
+                elif what == "rename" and name:
+                    to = await self.push_screen_wait(InputDialog(
+                        f"Rename :{name}:", "", "new name", value=name))
+                    if not to or to == name:
+                        continue
+                    to = ge.check_name(to.strip(":").strip())
+                    new = {to if k == name else k: v for k, v in emoji.items()}
+                elif what == "describe" and name:
+                    alt = await self.push_screen_wait(InputDialog(
+                        f"Describe :{name}:", "For people who cannot see it.", "",
+                        value=emoji[name].get("alt", "")))
+                    if alt is None:
+                        continue
+                    pic = {k: v for k, v in emoji[name].items() if k != "alt"}
+                    if alt.strip():
+                        pic["alt"] = alt.strip()[:ge.MAX_ALT]
+                    new[name] = pic
+                elif what == "remove" and name:
+                    new.pop(name, None)
+                else:
+                    continue
+                self.set_status("Publishing the group's emoji ...")
+                emoji = dict(await s.set_group_emoji(g.group_id, new))
+                self.set_status("")
+                self.notify("The group's emoji are published")
+            except (OSError, ge.EmojiError, SessionError, NNTPError, ConnectionError) as exc:
+                self.set_status("")
+                self.notify(f"Not changed: {exc}", severity="error", timeout=8)
 
     @work(group="dialog", exit_on_error=False)
     async def action_ignore(self) -> None:
