@@ -263,6 +263,34 @@ class GroupsMixin:
                     nodes[start] = tree.root.add_leaf(
                         Text(f"{mark} Start your {kind}", style="dim"), data=start)
         self._for_you_seen = getattr(self, "_for_you_seen", None) or for_you
+        # other people's feeds and sites, by person (#76, unseenet#706): under "People
+        # you follow", feed and site together under the person's name, not as hierarchies
+        by_id = {g.group_id: g for g in groups}
+        people = (self.session.followed_people_groups(list(by_id))
+                  if hasattr(self.session, "followed_people_groups") else [])
+        if people:
+            on_top += [by_id[gid] for p in people for gid in p["groups"].values() if gid in by_id]
+            unread_all = sum(self.session.unread_count(gid) for p in people for gid in p["groups"].values())
+            ptext = Text("People you follow" + (f" ({unread_all})" if unread_all else ""))
+            pnode = tree.root.add(ptext, data=("folder", "people:"),
+                                  expand=searching or "people:" in was_open or "people:" not in known)
+            nodes[("folder", "people:")] = pnode
+            for p in people:
+                items = [(kind, by_id[gid]) for kind, gid in p["groups"].items() if gid in by_id]
+                if len(items) == 1:                      # one thing of theirs: one row
+                    kind, g = items[0]
+                    unread = self.session.unread_count(g.group_id)
+                    text = Text(f"{FEED_MARK if kind == 'feed' else SITE_MARK} {p['label']}"
+                                + (f" ({unread})" if unread else ""), style="bold" if unread else "")
+                    nodes[g.group_id] = pnode.add_leaf(text, data=g.group_id)
+                    continue
+                key = "person:" + p["fingerprint"]
+                unread = sum(self.session.unread_count(g.group_id) for _, g in items)
+                per = pnode.add(Text(p["label"] + (f" ({unread})" if unread else ""), style="bold" if unread else ""),
+                                data=("folder", key), expand=searching or key in was_open)
+                nodes[("folder", key)] = per
+                for kind, g in items:
+                    nodes[g.group_id] = per.add_leaf(label(g, kind), data=g.group_id)
         for top, items in by_hierarchy([g for g in groups if g not in on_top]):
             if not top:                          # a hierarchy of one: no folder, full name
                 for g in items:
