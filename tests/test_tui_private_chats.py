@@ -47,8 +47,13 @@ async def test_tui_private_chats_item_and_list(tmp_path, monkeypatch):
         assert await wait_for(pilot, lambda: item() is not None
                               and "Private chats" in str(item().label), 300), stack(app)
         assert not any(n.data == ("folder", "Chats") for n in tree.root.children)   # no folder
-        assert "(1)" in str(item().label)                  # her line is unread
-        assert [c.data for c in item().children] == [CONTACT + key]
+
+        def unread_under():                                # her line is unread, once fetched
+            if "(1)" not in str(item().label):
+                app.refresh_groups()
+                return False
+            return [c.data for c in item().children] == [CONTACT + key]
+        assert await wait_for(pilot, unread_under, 300), stack(app)
         app.action_chats()                                 # the whole list
         assert await wait_for(pilot, lambda: isinstance(app.screen, ChatsDialog), 200)
         assert [c[0] for c in app.screen.chats] == [key]
