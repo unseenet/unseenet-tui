@@ -122,6 +122,9 @@ class PushMixin:
     def get_system_commands(self, screen):
         """Everything the keys do is also in the command palette (Ctrl+P)."""
         yield from super().get_system_commands(screen)
+        if isinstance(screen, ComposeDialog):        # while writing (UN-RFC 0031 3.2.1, #52)
+            yield SystemCommand("Insert read more", "Where a feed cuts this post for \"... more\": "
+                                "a line of three dots at the cursor  [Ctrl+R]", screen.action_read_more)
         yield SystemCommand("About Unseenet", "The client, the project, source and documentation  [F1]",
                             self.action_about)
         yield SystemCommand("Tor bridges", "Connect through bridges where Tor is blocked",

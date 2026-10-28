@@ -6,6 +6,10 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+- **Read more** (#52, UN-RFC 0031 3.2.1): Ctrl+R while writing a post, or Ctrl+P *Insert read
+  more*, puts the line of three dots where a feed cuts the post for "… more"; a post shown
+  whole leaves the line out (the core's rendering).
+
 - **A heading that is the group** (as the GUI, #35): `unseenet` with `.chat` and `.help` under
   it is one row that opens the group, and Space folds what is under it; headings lose `.*`.
   Enter on a plain folder folds it, as before.
