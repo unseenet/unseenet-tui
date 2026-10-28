@@ -96,7 +96,8 @@ class ContactsDialog(Dialog):
                     yield Button("Remove", variant="error", id="remove")
                     yield Button("Rename", id="rename")
                     yield Button("Write a post", id="post")
-                    yield Button("Chat", variant="primary", id="chat")
+                    yield Button("Profile", id="profile")     # their profile, feed, site
+                    yield Button("Chat", variant="primary", id="open-chat")   # not #chat: the chat pane's id
 
     def on_mount(self) -> None:
         """The focus on the first contact, or on Add."""
@@ -158,10 +159,10 @@ class ContactsDialog(Dialog):
         if event.option.id:
             self.dismiss(("chat", event.option.id))
 
-    @on(Button.Pressed, "#chat, #post, #rename, #remove")
+    @on(Button.Pressed, "#open-chat, #post, #rename, #remove, #profile")
     def _act(self, event: Button.Pressed) -> None:
         if (key := self._chosen()):
-            self.dismiss((event.button.id, key))
+            self.dismiss((event.button.id.removeprefix("open-"), key))
 
 
 class PersonPicker(Dialog):
@@ -290,7 +291,7 @@ class ChatsDialog(Dialog):
                 yield Button("Contacts", id="contacts")
                 yield Button("+ New chat", id="new")
                 if self.chats:
-                    yield Button("Chat", variant="primary", id="chat")
+                    yield Button("Chat", variant="primary", id="open-chat")   # not #chat: the chat pane's id
 
     def on_mount(self) -> None:
         """The focus in the filter, on the first chat."""
@@ -356,7 +357,7 @@ class ChatsDialog(Dialog):
         if event.option.id:
             self.dismiss(("chat", event.option.id))
 
-    @on(Button.Pressed, "#chat")
+    @on(Button.Pressed, "#open-chat")
     def _chat(self) -> None:
         if (key := self._chosen()):
             self.dismiss(("chat", key))
@@ -505,6 +506,11 @@ class ProfileDialog(Dialog):
                                  id="my-site")
                 else:
                     yield Button("Following" if self.following else "Follow", id="follow")
+                    # from the profile too (not #chat: the chat pane's id, hidden by the CSS)
+                    yield Button("Chat", id="with-chat")
+                    yield Button("Write a post", id="with-post")
+                    if self.contact:
+                        yield Button("Rename", id="with-rename")
                     yield Button("Remove contact" if self.contact else "Add contact", id="contact")
                     if self.theirs.get("feed"):
                         yield Button("Their feed", id="their-feed")
@@ -539,6 +545,10 @@ class ProfileDialog(Dialog):
     @on(Button.Pressed, "#their-site")
     def _their_site(self) -> None:
         self.dismiss("their-site")
+
+    @on(Button.Pressed, "#with-chat, #with-post, #with-rename")
+    def _with_them(self, event: Button.Pressed) -> None:
+        self.dismiss(event.button.id.removeprefix("with-"))
 
 
 class EditProfileDialog(Dialog):
