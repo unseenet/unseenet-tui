@@ -342,7 +342,7 @@ class PagesMixin:
         try:
             gid = await self.session.create_group(
                 result["name"], result["gtype"], result["title"], local=result["local"],
-                rules=result["rules"], rules_type=result.get("rules_type"),
+                charter=result["charter"], charter_type=result.get("charter_type"),
                 view=result["view"], low_latency=result["low_latency"],
                 kinds=result.get("kinds"), comments=result.get("comments"),
                 extra=({"attachments": result["attachments"]} if result.get("attachments")

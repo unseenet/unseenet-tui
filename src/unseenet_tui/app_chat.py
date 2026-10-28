@@ -490,22 +490,22 @@ class ChatMixin:
                 "open": "open", "inbox": "inbox - only the owner can read"}.get(g.type if g else None, "")
         name = self._group_label(g).strip() if g else gid
         fast = "  ·  fast delivery" if self.session.manifest_data(gid).get("low_latency") else ""
-        rules = "  ·  ? rules" if self.session.manifest_data(gid).get("rules") else ""
+        extra = "  ·  ? charter" if self.session.manifest_data(gid).get("charter") else ""
         if self.session.in_timeline(gid):                   # UN-RFC 0034 section 6.2
             fast += f"  ·  {TIMELINE_MARK} in your timeline"
         team = self.team_of(gid)                            # a team inbox you read (0047)
         if team:
-            rules += ("  ·  you reply as the team" if team["reader"] else
+            extra += ("  ·  you reply as the team" if team["reader"] else
                       "  ·  the owner removed you as a reader (Ctrl+P: Forget this team inbox)")
         reported = sum(n for _, _, n in self.session.hidden_by_reports(gid))
-        rules += f"  ·  {reported} hidden by reports (Ctrl+P: Show anyway)" if reported else ""
+        extra += f"  ·  {reported} hidden by reports (Ctrl+P: Show anyway)" if reported else ""
         hidden = self.session.hidden_by_blocks(gid)
         blocked = ("  ·  " + "; ".join(f"{n} hidden: blocked in {h}.*: {r}" for h, r, n in hidden[:2])
                    if hidden else "")
         paused = ("  ·  [b]showing all - your rules are paused[/b] (Ctrl+P: Show all again)"
                   if getattr(self, "_show_all", None) == gid else "")
         self.query_one("#threads-title", Static).update(
-            f"{name}  ·  {kind}{fast}  ·  {total} posts, {unread} unread{rules}{blocked}{paused}")
+            f"{name}  ·  {kind}{fast}  ·  {total} posts, {unread} unread{extra}{blocked}{paused}")
 
     def article(self, msg: Message, cut: bool = False) -> tuple[str, Text]:
         """The header (markup) and the body of a message, as the reader shows them.

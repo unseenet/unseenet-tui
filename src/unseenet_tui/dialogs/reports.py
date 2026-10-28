@@ -49,7 +49,7 @@ class ReportDialog(Dialog):
                             id="files")
                 yield Checkbox("Anonymous - they cannot see who reported it or answer you",
                                value=False, id="anon")
-                yield Label("For posts that break the group's rules or the law. In an emergency, "
+                yield Label("For posts that go against the group's charter or the law. In an emergency, "
                             "contact the police: nobody on Unseenet can see who anyone is. "
                             "Screenshots are saved again without where and when they were taken.",
                             classes="hint")

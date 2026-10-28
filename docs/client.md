@@ -117,7 +117,7 @@ else is in the command palette, ++ctrl+p++:
 | ++a++ | Add the selected post's author as a contact |
 | ++shift+d++ | Withdraw the selected post (yours, or in a group you own or moderate) |
 | ++v++ | Switch between chat and threads for the current group |
-| ++question-mark++ | About this group: its rules, type, owner and node |
+| ++question-mark++ | About this group: its charter, type, owner and node |
 | `!` | Go to a group the selected post names, such as `!dk.snak` |
 | ++f1++ | About Unseenet, with links to the source and these pages |
 | ++ctrl+p++ | Command palette: everything above, by name, plus what is used less often, like creating a group or inviting someone to a closed group |
@@ -255,16 +255,20 @@ it. Chat groups are never in it.
 
 ![The timeline: feeds and a discussion group, newest first](img/client-timeline.svg)
 
-## Group rules
+## A group's charter
 
-A group's owner can write **rules** - the group's charter. They are part
-of the group's signed settings, so everyone sees the same rules and only
-the owner can change them. The client shows them the first time you open
-the group, and again whenever the owner changes them. Press
-++question-mark++ to read them at any time; "? rules" in the title means
-the group has some.
+A group's owner can write its **charter**: what the group is for and what
+it asks of those who write there. It is part of the group's signed
+settings, so everyone sees the same charter and only the owner can change
+it. The client shows it the first time you open the group, and again
+whenever the owner changes it. Press ++question-mark++ to read it at any
+time; "? charter" in the title means the group has one.
 
-Owners change the title, description, rules, view and delivery with
+A charter is not enforced by any machine - moderators and the owner act
+on it. That is the difference from [your own rules](https://unseenet.org/guide/rules/), which
+are yours alone and which the client does apply to what you see.
+
+Owners change the title, description, charter, view and delivery with
 **Edit group** in the command palette (or the button in the ++question-mark++
 window). Every node gets the new version. **Help** (or F1) in Edit group says,
 for each setting, what it does, whom it affects and what changing it later
@@ -278,14 +282,14 @@ graphical clients show its picture; this client shows `:marsvin:` as written.
 The pictures are public, and only nodes that turn them on carry them
 ([UN-RFC 0056](https://unseenet.org/spec/un-rfc-0056/)).
 
-Rules can be [Markdown](#formatting-markdown-and-emoji) - tick *Markdown*
-under the text - so a charter can have headings such as "Allowed" and
-"Not allowed", numbered lists and links. Pictures are not possible in
-rules: they live in the group's signed settings, which cannot carry
-attachments. Older clients show Markdown rules as the text you typed,
+A charter can be [Markdown](#formatting-markdown-and-emoji) - tick *Markdown*
+under the text - so it can have headings such as "Welcome" and
+"Not welcome", numbered lists and links. Pictures are not possible in
+a charter: it lives in the group's signed settings, which cannot carry
+attachments. Older clients show a Markdown charter as the text you typed,
 which reads fine too ([UN-RFC 0014](https://unseenet.org/spec/un-rfc-0014/) section 2.1).
 
-![About a group (?): its owner, type, postage, how long posts are kept, and its rules](img/client-group-info.svg)
+![About a group (?): its owner, type, postage, how long posts are kept, and its charter](img/client-group-info.svg)
 
 ## Leaving and removing groups
 
@@ -356,7 +360,7 @@ for real crimes, contact the police.
 
 ## Reporting a post
 
-If a post breaks the group's rules or the law - spam, threats, abuse - select
+If a post goes against the group's charter or the law - spam, threats, abuse - select
 it and choose **Report post** in the command palette (in a chat, where no line
 is selected, it lets you choose the line). The report window shows the post;
 choose what is wrong, tick who should get it - the group's owner and
@@ -451,7 +455,7 @@ shows the list, and shows someone again.
 ## Pinned posts
 
 The owner and moderators of a group can pin posts at the top of it, for
-example a welcome post or the rules ([UN-RFC 0033](https://unseenet.org/spec/un-rfc-0033/)).
+example a welcome post or the charter ([UN-RFC 0033](https://unseenet.org/spec/un-rfc-0033/)).
 Nodes keep a pinned post beyond the group's window until it is unpinned.
 
 In the threads view, the pins are in a **Pinned** section above the
@@ -917,7 +921,7 @@ unseenet --help
 | `whoami` | List your identities and their keys |
 | `node-add ADDRESS` | Add a node (`xyz.onion` or `host:port`) |
 | `groups [PATTERN] [--mine]` | List groups on the node; `--mine` only those your identities own |
-| `group-create NAME [--type ...] [settings]` | Create a group you own: `--view feed\|pages\|chat`, `--poster KEY`, `--moderator KEY`, `--comments open`, `--attachments MAX_SIZE [--types image/*]`, `--max-pins`, `--max-pages`, `--home`, `--rules FILE` and more (`group-create --help`) |
+| `group-create NAME [--type ...] [settings]` | Create a group you own: `--view feed\|pages\|chat`, `--poster KEY`, `--moderator KEY`, `--comments open`, `--attachments MAX_SIZE [--types image/*]`, `--max-pins`, `--max-pages`, `--home`, `--charter FILE` and more (`group-create --help`) |
 | `group-edit GROUP_ID [changes]` | Change a group you own, in one new manifest: `--add-poster`/`--remove-poster`, `--add-moderator`/`--remove-moderator`, `--ban KEY [--reason TEXT]`/`--unban`, and every setting of `group-create` |
 | `group-show GROUP_ID` | Show the group's current manifest |
 | `group-remove GROUP_ID ... [--reason TEXT] [--yes]` | Remove groups you own from the whole network ([final](#leaving-and-removing-groups)) |

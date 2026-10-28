@@ -128,7 +128,7 @@ GROUP_NAME_HELP = ("Lowercase letters, digits and - _ +, parts separated by dots
 
 class CreateGroupDialog(Dialog):
     def compose(self) -> ComposeResult:
-        """Creating a group: name, type, view, kinds, comments, files, reactions and rules."""
+        """Creating a group: name, type, view, kinds, comments, files, reactions and charter."""
         with Vertical(classes="dialog"):
             yield Label("Create a group", classes="title")
             yield Input(placeholder="Name, e.g. dk.snak", id="name")
@@ -149,16 +149,17 @@ class CreateGroupDialog(Dialog):
             yield Select(COMMENTS_CHOICES, value="none", allow_blank=False, id="comments")
             yield Select(FILES_CHOICES, value="none", allow_blank=False, id="files")
             yield Input(placeholder="Title (optional; keep it vague for closed groups)", id="title")
-            yield Label("Rules (optional) - shown to people before they post:", classes="hint")
-            yield TextArea("", id="rules", soft_wrap=True)
+            yield Label("Charter (optional) - what the group is for and asks of those who write; "
+                        "shown to people before they post:", classes="hint")
+            yield TextArea("", id="charter", soft_wrap=True)
             yield Checkbox(MARKDOWN_HINT, id="markdown", value=writes_markdown(self.app, None, ""))
             with Horizontal(classes="buttons"):
                 yield Button("Cancel", id="cancel")
                 yield Button("Create", variant="primary", id="ok")
 
     def on_mount(self) -> None:
-        """Size the rules field, and the focus in the name."""
-        self.query_one("#rules", TextArea).styles.height = 6
+        """Size the charter field, and the focus in the name."""
+        self.query_one("#charter", TextArea).styles.height = 6
         self.query_one("#comments", Select).display = False
 
     @on(Select.Changed, "#type")
@@ -210,10 +211,10 @@ class CreateGroupDialog(Dialog):
         self.dismiss({"name": name, "gtype": self.query_one("#type", Select).value,
                       "title": self.query_one("#title", Input).value.strip(),
                       "local": self.query_one("#where", Select).value == "local",
-                      "rules": self.query_one("#rules", TextArea).text.strip(),
-                      "rules_type": markup.text_type_for(
+                      "charter": self.query_one("#charter", TextArea).text.strip(),
+                      "charter_type": markup.text_type_for(
                           self.query_one("#markdown", Checkbox).value,
-                          self.query_one("#rules", TextArea).text),
+                          self.query_one("#charter", TextArea).text),
                       "view": view, "low_latency": fast,
                       "kinds": KINDS[self.query_one("#kinds", Select).value],
                       "comments": self.query_one("#comments", Select).value,
@@ -223,7 +224,7 @@ class CreateGroupDialog(Dialog):
 
 
 class GroupInfoDialog(Dialog):
-    """Title, type, owner and rules of a group (UN-RFC 0014)."""
+    """Title, type, owner and charter of a group (UN-RFC 0014)."""
 
     def __init__(self, gid: str, data: dict, owner_label: str, can_edit: bool, first_time: bool,
                  node: str = ""):
@@ -232,7 +233,7 @@ class GroupInfoDialog(Dialog):
         self.can_edit, self.first_time = can_edit, first_time
 
     def compose(self) -> ComposeResult:
-        """A group's info: its address, owner, type, view, rules, retention, node and
+        """A group's info: its address, owner, type, view, charter, retention, node and
         settings."""
         d = self.data
         kinds = GROUP_KINDS
@@ -279,23 +280,24 @@ class GroupInfoDialog(Dialog):
                       "line) - it goes to the owner and moderators, the hierarchy's maintainer, your "
                       "node's operator and the spam report issuers you follow."]
         with Vertical(classes="dialog"):
-            yield Label(("Before you post - the rules of " if self.first_time and d.get("rules")
+            yield Label(("Before you post - the charter of " if self.first_time and d.get("charter")
                          else "About ") + (d.get("title") or self.gid.rpartition("@")[0]),
                         classes="title", markup=False)
             yield Static("\n".join(lines), markup=False)
-            yield Label("Rules" if d.get("rules") else "This group has no rules.", classes="title")
-            if d.get("rules"):
-                with VerticalScroll(id="rules-view"):
-                    yield Static(manifest_text(d["rules"], d.get("rules_type")), markup=False)
+            yield Label("Charter" if d.get("charter") else "This group has no charter.",
+                        classes="title")
+            if d.get("charter"):
+                with VerticalScroll(id="charter-view"):
+                    yield Static(manifest_text(d["charter"], d.get("charter_type")), markup=False)
             with Horizontal(classes="buttons"):
                 if self.can_edit:
                     yield Button("Edit group", id="edit")
                 yield Button("OK" if self.first_time else "Close", variant="primary", id="cancel")
 
     def on_mount(self) -> None:
-        """Show the rules as Markdown or plain text, as the group says."""
-        if self.data.get("rules"):
-            self.query_one("#rules-view").styles.max_height = 14
+        """Show the charter as Markdown or plain text, as the group says."""
+        if self.data.get("charter"):
+            self.query_one("#charter-view").styles.max_height = 14
 
     @on(Button.Pressed, "#edit")
     def _edit(self) -> None:
@@ -381,7 +383,7 @@ class SettingsHelpDialog(Dialog):
 
 
 class EditGroupDialog(Dialog):
-    """Owner: change title, description, rules, view and delivery (a new manifest)."""
+    """Owner: change title, description, charter, view and delivery (a new manifest)."""
 
     BINDINGS = [Binding("f1", "help", "Help")]            # with Esc from Dialog
 
@@ -394,7 +396,7 @@ class EditGroupDialog(Dialog):
             ("title", True), ("view", True), ("low_latency", True), ("comments", channel),
             ("reactions", not inbox), ("index", channel), ("files", d.get("type") in FILES_GROUP_TYPES),
             ("min_pow", True), ("languages", not inbox), ("tags", not inbox),
-            ("report_issuers", not inbox), ("team_name", inbox), ("rules", True)) if on]
+            ("report_issuers", not inbox), ("team_name", inbox), ("charter", True)) if on]
         self.help_text = settings_help_text(self.help_keys)
 
     def action_help(self) -> None:
@@ -407,7 +409,7 @@ class EditGroupDialog(Dialog):
         self.action_help()
 
     def compose(self) -> ComposeResult:
-        """The owner's settings of a group: title, description, rules, view, comments,
+        """The owner's settings of a group: title, description, charter, view, comments,
         files, reactions, pins, pages."""
         d = self.data
         current = "fastchat" if d.get("low_latency") else d.get("view", "threads")
@@ -461,10 +463,11 @@ class EditGroupDialog(Dialog):
             else:                                        # a team inbox (UN-RFC 0047)
                 yield Input(value=d.get("team_name", ""), id="team_name", max_length=64,
                             placeholder="The name replies go out as, e.g. Example (operator)")
-            yield Label("Rules - shown to people before their first post:", classes="hint")
-            yield TextArea(d.get("rules", ""), id="body", soft_wrap=True)
+            yield Label("Charter - what the group is for and asks of those who write; shown to "
+                        "people before their first post, never enforced by machines:", classes="hint")
+            yield TextArea(d.get("charter", ""), id="body", soft_wrap=True)
             yield Checkbox(MARKDOWN_HINT, id="markdown",
-                           value=writes_markdown(self.app, d.get("rules_type"), d.get("rules", "")))
+                           value=writes_markdown(self.app, d.get("charter_type"), d.get("charter", "")))
             with Horizontal(classes="buttons"):
                 yield Button("Cancel", id="cancel")
                 if self.help_text:
@@ -519,10 +522,10 @@ class EditGroupDialog(Dialog):
         view, fast = DELIVERY[self.query_one("#view", Select).value]
         changes = {"title": self.query_one("#title", Input).value.strip(),
                    "description": self.query_one("#description", Input).value.strip(),
-                   "rules": self.query_one("#body", TextArea).text.strip(),
+                   "charter": self.query_one("#body", TextArea).text.strip(),
                    "view": view, "low_latency": fast, "min_pow": min_pow}
-        changes["rules_type"] = markup.text_type_for(self.query_one("#markdown", Checkbox).value,
-                                                     changes["rules"])
+        changes["charter_type"] = markup.text_type_for(self.query_one("#markdown", Checkbox).value,
+                                                       changes["charter"])
         if self.data.get("type") == "channel":
             days = self.query_one("#comment_days", Input).value.strip()
             if days and (not days.isdigit() or int(days) < 1):
@@ -823,9 +826,9 @@ class BrowseDialog(Dialog):
             lines.append("An inbox: anyone can write to it, only its owner can read it.")
         if data.get("view") == "data":
             lines.append("Data for programs (lists, certificates), not posts for people.")
-        if data.get("rules"):
-            first = data["rules"].strip().splitlines()[0]
-            lines.append(f"Rules:  {first[:90]}" + (" ..." if len(data["rules"].strip()) > len(first) else ""))
+        if data.get("charter"):
+            first = data["charter"].strip().splitlines()[0]
+            lines.append(f"Charter: {first[:89]}" + (" ..." if len(data["charter"].strip()) > len(first) else ""))
         try:
             self.query_one("#group-details", Static).update("\n".join(lines))
         except Exception:  # noqa: BLE001  (the dialog was closed meanwhile)

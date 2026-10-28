@@ -81,7 +81,7 @@ class ComposeDialog(Dialog):
                 Binding("ctrl+w", "warnings", "Warning")]
 
     def __init__(self, group: GroupInfo, subject: str = "", quote: str = "", is_reply: bool = False,
-                 heading: str | None = None, signature: str = "", has_rules: bool = False,
+                 heading: str | None = None, signature: str = "", has_charter: bool = False,
                  files_allowed: bool = False, reply_to=None):
         super().__init__()
         self.group, self.subject, self.quote, self.is_reply = group, subject, quote, is_reply
@@ -89,7 +89,7 @@ class ComposeDialog(Dialog):
         self._lang_touched = False               # the language field is yours once you type in it
         self._lang_setting = False
         self._lang_timer = None
-        self.heading, self.signature, self.has_rules = heading, signature, has_rules
+        self.heading, self.signature, self.has_charter = heading, signature, has_charter
         self.files_allowed = files_allowed       # the group takes files (UN-RFC 0027)
         self.files: list[str] = []               # what to send with it, read after dismiss
         self.tags: list[str] = []                # the author's tags (UN-RFC 0052), after dismiss
@@ -143,7 +143,7 @@ class ComposeDialog(Dialog):
                 yield Label("", id="notify-who", classes="hint", markup=False)
             yield Label((("Cut the quote down to what you answer.  " if self.quote.lstrip().startswith(">")
                           or "\n>" in self.quote else "")
-                         + ("This group has rules: Esc, then ?.  " if self.has_rules else "")
+                         + ("This group has a charter: Esc, then ?.  " if self.has_charter else "")
                          + "Signed with your key · proof-of-work added.  Ctrl+B bold · Ctrl+Q quote · "
                          "Ctrl+R read more · Ctrl+W warning · Ctrl+E bigger"), classes="hint", id="foot")
             with Horizontal(classes="buttons"):

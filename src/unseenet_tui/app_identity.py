@@ -360,7 +360,7 @@ class IdentityMixin:
         answered = self.messages.get(references[-1]) if references else None   # its language (#686)
         dlg = ComposeDialog(
             g, subject, quote, bool(references), signature=self.session.signature(), reply_to=answered,
-            has_rules=bool(data.get("rules")),
+            has_charter=bool(data.get("charter")),
             files_allowed=bool(data.get("attachments")) and g.type != "inbox"
             and (g.type != "closed" or bool(self.session.group_entry(g.group_id).get("keys"))))
         result = await self.push_screen_wait(dlg)

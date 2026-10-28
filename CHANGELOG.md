@@ -6,6 +6,11 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+- **A group's charter** (#87, unseenet#726): what a group's owner writes about the group
+  is now called its *charter* everywhere - "? charter" in the title, *Charter* in group
+  info, Create group and Edit group, and the first-time display. *Rules* means only your
+  own rules, which the client applies. Needs the core with `charter` (unseenet#727).
+
 - **New screenshots and demo** (#71): the recording goes through the timeline, a discussion,
   a reply, Private chats and the person picker; new screenshots of a feed, the timeline,
   Private chats and the picker, and the guide tells about feeds, People you follow and the
