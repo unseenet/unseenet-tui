@@ -52,11 +52,11 @@ CTRL_P, CTRL_S, SHIFT_TAB = "\x10", "\x13", "\x1b[Z"
 SCRIPT: list[tuple[float, str, bool]] = [
     (2.0, PASSPHRASE, True),     # unlock the vault
     (0.6, ENTER, False),
-    (3.5, DOWN, False),          # down the list of groups ...
-    (0.5, DOWN, False),
-    (0.5, DOWN, False),
-    (0.5, DOWN, False),
-    (0.5, DOWN, False),
+    (3.5, DOWN, False),          # the timeline: feeds, and dk.snak put into it
+    (0.8, ENTER, False),
+    (3.0, "/", False),           # find a group by name ...
+    (0.6, "snak", True),
+    (0.8, ENTER, False),
     (0.8, ENTER, False),         # ... and open dk.snak
     (2.5, DOWN, False),          # down to Sonia's answer about USB sticks
     (0.7, DOWN, False),
@@ -67,16 +67,17 @@ SCRIPT: list[tuple[float, str, bool]] = [
     (1.0, "r", False),           # write a reply
     (1.2, "Thanks - I'll try it on the library computer on Saturday.", True),
     (1.5, CTRL_S, False),
-    (4.0, SHIFT_TAB, False),     # over to the chat group
-    (0.8, DOWN, False),
+    (4.0, CTRL_P, False),        # private chats: one per person
+    (0.8, "private chats", True),
     (0.8, ENTER, False),
-    (2.0, "Hi all - just found this group!", True),
-    (0.6, ENTER, False),
-    (3.0, ESC, False),
+    (2.5, ESC, False),
+    (0.5, "m", False),           # a private post: the person picker
+    (2.0, TAB, False),
+    (1.5, ESC, False),
     (1.0, "g", False),           # browse the groups on the node
     (3.0, ESC, False),
     (1.0, CTRL_P, False),        # the command palette
-    (1.0, "moder", True),
+    (1.0, "timeline", True),
     (2.5, ESC, False),
 ]
 
@@ -120,7 +121,8 @@ def serve_node() -> tuple[str, asyncio.AbstractEventLoop]:
     ready: dict[str, str] = {}
 
     async def start() -> None:
-        node = Node(Store(), NodeConfig(min_pow=8, forward_delay=(0, 0), name="node1"))
+        node = Node(Store(), NodeConfig(min_pow=8, forward_delay=(0, 0), name="node1", sites="accept",
+                                        min_ripe=None))   # no key ripening here (UN-RFC 0025)
         server = await node.serve("127.0.0.1", 0)
         ready["addr"] = f"127.0.0.1:{server.sockets[0].getsockname()[1]}"
 
@@ -184,7 +186,9 @@ def main() -> None:
 
         env = {k: v for k, v in os.environ.items() if k != "UNSEENET_PASSPHRASE"}
         env.update(TERM="xterm-256color", COLORTERM="truecolor", UNSEENET_INSECURE_FAST_KDF="1",
-                   UNSEENET_HOME=str(home), PYTHONPATH=str(ROOT / "src"))
+                   UNSEENET_HOME=str(home),
+                   # this repo's client, and the core the caller points at, if any
+                   PYTHONPATH=os.pathsep.join(filter(None, [str(ROOT / "src"), os.environ.get("PYTHONPATH")])))
         child = pexpect.spawn(sys.executable, ["-m", "unseenet_tui.app", "--vault", str(target)],
                               env=env, cwd=str(home), dimensions=(ROWS, COLS))
         rec = Recorder(child, args.debug)
@@ -210,7 +214,7 @@ def main() -> None:
     print(out)
     if args.gif:
         agg = shutil.which("agg") or "agg"
-        subprocess.run([agg, "--font-family", "Fira Code,DejaVu Sans Mono", "--font-size", "14",
+        subprocess.run([agg, "--font-family", "Fira Code,DejaVu Sans Mono,Noto Sans Mono,Liberation Mono", "--font-size", "14",
                         "--theme", "monokai", "--idle-time-limit", "2", "--last-frame-duration", "3",
                         str(out), args.gif], check=True)
         print(args.gif)

@@ -6,6 +6,12 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+- **New screenshots and demo** (#71): the recording goes through the timeline, a discussion,
+  a reply, Private chats and the person picker; new screenshots of a feed, the timeline,
+  Private chats and the picker, and the guide tells about feeds, People you follow and the
+  timeline. The docs tools work again (their test node asked new keys to ripen).
+- **Group list order as in the GUI**: For you, Timeline, your feed and site, then Your
+  contacts, Private posts and Private chats (#73).
 - **People you follow, by person** (as the GUI, #76, unseenet#706): following someone puts
   their feed and site together under their name in *People you follow*, sorted by name -
   one row when they have only one - instead of `feed` and `site` folders.
