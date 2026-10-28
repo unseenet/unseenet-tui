@@ -57,7 +57,7 @@ from unseenet.client.session import (MAX_SIG_LINES, SIG_SEPARATOR, GroupInfo, Me
 from unseenet.client.threads import CONTACT, FOR_YOU, TIMELINE   # the session's pseudo groups (#139)
 from unseenet.client.runtime import ClientRuntime
 from unseenet.client import events as ev
-from .helpers import REFRESH_SECONDS, REPO_URL, DOCS_URL, ACROSS, FEED_MARK, TIMELINE_MARK, START_FEED, START_SITE, CHATS, CHATS_SHOWN, CONTACTS, FOLDED, FEED_SHOWN, COMMENT_PAGE, CLIP_LINES, SITE_MARK, REPLY_MARK, MENTION_MARK, for_you_marks, for_you_news, sess_default_pow, group_name_problem, GROUP_KINDS, known_node_details, node_details, ICONS, _ONION, PIN_MARK, ICON_LEGEND, ORIGIN_MARK, NETWORK_NAMES, network_name, origin_text, edited_when, group_icons, is_personal_inbox, by_hierarchy, CSS  # noqa: F401
+from .helpers import REFRESH_SECONDS, REPO_URL, DOCS_URL, ACROSS, FEED_MARK, TIMELINE_MARK, START_FEED, START_SITE, CHATS, CHATS_SHOWN, CONTACTS, FOLDED, FEED_SHOWN, COMMENT_PAGE, OLDER, SHOWN_FIRST, newest_rows, CLIP_LINES, SITE_MARK, REPLY_MARK, MENTION_MARK, for_you_marks, for_you_news, sess_default_pow, group_name_problem, GROUP_KINDS, known_node_details, node_details, ICONS, _ONION, PIN_MARK, ICON_LEGEND, ORIGIN_MARK, NETWORK_NAMES, network_name, origin_text, edited_when, group_icons, is_personal_inbox, by_hierarchy, CSS  # noqa: F401
 from .dialogs.base import Dialog, InputDialog, InfoDialog, ConfirmDialog, KeyListDialog  # noqa: F401
 from .dialogs.setup import UnlockDialog, ChangePassphraseDialog, OTHER_NODE, SetupDialog, BridgesDialog  # noqa: F401
 from .dialogs.compose import ComposeDialog, PageDialog, PreviewDialog, SignatureDialog, PinDialog, ReactDialog, reactions_text  # noqa: F401
@@ -520,6 +520,12 @@ class GroupsMixin:
                      "mentions": "Comments: the ones that name you"}[how])
         self._render_threads()
 
+    def show_older(self) -> None:
+        """Enter on "View older": twice as many of the group's threads, entries or lines (#86)."""
+        gid = self.current_group
+        self._shown[gid] = self._shown.get(gid, SHOWN_FIRST) * 2
+        self._render_threads()
+
     def show_more_comments(self, entry: str) -> None:
         """Enter on "View N more": COMMENT_PAGE more of the entry's comments."""
         self._comments_more[entry] = self._comments_more.get(entry, 0) + COMMENT_PAGE
@@ -556,6 +562,10 @@ class GroupsMixin:
             rows, self._scores = self.scored_rows(gid, rows)
         # comments folded in a feed (#34, UN-RFC 0034 4.4); ``rows`` stays every message
         shown_rows = self._fold_comments(rows) if feed and gid != TIMELINE else rows
+        older = False                     # a large group: its newest only, older on Enter (#86)
+        if gid and shown != "pages":
+            shown_rows, older = newest_rows(shown_rows, self._shown.get(gid, SHOWN_FIRST),
+                                            chat=shown == "chat")
         table = self.query_one("#threads", DataTable)
         keep = self.current_message.message_id if self.current_message else None
         table.clear()
@@ -566,6 +576,10 @@ class GroupsMixin:
         if pins and self.view_of(gid) != "chat":
             self._pinned_section(table, gid, pins, by_id)
         counted: dict = {}                              # reactions, once per group (0048)
+        older_row = (" ", Text(("    ↑" if shown == "chat" else "    ↓") + " View older " + ("lines" if shown == "chat" else "entries" if feed else "threads")
+                               + "  (Enter)", style="dim italic"), "", "")
+        if older and shown == "chat":                    # a chat's older lines are above it
+            table.add_row(*older_row, key=OLDER)
         for m, depth in shown_rows:
             if m == FOLDED:                         # "View N more comments" (#34)
                 entry, hidden = depth
@@ -633,6 +647,8 @@ class GroupsMixin:
                     line.append(f"   ▸ {folded_n} folded", style="dim italic")
                 line.append(f"   {res.score:+d}", style="dim")
             table.add_row(flag, line, Text(self._who(m)), date, key=m.message_id)
+        if older and shown != "chat":                    # below the threads or entries (#86)
+            table.add_row(*older_row, key=OLDER)
         self._render_title()
         # the rows are fresh objects; an open read screen follows them, so it
         # shows an edited post and steps n/p from the right place (#137)

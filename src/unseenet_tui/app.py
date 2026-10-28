@@ -58,7 +58,7 @@ from unseenet.client.runtime import ClientRuntime
 from unseenet.client import events as ev
 
 # moved out by area (#20); re-exported here, so imports from app keep working
-from .helpers import REFRESH_SECONDS, REPO_URL, DOCS_URL, ACROSS, FEED_MARK, START_FEED, START_SITE, CHATS, CHATS_SHOWN, CONTACTS, FOLDED, FEED_SHOWN, COMMENT_PAGE, CLIP_LINES, SITE_MARK, REPLY_MARK, MENTION_MARK, for_you_marks, for_you_news, sess_default_pow, group_name_problem, GROUP_KINDS, known_node_details, node_details, ICONS, _ONION, PIN_MARK, ICON_LEGEND, ORIGIN_MARK, NETWORK_NAMES, network_name, origin_text, edited_when, group_icons, is_personal_inbox, by_hierarchy, CSS  # noqa: F401
+from .helpers import REFRESH_SECONDS, REPO_URL, DOCS_URL, ACROSS, FEED_MARK, START_FEED, START_SITE, CHATS, CHATS_SHOWN, CONTACTS, FOLDED, FEED_SHOWN, COMMENT_PAGE, OLDER, SHOWN_FIRST, newest_rows, CLIP_LINES, SITE_MARK, REPLY_MARK, MENTION_MARK, for_you_marks, for_you_news, sess_default_pow, group_name_problem, GROUP_KINDS, known_node_details, node_details, ICONS, _ONION, PIN_MARK, ICON_LEGEND, ORIGIN_MARK, NETWORK_NAMES, network_name, origin_text, edited_when, group_icons, is_personal_inbox, by_hierarchy, CSS  # noqa: F401
 from .dialogs.base import Dialog, InputDialog, InfoDialog, ConfirmDialog, KeyListDialog  # noqa: F401
 from .dialogs.setup import UnlockDialog, ChangePassphraseDialog, OTHER_NODE, SetupDialog, BridgesDialog  # noqa: F401
 from .dialogs.compose import ComposeDialog, PageDialog, PreviewDialog, SignatureDialog, PinDialog, ReactDialog, reactions_text  # noqa: F401
@@ -239,6 +239,7 @@ class UnseenetApp(GroupsMixin, ChatMixin, ActionsMixin, FeedsMixin, AddressesMix
         self.chat_files: dict[str, list[str]] = {}  # files for the next chat line, per group (#496)
         self._comments_how: dict[str, str] = {}     # per feed entry: newest, mine or mentions (#34)
         self._comments_more: dict[str, int] = {}    # per feed entry: comments shown beyond those
+        self._shown: dict[str, int] = {}             # per large group: rows shown (#86)
         self.groups: dict[str, GroupInfo] = {}
         self.current_group: str | None = None
         self.messages: dict[str, Message] = {}
@@ -548,6 +549,9 @@ class UnseenetApp(GroupsMixin, ChatMixin, ActionsMixin, FeedsMixin, AddressesMix
             return
         if str(event.row_key.value).startswith(FOLDED):   # "View N more comments" (#34)
             self.show_more_comments(event.row_key.value[len(FOLDED):])
+            return
+        if event.row_key.value == OLDER:                  # "View older threads" (#86)
+            self.show_older()
             return
         msg = self.messages.get(event.row_key.value)
         if msg is not None:
