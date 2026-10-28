@@ -257,7 +257,11 @@ class UnseenetApp(GroupsMixin, ChatMixin, ActionsMixin, FeedsMixin, AddressesMix
                 # disabled while hidden, or it would take the focus at start
                 yield Input(placeholder="Search your groups", id="groups-filter", disabled=True,
                             **NO_SELECT_ON_FOCUS)
-                yield Tree("groups", id="groups")
+                # Enter on a folder folds it; on a heading that is a group, opens the
+                # group (#35) - Space folds that one
+                tree = Tree("groups", id="groups")
+                tree.auto_expand = False
+                yield tree
             with Vertical():
                 yield Static("Select a group", id="threads-title", markup=False)
                 yield DataTable(id="threads", cursor_type="row", zebra_stripes=True)
@@ -503,6 +507,9 @@ class UnseenetApp(GroupsMixin, ChatMixin, ActionsMixin, FeedsMixin, AddressesMix
 
     @on(Tree.NodeSelected, "#groups")
     def _group_selected(self, event: Tree.NodeSelected) -> None:
+        if isinstance(event.node.data, tuple) and event.node.data[0] == "folder":
+            event.node.toggle()                         # a folder: Enter folds it
+            return
         if event.node.data == START_FEED:
             self.action_start_feed()
         elif event.node.data == START_SITE:

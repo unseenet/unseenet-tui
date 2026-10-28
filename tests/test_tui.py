@@ -1309,7 +1309,7 @@ async def test_tui_group_tree_drops_prefix_and_folds(tmp_path, monkeypatch):
         await pilot.pause(0.5)
         tree = app.query_one("#groups")
         dk = next(n for n in tree.root.children if n.data == ("folder", "dk"))
-        assert str(dk.label).startswith("dk.*")
+        assert str(dk.label).startswith("dk") and ".*" not in str(dk.label)   # no ".*" (#35)
         labels = [str(n.label) for n in dk.children]
         assert any(l.endswith(".historie") for l in labels), labels
         assert any(l.endswith(".snak") and "dk.snak" not in l for l in labels), labels
@@ -1846,4 +1846,30 @@ async def test_tui_chat_line_on_several_lines(tmp_path, monkeypatch):
         assert await wait_for(pilot, lambda: sent == ["one\ntwo\nthree\nfour"], 200), sent
         assert box.value == ""
         assert "Alt+Enter new line" in str(box.placeholder)
+    server.close()
+
+
+async def test_tui_a_heading_that_is_the_group(tmp_path, monkeypatch):
+    """#35: dk.historie with dk.historie.egypten under it is one row - the group, which
+    opens it, and folds what is under it with Space; Enter on a plain folder folds it."""
+    app, server = await _app_with_groups(
+        tmp_path, monkeypatch, ["dk.snak", "dk.historie", "dk.historie.egypten"])
+    async with app.run_test(size=(140, 40)) as pilot:
+        assert await wait_for(pilot, lambda: len(app.groups) == 4, 300)
+        await pilot.pause(0.5)
+        tree = app.query_one("#groups")
+        dk = next(n for n in tree.root.children if n.data == ("folder", "dk"))
+        head = next(n for n in dk.children if isinstance(n.data, str) and n.data.startswith("dk.historie@"))
+        assert str(head.label).split()[-1].startswith(".historie")
+        assert [str(n.label).split()[-1] for n in head.children] == [".egypten"]
+        assert not any(n.data == ("folder", "dk.historie") for n in dk.children)   # not twice
+        tree.select_node(head)
+        assert await wait_for(pilot, lambda: app.current_group == head.data, 300)
+        dk_open = dk.is_expanded
+        tree.select_node(dk)                       # Enter on a folder folds it
+        await pilot.pause(0.2)
+        assert dk.is_expanded != dk_open
+        app.refresh_groups()                       # the heading's fold is kept
+        await pilot.pause(0.3)
+        await pilot.press("q")
     server.close()

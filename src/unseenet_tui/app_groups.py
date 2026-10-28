@@ -71,6 +71,7 @@ from .app_reports import HIDDEN_MARK, reported_text  # noqa: E402
 
 
 class GroupsMixin:
+    _headings: dict = {}                         # heading groups and their folder keys (#35)
 
     # --- groups ---
     def _groups_from_vault(self, available: dict[str, GroupInfo] | None = None) -> dict[str, GroupInfo]:
@@ -128,6 +129,8 @@ class GroupsMixin:
         # folders are known by ("folder", key): "Chats", a hierarchy ("alt") or a part
         # of a name within one ("alt.history")
         def folder_key(node) -> str:
+            if isinstance(node.data, str) and node.data in self._headings:   # a heading group
+                return self._headings[node.data]
             return node.data[1] if isinstance(node.data, tuple) else str(node.label).split(" (")[0]
 
         def all_folders(node):
@@ -176,20 +179,36 @@ class GroupsMixin:
                 text.stylize("bold")
             return text
 
-        def add_branch(parent, node) -> None:
-            """A hierarchy's or folder's contents: its own group first, then the rest."""
-            for g in node.items:                # alt.history in .history, unseenet in unseenet.*
-                nodes[g.group_id] = parent.add_leaf(label(g, node.own_label), data=g.group_id)
+        def heading(parent, key: str, shown: str, items: list, own: list, opened: bool):
+            """A folder (#35): when a group has its name (unseenet with .chat under it),
+            the heading *is* that group - it opens the group, and Space folds it - else
+            a folder by name. Returns the node, with the group's namesakes under it."""
+            if own:
+                g = own[0]
+                node = parent.add(label(g, shown), data=g.group_id, expand=opened)
+                nodes[g.group_id] = node
+                self._headings[g.group_id] = key
+                for other in own[1:]:            # the same name with another fingerprint
+                    nodes[other.group_id] = node.add_leaf(label(other, shown), data=other.group_id)
+            else:
+                node = parent.add(folder_label(shown, items), data=("folder", key), expand=opened)
+            nodes[("folder", key)] = node
+            return node
+
+        def add_branch(parent, node, own_done: bool = False) -> None:
+            """A hierarchy's or folder's contents: its own group first (unless it is the
+            heading), then the rest."""
+            if not own_done:
+                for g in node.items:            # alt.history in .history
+                    nodes[g.group_id] = parent.add_leaf(label(g, node.own_label), data=g.group_id)
             for child in node.children:
                 if child.is_folder:
                     key = child.path
                     inside = {g.group_id for g in child.all_items()}
-                    folder = parent.add(folder_label("." + child.label, child.all_items()),
-                                        data=("folder", key),
-                                        expand=searching or key in was_open
-                                        or (key not in known and self.current_group in inside))
-                    nodes[("folder", key)] = folder
-                    add_branch(folder, child)
+                    folder = heading(parent, key, "." + child.label, child.all_items(), child.items,
+                                     searching or key in was_open
+                                     or (key not in known and self.current_group in inside))
+                    add_branch(folder, child, own_done=bool(child.items))
                 else:
                     for g in child.items:
                         nodes[g.group_id] = parent.add_leaf(label(g, "." + child.label),
@@ -197,6 +216,7 @@ class GroupsMixin:
 
         select = None
         nodes: dict = {}
+        self._headings = {}                      # a group that is a heading: its folder key
         groups = list(self.groups.values())
         searching = bool(groupfilter.parse(self.group_query))
         if searching:                            # #13: only what matches, every folder open
@@ -240,10 +260,10 @@ class GroupsMixin:
                 for g in items:
                     nodes[g.group_id] = tree.root.add_leaf(label(g), data=g.group_id)
                 continue
-            parent = tree.root.add(folder_label(f"{top}.*", items), data=("folder", top),
-                                   expand=searching or top in was_open or top not in known)
-            nodes[("folder", top)] = parent
-            add_branch(parent, group_tree(top, [(g.group_id.rpartition("@")[0], g) for g in items]))
+            branch = group_tree(top, [(g.group_id.rpartition("@")[0], g) for g in items])
+            parent = heading(tree.root, top, top, items, branch.items,   # no ".*" any more (#35)
+                             searching or top in was_open or top not in known)
+            add_branch(parent, branch, own_done=bool(branch.items))
         # Put the cursor back where it was (or on the current group); the tree computes
         # line numbers on its next refresh, so do it after that.
         select = nodes.get(keep) or nodes.get(self.current_group)
