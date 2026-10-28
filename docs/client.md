@@ -235,6 +235,26 @@ New posts arrive by **push**: the client keeps a second connection to
 the node, which tells it about new messages as soon as they arrive. On
 the same node a chat is practically instant.
 
+## Feeds, people and the timeline
+
+A **feed** shows entries newest first, with comments under each - a person's own feed, or
+a group shown as one. Times say how long ago. A long entry is cut with *… more* (where
+its author put a line of three dots, if they did); Enter shows it whole. Comments are
+folded to the newest one and your own talks: Enter on *View N more* shows 20 more, and
+++ctrl+p++ *Which comments* shows where you wrote, or what names you, instead.
+
+Follow a person from their profile, or ++ctrl+p++ *Follow*. Their feed and site come
+under **People you follow**, by name, together.
+
+The **Timeline** shows the entries of the feeds you follow, newest first and nothing
+reordered. ++ctrl+p++ *Add to timeline / take out of timeline* puts a discussion group in
+(each new thread, with its answers under it) or takes a feed out; `•` marks the groups in
+it. Chat groups are never in it.
+
+![A person's feed: the entry cut at "… more", a comment folded](img/client-feed.svg)
+
+![The timeline: feeds and a discussion group, newest first](img/client-timeline.svg)
+
 ## Group rules
 
 A group's owner can write **rules** - the group's charter. They are part
@@ -535,21 +555,24 @@ node the first time you connect. A private message is one of two kinds
 ([UN-RFC 0028](https://unseenet.org/spec/un-rfc-0028/)), and you choose which when you write:
 
 - a **post** has a subject, is read on its own and answered with a
-  quote, just like a post in a group. Private posts are at the top of the group list as
+  quote, just like a post in a group. Private posts are near the top of the group list as
   *@ Private posts*, threaded, with the ones you sent among them (*You → name*).
 - a **chat** is a line in a running conversation, without a subject.
-  Chats are under *Chats* in the group list, one conversation per
-  person: your contacts (`•`), and anyone else you have chatted with
-  (`◦`, with the name they gave and their fingerprint), so a chat never
-  goes missing and both sides of it stay together.
+  *» Private chats* holds them, one conversation per person: your contacts (`•`), and
+  anyone else you have chatted with (`◦`, with the name they gave and their fingerprint),
+  so a chat never goes missing and both sides of it stay together. Under it only the
+  chats with unread lines show (at most three); select *Private chats* for all of them.
+
+![Private chats: one per person, unread first, closed ones last](img/client-private-chats.svg)
 
 Only the recipient can see which kind a message is: the kind is inside
 the sealed message. The copy on the node is sealed to the recipient, so
 the client keeps its own copy of what you sent, encrypted in your vault.
 
-- To write a private post, press ++m++ and type a contact's name, or paste a key (they find it with
-  ++k++). If you have a post by them selected, their key is filled in.
-- To chat, open the contact, or use ++ctrl+p++, *Chat with someone*.
+- To write a private post, press ++m++; to chat, ++ctrl+p++ *Chat with someone*. Both open
+  the **person picker**: recent people first, then your contacts - type to find someone, or
+  paste a key (they find it with ++k++). ++tab++ switches between a chat and a post. If you
+  have a post by someone selected, they are at the top.
   In a chat, ++n++ writes a post to them instead.
 - Only the recipient can read the message. The node cannot, and it does
   not even learn who sent it: the message is sealed to the recipient's key
@@ -568,9 +591,11 @@ an inbox, and you write to someone with ++m++ instead.
 ## Contacts and conversations
 
 Press ++a++ on a post or a private message to add its author as a
-**contact**, under a name you choose. Contacts appear in the group list
-under *Chats*; selecting one shows your chat with that person, both
+**contact**, under a name you choose. *Your contacts* at the top of the group list (or
+++c++) lists them, the names only you see; Enter chats with one. A chat shows both
 directions, in order. ++n++ there writes them a post instead.
+
+![The person picker: recent people, then contacts; Tab for a chat or a post](img/client-picker.svg)
 
 - The name is yours alone and is tied to the person's key. Someone else
   can call themselves "Sonia", but only the real one shows as

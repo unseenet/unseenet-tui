@@ -234,14 +234,6 @@ class GroupsMixin:
         for kind, gid_ in (("feed", my_feed), ("site", my_site)):   # "Your feed", "Your site" (#495)
             if not searching and self.session.has_personal_group(kind):
                 on_top += [g for g in groups if g.group_id == gid_]
-        if not searching:                                # Your contacts, Private posts and
-            nodes[CONTACTS] = tree.root.add_leaf(         # Private chats, alike (#73)
-                Text(f"{ICONS['inbox']} Your contacts"), data=CONTACTS)
-        for g in mine:                                   # private messages always first
-            node = tree.root.add_leaf(label(g), data=g.group_id)
-            nodes[g.group_id] = node
-        if not searching:                                # then private chats: one item (#39)
-            self._chats_item(tree, nodes)
         for_you = self.session.for_you_counts()
         text = Text(f"{REPLY_MARK} For you" + for_you_marks(for_you))
         if for_you.total:
@@ -262,6 +254,15 @@ class GroupsMixin:
                 else:
                     nodes[start] = tree.root.add_leaf(
                         Text(f"{mark} Start your {kind}", style="dim"), data=start)
+        # Your contacts, Private posts and Private chats, alike, after For you, the timeline
+        # and your own feed and site - in the GUI's order (#73, gui#209)
+        if not searching:
+            nodes[CONTACTS] = tree.root.add_leaf(Text(f"{ICONS['inbox']} Your contacts"), data=CONTACTS)
+        for g in mine:
+            node = tree.root.add_leaf(label(g), data=g.group_id)
+            nodes[g.group_id] = node
+        if not searching:                                # private chats: one item (#39)
+            self._chats_item(tree, nodes)
         self._for_you_seen = getattr(self, "_for_you_seen", None) or for_you
         # other people's feeds and sites, by person (#76, unseenet#706): under "People
         # you follow", feed and site together under the person's name, not as hierarchies

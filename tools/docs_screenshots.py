@@ -31,6 +31,7 @@ import unseenet.client.session as sess  # noqa: E402
 from unseenet.client.session import Session  # noqa: E402
 from unseenet_tui.app import (BrowseDialog, ComposeDialog, GroupInfoDialog,  # noqa: E402
                                  NamesDialog, NodesDialog, ReadScreen, UnseenetApp)
+from unseenet_tui.dialogs.people import ChatsDialog, PersonPicker  # noqa: E402
 from unseenet.core.store import Store  # noqa: E402
 from unseenet.core.vault import Vault  # noqa: E402
 from unseenet.node.server import Node, NodeConfig  # noqa: E402
@@ -94,17 +95,41 @@ async def fill(tmp: Path, addr: str) -> tuple[Path, dict[str, str]]:
     await sonia.send_private(me.my_inbox, "Dinner on Sunday?",
                              "Mum asks if you come for dinner on Sunday. Bring the dog.\n")
 
+    # feeds and a site; Andreas follows both people (UN-RFC 0034, 0035; tui#76)
+    mfeed = await mikkel.start_personal_group("feed")
+    sfeed = await sonia.start_personal_group("feed")
+    ssite = await sonia.start_personal_group("site")
+    await sonia.put_page(ssite, "index", "# Sonia's guinea pigs\n\nKaj, Mille and the new one.\n")
+    trip = await mikkel.post(mfeed, "A node in my backpack",
+                             "I ran a node from a Pi in my backpack all weekend.\n\n...\n\n"
+                             "It lasted 14 hours on a power bank, and Tor found its way every time "
+                             "I changed networks. Next time: a solar panel.\n")
+    await sonia.post(mfeed, "", "A solar panel! I want to see that.\n", kind="chat", references=[trip])
+    await mikkel.post(mfeed, "", "Pictures will come.\n", kind="chat", references=[trip])
+    await sonia.post(sfeed, "", "New page about the guinea pigs - see my site.\n", kind="chat")
+    for who, f in ((mikkel, mfeed), (sonia, sfeed)):
+        await who.publish_profile({"v": 1, "about": "Hello", "feeds": [f]})
     for gid in (snak, marsvin, chat, radio):
         me.subscribe(gid)
+    await me.follow_person(mikkel.identity().key_text)
+    await me.follow_person(sonia.identity().key_text)
+    me.subscribe(ssite)
     me.add_contact(sonia.identity().key_text, "Sonia")
+    me.add_contact(mikkel.identity().key_text, "Mikkel")
+    await sonia.send_chat("contact:" + me.identity().key_text, "Are you coming on Sunday?\n")
+    await mikkel.send_chat("contact:" + me.identity().key_text, "Did you see my feed?\n")
     for gid in (snak, marsvin, chat, radio):
         await me.fetch_group(gid)
         me.mark_rules_seen(gid)
     me.data.setdefault("views", {})[chat] = "chat"
+    await me.fetch_unknown_manifests()
+    for gid in (mfeed, sfeed, ssite):
+        await me.fetch_group(gid)
+    me.set_in_timeline(snak, True)        # a discussion group in the timeline (UN-RFC 0034 6.2)
     me.save()
     for s in (me, sonia, mikkel):
         await s.close()
-    return tmp / "andreas.vault", {"snak": snak, "chat": chat, "marsvin": marsvin}
+    return tmp / "andreas.vault", {"snak": snak, "chat": chat, "marsvin": marsvin, "feed": mfeed}
 
 
 async def wait_for(pilot, cond, tries=300) -> bool:
@@ -192,6 +217,25 @@ async def shoot(vault: Path, groups: dict[str, str], out: Path) -> list[Path]:
         await pilot.pause(0.5)
         await save("palette")
         await close()
+        # A person's feed, under People you follow: comments folded, cut at read more (#34, #76)
+        app.select_group(groups["feed"])
+        assert await wait_for(pilot, lambda: len(app.messages) >= 1), "no feed"
+        app.query_one("#threads").focus()
+        await save("feed")
+        # The timeline: feeds and a discussion group put into it (UN-RFC 0034 6.2)
+        from unseenet.client.threads import TIMELINE
+        app.select_group(TIMELINE)
+        assert await wait_for(pilot, lambda: len(app.messages) >= 3), "no timeline"
+        await save("timeline")
+        # Private chats, and the person picker (#39, #73)
+        app.action_chats()
+        assert await wait_for(pilot, lambda: isinstance(app.screen, ChatsDialog))
+        await save("private-chats")
+        await close()
+        app.action_chat_with()
+        assert await wait_for(pilot, lambda: isinstance(app.screen, PersonPicker))
+        await save("picker")
+        await close()
         await pilot.press("q")
     return saved
 
@@ -199,7 +243,8 @@ async def shoot(vault: Path, groups: dict[str, str], out: Path) -> list[Path]:
 async def main() -> None:
     out = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "docs" / "img"
     out.mkdir(parents=True, exist_ok=True)
-    node = Node(Store(), NodeConfig(min_pow=8, forward_delay=(0, 0), name="node1"))
+    node = Node(Store(), NodeConfig(min_pow=8, forward_delay=(0, 0), name="node1", sites="accept",
+                                 min_ripe=None))   # no key ripening here (UN-RFC 0025)
     server = await node.serve("127.0.0.1", 0)
     addr = f"127.0.0.1:{server.sockets[0].getsockname()[1]}"
     with tempfile.TemporaryDirectory(prefix="unseenet-shots-") as tmp:
