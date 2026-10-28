@@ -66,6 +66,10 @@ START_FEED = ("action", "start-feed")    # "Start your feed" at the top of the g
 START_SITE = ("action", "start-site")    # ... and "Start your site", the same way
 CHATS = ("action", "chats")              # "Private chats" at the top: every chat, in a list (#39)
 CHATS_SHOWN = 5                          # unread chats under it; the rest behind Show all
+FOLDED = "folded:"                       # a feed's "View N more comments" row (#34)
+FEED_SHOWN = 1                           # comments under an entry before "View more", as the GUI
+COMMENT_PAGE = 20                        # ... and how many more each time
+CLIP_LINES = 10                          # an entry's text in a feed before "… more"
 SITE_MARK = "▤"                          # your site in the group list (UN-RFC 0035)
 REPLY_MARK, MENTION_MARK = "◄", "♦"   # in the basic character set (Windows console)
 
