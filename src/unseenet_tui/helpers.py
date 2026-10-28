@@ -273,6 +273,14 @@ ModalScreen { align: center middle; }
 .dialog.about { width: 90; max-width: 100%; height: 94%; overflow-y: hidden; }
 .dialog.about #about-text { height: 1fr; padding-right: 1; }
 .dialog.compose #body { height: 1fr; margin-bottom: 1; }
+.dialog.compose .metarow { height: auto; }
+.dialog.compose .metarow .langcol { width: 34; height: auto; }
+.dialog.compose .metarow #tags { width: 1fr; }
+.dialog.compose .warnlist { height: auto; display: none; }
+.dialog.compose .warnlist.open { display: block; }
+.dialog.compose .warnlist Checkbox { width: auto; margin-right: 1; }
+.dialog.compose.big { width: 100%; height: 100%; }
+.dialog.compose.big .metarow, .dialog.compose.big #foot { display: none; }
 .dialog .buttons { height: auto; align-horizontal: right; dock: bottom; }
 .dialog Button { margin-left: 1; min-width: 8; width: auto; }
 .dialog .hint { color: $text-muted; }

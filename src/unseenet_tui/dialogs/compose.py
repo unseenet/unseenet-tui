@@ -75,7 +75,10 @@ def language_options(first, group) -> list[tuple[str, str]]:
 
 class ComposeDialog(Dialog):
     BINDINGS = [Binding("escape", "cancel", "Cancel"), Binding("ctrl+s", "send", "Send"),
-                Binding("ctrl+r", "read_more", "Read more")]
+                Binding("ctrl+e", "bigger", "Bigger"),        # room to write (#74, as gui#203)
+                Binding("ctrl+b", "bold", "Bold"), Binding("ctrl+q", "quote", "Quote"),
+                Binding("ctrl+r", "read_more", "Read more"),
+                Binding("ctrl+w", "warnings", "Warning")]
 
     def __init__(self, group: GroupInfo, subject: str = "", quote: str = "", is_reply: bool = False,
                  heading: str | None = None, signature: str = "", has_rules: bool = False,
@@ -92,11 +95,14 @@ class ComposeDialog(Dialog):
         self.tags: list[str] = []                # the author's tags (UN-RFC 0052), after dismiss
         self.languages: list[str] | None = None  # what it is written in (0052 5a), after dismiss
         self._suggested: list[str] = []
+        self.warnings: list[str] = []            # content warnings chosen (UN-RFC 0052/0053)
 
     def compose(self) -> ComposeResult:
         """The compose window: where it goes, the subject, the text with the quote and
         signature, files."""
-        with Vertical(classes="dialog compose"):
+        s = getattr(self.app, "session", None)
+        big = bool(s and s.client_setting("tui", "compose_big", False))     # remembered (#74)
+        with Vertical(classes="dialog compose" + (" big" if big else "")):
             kind = "Reply in" if self.is_reply else "New post in"
             lock = "  ∩ encrypted" if self.group.type == "closed" else ""
             yield Label(self.heading or f"{kind} {self.app.session.group_label(self.group.group_id)}{lock}", classes="title",
@@ -107,30 +113,39 @@ class ComposeDialog(Dialog):
             yield EmojiTextArea(text, id="body", soft_wrap=True)     # :ta completion (#6)
             yield Static("", id="body-emoji", markup=False)
             gid = self.group.group_id or ""
-            if self.group.type != "inbox" and gid and not gid.startswith(("contact:", "inbox@")):
-                codes, why = self.app.session.suggest_languages(gid, reply_to=self.reply_to)  # 0052 5a
-                self._suggested = codes
-                yield Select(language_options(codes, self.app.session.manifest_data(gid).get("languages") or []),
-                             value=codes[0] if codes else "", allow_blank=False, id="lang",
-                             prompt="Language")
-                yield Label("Language: " + {"you": "what you wrote in here last", "group": "the group's",
-                                            "profile": "from your profile"}.get(why, "none is sent"),
-                            classes="hint", markup=False, id="lang-why")
+            # language, tags and warnings on one row (#74, as gui#203), each with its why
+            with Horizontal(classes="metarow"):
+                if self.group.type != "inbox" and gid and not gid.startswith(("contact:", "inbox@")):
+                    codes, why = self.app.session.suggest_languages(gid, reply_to=self.reply_to)  # 0052 5a
+                    self._suggested = codes
+                    with Vertical(classes="langcol"):
+                        yield Select(language_options(codes, self.app.session.manifest_data(gid).get("languages") or []),
+                                     value=codes[0] if codes else "", allow_blank=False, id="lang",
+                                     prompt="Language")
+                        yield Label("Language: " + {"you": "what you wrote in here last", "group": "the group's",
+                                                    "profile": "from your profile"}.get(why, "none is sent"),
+                                    classes="hint", markup=False, id="lang-why")
+                if self.group.type != "inbox":              # tags; warnings behind one choice
+                    yield Input(placeholder="Tags - add a tag, or write #word in the text", id="tags")
+                    yield Button("⚠ Content warning", id="warn-btn")
+            if self.group.type != "inbox":                  # the warnings, when asked for (Ctrl+W)
+                with Horizontal(id="warn-list", classes="warnlist"):
+                    for w in WARNING_ORDER:
+                        yield Checkbox(WARNING_TEXT[w], id="w-" + w)
             if self.files_allowed:
                 yield Input(placeholder="Files to send with it - paths, comma between: "
                             "~/garden.jpg, ~/map.pdf", id="files")
                 yield Label("Pictures are cleaned of their metadata - place, camera, time - "
                             "before they are sent.", classes="hint")
-            if self.group.type != "inbox":                  # tags, warnings first (UN-RFC 0052)
-                yield Input(placeholder="Tags - spoiler, profanity, sexual, nudity, violence, gore, or "
-                            "your own words; #words in the text count too", id="tags")
             if self._notices():
                 yield Checkbox("Tell the people you mention (a notice in their inbox)",
                                value=self.app.session.notice_settings()["send"], id="notify")
                 yield Label("", id="notify-who", classes="hint", markup=False)
-            yield Label(("This group has rules - press Esc and ? to read them.  " if self.has_rules
-                         else "") + "Ctrl+S to send. Sending takes a moment: the post carries a "
-                        "small proof-of-work.", classes="hint")
+            yield Label((("Cut the quote down to what you answer.  " if self.quote.lstrip().startswith(">")
+                          or "\n>" in self.quote else "")
+                         + ("This group has rules: Esc, then ?.  " if self.has_rules else "")
+                         + "Signed with your key · proof-of-work added.  Ctrl+B bold · Ctrl+Q quote · "
+                         "Ctrl+R read more · Ctrl+W warning · Ctrl+E bigger"), classes="hint", id="foot")
             with Horizontal(classes="buttons"):
                 yield Button("Cancel", id="cancel")
                 yield Button("Send", variant="primary", id="ok")
@@ -215,7 +230,59 @@ class ComposeDialog(Dialog):
         else:
             self.query_one("#subject").focus()
 
-    @on(Button.Pressed, "#ok")
+    def action_bigger(self) -> None:
+        """Ctrl+E: the text gets nearly all the room - or back (#74); remembered."""
+        win = self.query_one(".dialog.compose")
+        big = not win.has_class("big")
+        win.set_class(big, "big")
+        s = getattr(self.app, "session", None)
+        if s is not None:
+            s.set_client_setting("tui", "compose_big", big)
+        self.query_one("#body", TextArea).focus()
+
+    def _selected_lines(self, body: TextArea) -> tuple[int, int]:
+        (r1, _), (r2, _) = sorted((body.selection.start, body.selection.end))
+        return r1, r2
+
+    def action_bold(self) -> None:
+        """Ctrl+B: ** around the selection (or around "text" to write over)."""
+        body = self.query_one("#body", TextArea)
+        start, end = sorted((body.selection.start, body.selection.end))
+        chosen = body.selected_text or "text"
+        body.replace("**" + chosen + "**", start, end)
+        if not body.selected_text and start == end:
+            body.selection = type(body.selection)((start[0], start[1] + 2), (start[0], start[1] + 6))
+        body.focus()
+
+    def action_quote(self) -> None:
+        """Ctrl+Q: "> " at the start of the selected lines (or the cursor's line)."""
+        body = self.query_one("#body", TextArea)
+        r1, r2 = self._selected_lines(body)
+        lines = body.text.split("\n")
+        for r in range(r1, min(r2, len(lines) - 1) + 1):
+            body.insert("> ", (r, 0))
+        body.focus()
+
+    def action_warnings(self) -> None:
+        """Ctrl+W: show or hide the content warnings to choose from."""
+        if not self.query("#warn-list"):
+            return
+        lst = self.query_one("#warn-list")
+        lst.set_class(not lst.has_class("open"), "open")
+        if lst.has_class("open"):
+            self.query_one("#w-spoiler", Checkbox).focus()
+
+    @on(Button.Pressed, "#warn-btn")
+    def _warn_btn(self) -> None:
+        self.action_warnings()
+
+    @on(Checkbox.Changed, ".warnlist Checkbox")
+    def _warn_changed(self) -> None:
+        """Only the chosen warnings show, on the button (as the GUI's)."""
+        self.warnings = [w for w in WARNING_ORDER if self.query_one("#w-" + w, Checkbox).value]
+        self.query_one("#warn-btn", Button).label = (
+            "⚠ " + ", ".join(WARNING_TEXT[w] for w in self.warnings) if self.warnings else "⚠ Content warning")
+
     def action_read_more(self) -> None:
         """Ctrl+R: a read-more line at the cursor (UN-RFC 0031 3.2.1) - a feed cuts the
         post there for "... more"; nobody needs to know the syntax."""
@@ -225,6 +292,7 @@ class ComposeDialog(Dialog):
         body.move_cursor(cursor)
         body.focus()
 
+    @on(Button.Pressed, "#ok")
     def action_send(self) -> None:
         """Ctrl+S: check and send it, or say what is missing."""
         subject = self.query_one("#subject", Input).value.strip()
@@ -243,8 +311,15 @@ class ComposeDialog(Dialog):
             chosen = [value] if isinstance(value, str) and value else []
             self.languages = chosen if (chosen or self._suggested) else None
         if self.query("#tags"):                           # the core normalises them, adds #words
-            self.tags = [t for t in self.query_one("#tags", Input).value.replace(",", " ").split() if t]
+            typed = [t for t in self.query_one("#tags", Input).value.replace(",", " ").split() if t]
+            self.tags = list(self.warnings) + [t for t in typed if t not in self.warnings]
         self.dismiss((subject, body, keys))
+
+
+# content warnings (UN-RFC 0052/0053), spoiler first - the one people use most (#74)
+WARNING_ORDER = ("spoiler", "profanity", "sexual", "nudity", "violence", "gore")
+WARNING_TEXT = {"spoiler": "Spoiler", "profanity": "Profanity", "sexual": "Sexual content",
+                "nudity": "Nudity", "violence": "Violence", "gore": "Gore"}
 
 
 def with_read_more(text: str, row: int, col: int) -> tuple[str, tuple[int, int]]:
