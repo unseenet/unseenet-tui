@@ -104,6 +104,45 @@ async def test_writing_and_the_settings(tmp_path, monkeypatch):
         await pilot.press("q")
 
 
+async def test_an_edit_starts_with_the_posts_tags_warnings_and_language(tmp_path, monkeypatch):
+    """#91 (unseenet#733): the edit window is filled in from the post, so fixing a typo
+    keeps its warning, tags and language; changing them sends the new ones."""
+    from textual.widgets import Checkbox, Select
+    from unseenet_tui.dialogs.compose import ComposeDialog
+    app = await _app(tmp_path, monkeypatch)
+    got = []
+    async with app.run_test(size=(140, 60)) as pilot:
+        assert await app_ready(pilot, app), stack(app)
+        s = app.session
+        _labelled(s)
+        dlg = ComposeDialog(s.group_info(GID), "Slutningen", "Han dør #serier\n", is_reply=True,
+                            start_tags=["spoiler", "finale"], start_languages=["da", "en"])
+        app.push_screen(dlg, got.append)
+        assert await wait_for(pilot, lambda: laid_out(app, "#tags")), stack(app)
+        assert app.screen.query_one("#tags").value == "finale"            # warnings are boxes
+        assert app.screen.query_one("#w-spoiler", Checkbox).value
+        assert not app.screen.query_one("#w-sexual", Checkbox).value
+        assert app.screen.query_one("#lang", Select).value == "da"
+        assert "the post's" in str(app.screen.query_one("#lang-why").render())
+        app.screen.action_send()                                          # nothing changed
+        assert await wait_for(pilot, lambda: bool(got)), stack(app)
+        assert dlg.tags == ["spoiler", "finale"] and dlg.languages == ["da", "en"]
+
+        got.clear()
+        dlg = ComposeDialog(s.group_info(GID), "Slutningen", "Han dør\n", is_reply=True,
+                            start_tags=["spoiler"], start_languages=["da"])
+        app.push_screen(dlg, got.append)
+        assert await wait_for(pilot, lambda: laid_out(app, "#tags")), stack(app)
+        app.screen.query_one("#w-spoiler", Checkbox).value = False
+        app.screen.query_one("#w-sexual", Checkbox).value = True
+        app.screen.query_one("#lang", Select).value = "en"
+        await pilot.pause(0.1)
+        app.screen.action_send()
+        assert await wait_for(pilot, lambda: bool(got)), stack(app)
+        assert dlg.tags == ["sexual"] and dlg.languages == ["en"]
+        await pilot.press("q")
+
+
 async def test_everything_with_a_tag(tmp_path, monkeypatch):
     app = await _app(tmp_path, monkeypatch)
     async with app.run_test(size=(140, 50)) as pilot:
