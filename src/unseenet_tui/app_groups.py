@@ -42,6 +42,7 @@ from unseenet.core.groups import (INBOX_NAME, make_group_id, KIND_CHAT, KIND_POS
 from unseenet.client import session as _session_module
 from unseenet.client import naming
 from unseenet.client import richtext
+from unseenet.client.timefmt import ago
 from unseenet.client import groupfilter
 from unseenet.client.grouptree import fingerprint_suffix, group_tree
 from unseenet.core import markup
@@ -56,7 +57,7 @@ from unseenet.client.session import (MAX_SIG_LINES, SIG_SEPARATOR, GroupInfo, Me
 from unseenet.client.threads import CONTACT, FOR_YOU, TIMELINE   # the session's pseudo groups (#139)
 from unseenet.client.runtime import ClientRuntime
 from unseenet.client import events as ev
-from .helpers import REFRESH_SECONDS, REPO_URL, DOCS_URL, ACROSS, FEED_MARK, TIMELINE_MARK, START_FEED, START_SITE, CHATS, CHATS_SHOWN, SITE_MARK, REPLY_MARK, MENTION_MARK, for_you_marks, for_you_news, sess_default_pow, group_name_problem, GROUP_KINDS, known_node_details, node_details, ICONS, _ONION, PIN_MARK, ICON_LEGEND, ORIGIN_MARK, NETWORK_NAMES, network_name, origin_text, edited_when, group_icons, is_personal_inbox, by_hierarchy, CSS  # noqa: F401
+from .helpers import REFRESH_SECONDS, REPO_URL, DOCS_URL, ACROSS, FEED_MARK, TIMELINE_MARK, START_FEED, START_SITE, CHATS, CHATS_SHOWN, FOLDED, FEED_SHOWN, COMMENT_PAGE, CLIP_LINES, SITE_MARK, REPLY_MARK, MENTION_MARK, for_you_marks, for_you_news, sess_default_pow, group_name_problem, GROUP_KINDS, known_node_details, node_details, ICONS, _ONION, PIN_MARK, ICON_LEGEND, ORIGIN_MARK, NETWORK_NAMES, network_name, origin_text, edited_when, group_icons, is_personal_inbox, by_hierarchy, CSS  # noqa: F401
 from .dialogs.base import Dialog, InputDialog, InfoDialog, ConfirmDialog, KeyListDialog  # noqa: F401
 from .dialogs.setup import UnlockDialog, ChangePassphraseDialog, OTHER_NODE, SetupDialog, BridgesDialog  # noqa: F401
 from .dialogs.compose import ComposeDialog, PageDialog, PreviewDialog, SignatureDialog, PinDialog, ReactDialog, reactions_text  # noqa: F401
@@ -420,6 +421,86 @@ class GroupsMixin:
         if under and len(partners) + len(closed) > len(under):
             node.add_leaf(Text(f"Show all ({len(partners) + len(closed)})", style="dim"), data=CHATS)
 
+    def _fold_comments(self, rows: list) -> list:
+        """A feed's rows with each entry's comments folded (#34, UN-RFC 0034 4.4): the
+        newest one, and always your own and the answers to them; the rest behind a "View
+        N more" row (``(FOLDED, (entry id, n))``), COMMENT_PAGE more at a time. Ctrl+P
+        *Which comments* shows where you wrote, or what names you, instead. Never chosen
+        by how many answer or react."""
+        s = self.session
+        mine, patterns = s.my_message_ids(), s._mention_patterns()
+        me = s.identity().key_text if s.has_identity() else None
+        out, i = [], 0
+        while i < len(rows):
+            m, depth = rows[i]
+            j = i + 1
+            while j < len(rows) and rows[j][1] > 0:
+                j += 1
+            if depth:                                 # a comment without its entry here
+                out.append(rows[i])
+                i += 1
+                continue
+            comments = rows[i + 1:j]
+            how = self._comments_how.get(m.message_id, "newest")
+            extra = self._comments_more.get(m.message_id, 0)
+            own = {c.message_id for c, _ in comments if c.author_key == me}
+            talks = {c.message_id for c, _ in comments
+                     if c.message_id in own or set(c.references or ()) & own}
+            if how == "mentions":
+                keep = {c.message_id for c, _ in comments if s.for_me(c, mine, patterns) == "mention"}
+            elif how == "mine":
+                keep = set(talks)
+            else:
+                keep = {c.message_id for c, _ in comments[-FEED_SHOWN:]} | talks
+            newest_hidden = [c.message_id for c, _ in comments if c.message_id not in keep]
+            keep |= set(newest_hidden[len(newest_hidden) - extra:] if extra else [])
+            hidden = len(comments) - len(keep)
+            out.append((m, 0))
+            if hidden:
+                out.append((FOLDED, (m.message_id, hidden)))
+            out += [c for c in comments if c[0].message_id in keep]
+            i = j
+        return out
+
+    def _entry_of(self, m) -> str | None:
+        """The entry a feed's message belongs to: itself, or the first it answers."""
+        if m is None:
+            return None
+        return (m.references or [m.message_id])[0] if m.references else m.message_id
+
+    def action_which_comments(self) -> None:
+        """Ctrl+P: which of the entry's comments are shown - the newest, where you wrote,
+        or what names you, in turn (#34). Never by how many answer or react."""
+        entry = self._entry_of(self.current_message)
+        if not entry or self.view_of(self.current_group) != "feed":
+            self.notify("Select an entry in a feed first", severity="warning")
+            return
+        order = ["newest", "mine", "mentions"]
+        how = order[(order.index(self._comments_how.get(entry, "newest")) + 1) % len(order)]
+        self._comments_how[entry] = how
+        self._comments_more.pop(entry, None)
+        self.notify({"newest": "Comments: the newest, and your own talks",
+                     "mine": "Comments: where you wrote, and the answers to you",
+                     "mentions": "Comments: the ones that name you"}[how])
+        self._render_threads()
+
+    def show_more_comments(self, entry: str) -> None:
+        """Enter on "View N more": COMMENT_PAGE more of the entry's comments."""
+        self._comments_more[entry] = self._comments_more.get(entry, 0) + COMMENT_PAGE
+        self._render_threads()
+
+    def _tick_ago(self) -> None:
+        """Every minute: how long ago in a feed's list, kept true (#34)."""
+        gid = self.current_group
+        if not gid or (self.view_of(gid) != "feed" and gid != TIMELINE):
+            return
+        for table in self.query("#threads"):
+            for mid, m in self.messages.items():
+                try:
+                    table.update_cell(mid, "date", ago(m.date))
+                except Exception:  # noqa: BLE001 - a row gone since: nothing to keep fresh
+                    pass
+
     def _render_threads(self) -> None:
         gid = self.current_group
         s = self.session
@@ -437,6 +518,8 @@ class GroupsMixin:
         self._scores = {}
         if (not feed or gid == TIMELINE) and shown not in ("chat", "pages"):   # your rules (UN-RFC 0051)
             rows, self._scores = self.scored_rows(gid, rows)
+        # comments folded in a feed (#34, UN-RFC 0034 4.4); ``rows`` stays every message
+        shown_rows = self._fold_comments(rows) if feed and gid != TIMELINE else rows
         table = self.query_one("#threads", DataTable)
         keep = self.current_message.message_id if self.current_message else None
         table.clear()
@@ -447,7 +530,13 @@ class GroupsMixin:
         if pins and self.view_of(gid) != "chat":
             self._pinned_section(table, gid, pins, by_id)
         counted: dict = {}                              # reactions, once per group (0048)
-        for m, depth in rows:
+        for m, depth in shown_rows:
+            if m == FOLDED:                         # "View N more comments" (#34)
+                entry, hidden = depth
+                table.add_row(" ", Text(f"    ↳ View {hidden} more comment{'s' if hidden != 1 else ''}"
+                                        f"  (Enter: {COMMENT_PAGE} more)", style="dim italic"),
+                              "", "", key=FOLDED + entry)
+                continue
             self.messages[m.message_id] = m
             flag = "●" if not s.is_read(m) else " "
             title = m.subject or "(no subject)"
@@ -484,7 +573,8 @@ class GroupsMixin:
                             else f"  ({s.group_label(m.group)})")
             elif gid == TIMELINE:
                 subject += f"  ({s.group_label(m.group)})"
-            date = m.date.astimezone().strftime("%d %b %H:%M") if m.date else ""
+            date = (ago(m.date) if feed else                # how long ago, in feeds (#34)
+                    m.date.astimezone().strftime("%d %b %H:%M") if m.date else "")
             stripe = None if getattr(m, "reported", None) else self.warning_stripe(m)   # 0053
             line = Text.assemble(stripe, " ", subject) if stripe is not None else Text(subject)
             if self.hidden_text(m) and not getattr(m, "reported", None):

@@ -42,6 +42,7 @@ from unseenet.core.groups import (INBOX_NAME, make_group_id, KIND_CHAT, KIND_POS
 from unseenet.client import session as _session_module
 from unseenet.client import naming
 from unseenet.client import richtext
+from unseenet.client.timefmt import ago
 from unseenet.client import groupfilter
 from unseenet.client.grouptree import fingerprint_suffix, group_tree
 from unseenet.core import markup
@@ -56,7 +57,7 @@ from unseenet.client.session import (MAX_SIG_LINES, SIG_SEPARATOR, GroupInfo, Me
 from unseenet.client.threads import CONTACT, FOR_YOU, TIMELINE   # the session's pseudo groups (#139)
 from unseenet.client.runtime import ClientRuntime
 from unseenet.client import events as ev
-from .helpers import REFRESH_SECONDS, REPO_URL, DOCS_URL, ACROSS, FEED_MARK, TIMELINE_MARK, START_FEED, START_SITE, CHATS, CHATS_SHOWN, SITE_MARK, REPLY_MARK, MENTION_MARK, for_you_marks, for_you_news, sess_default_pow, group_name_problem, GROUP_KINDS, known_node_details, node_details, ICONS, _ONION, PIN_MARK, ICON_LEGEND, ORIGIN_MARK, NETWORK_NAMES, network_name, origin_text, edited_when, group_icons, is_personal_inbox, by_hierarchy, CSS  # noqa: F401
+from .helpers import REFRESH_SECONDS, REPO_URL, DOCS_URL, ACROSS, FEED_MARK, TIMELINE_MARK, START_FEED, START_SITE, CHATS, CHATS_SHOWN, FOLDED, FEED_SHOWN, COMMENT_PAGE, CLIP_LINES, SITE_MARK, REPLY_MARK, MENTION_MARK, for_you_marks, for_you_news, sess_default_pow, group_name_problem, GROUP_KINDS, known_node_details, node_details, ICONS, _ONION, PIN_MARK, ICON_LEGEND, ORIGIN_MARK, NETWORK_NAMES, network_name, origin_text, edited_when, group_icons, is_personal_inbox, by_hierarchy, CSS  # noqa: F401
 from .dialogs.base import Dialog, InputDialog, InfoDialog, ConfirmDialog, KeyListDialog  # noqa: F401
 from .dialogs.setup import UnlockDialog, ChangePassphraseDialog, OTHER_NODE, SetupDialog, BridgesDialog  # noqa: F401
 from .dialogs.compose import ComposeDialog, PageDialog, PreviewDialog, SignatureDialog, PinDialog, ReactDialog, reactions_text  # noqa: F401
@@ -506,9 +507,13 @@ class ChatMixin:
         self.query_one("#threads-title", Static).update(
             f"{name}  ·  {kind}{fast}  ·  {total} posts, {unread} unread{rules}{blocked}{paused}")
 
-    def article(self, msg: Message) -> tuple[str, Text]:
-        """The header (markup) and the body of a message, as the reader shows them."""
+    def article(self, msg: Message, cut: bool = False) -> tuple[str, Text]:
+        """The header (markup) and the body of a message, as the reader shows them.
+        ``cut``: an entry beside a feed's list - a long post cut with "… more" (#34), at
+        the author's read-more line when it is within twice the cut (UN-RFC 0031 3.2.1)."""
         date = msg.date.astimezone().strftime("%A %d %B %Y %H:%M") if msg.date else ""
+        if cut and msg.date:                                  # beside a feed: how long ago (#34)
+            date = f"{ago(msg.date)}  ·  {date}"
         if getattr(msg, "origin_network", ""):               # UN-RFC 0049 section 5.1
             date = (f"posted {date}\n{ORIGIN_MARK} {escape(origin_text(msg))} "
                     "[dim](the date it was first published is the poster's claim)[/dim]")
@@ -564,8 +569,13 @@ class ChatMixin:
             text, sig = split_signature(msg.body)
             # Markdown or plain, as the message says (UN-RFC 0031); the signature never is
             body = Text("\n")
-            body.append(richtext.blocks(markup.body(text, msg.content_type, msg.kind)))
-            if sig is not None:
+            tree = markup.body(text, msg.content_type, msg.kind)
+            shown, more = cut_text(tree) if cut and msg.kind != KIND_CHAT else (richtext.blocks(tree), False)
+            body.append(shown)
+            if more:
+                body.append("\n\n… more", style="bold")
+                body.append("  - Enter shows it whole", style="dim italic")
+            if sig is not None and not more:
                 body.append("\n\n")
                 body.append(SIG_SEPARATOR + sig, style="dim")
             if msg.attachments:                              # UN-RFC 0027 section 9.2
@@ -626,3 +636,20 @@ class ChatMixin:
         await asyncio.sleep(2)
         self.session.save()
         await self._render_groups()
+
+
+def cut_text(tree: list[dict]) -> tuple[Text, bool]:
+    """A post's text cut for a feed (#34): at the author's read-more line when what comes
+    before it is at most twice CLIP_LINES (UN-RFC 0031 3.2.1), else after CLIP_LINES
+    lines when it is longer - and whether anything is left out."""
+    at = next((i for i, b in enumerate(tree) if b.get("t") == "more"), None)
+    if at is not None:
+        before = richtext.blocks(tree[:at])
+        if len(before.plain.split("\n")) <= 2 * CLIP_LINES:
+            return before, True
+    whole = richtext.blocks(tree)
+    lines = whole.split("\n")
+    if len(lines) <= CLIP_LINES + 2:                    # a line or two over: shown whole
+        return whole, False
+    out = Text("\n").join(lines[:CLIP_LINES])
+    return out, True

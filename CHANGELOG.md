@@ -6,6 +6,13 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+- **Feeds as in the GUI** (#34): times say how long ago in feeds and the timeline (*now*,
+  *5 min*, *Yesterday 14:20*, … - the core's words, kept true every minute), a long entry
+  beside the list is cut with *… more* - at the author's read-more line when there is one -
+  and Enter shows it whole; comments are folded to the newest one and your own talks, with
+  *View N more* (20 at a time) and Ctrl+P *Which comments* (newest, where you wrote, what
+  names you).
+
 - **Read more** (#52, UN-RFC 0031 3.2.1): Ctrl+R while writing a post, or Ctrl+P *Insert read
   more*, puts the line of three dots where a feed cuts the post for "… more"; a post shown
   whole leaves the line out (the core's rendering).
