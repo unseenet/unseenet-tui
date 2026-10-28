@@ -70,6 +70,25 @@ CONTACTS = ("action", "contacts")        # "Your contacts" at the top, beside th
 FOLDED = "folded:"                       # a feed's "View N more comments" row (#34)
 FEED_SHOWN = 1                           # comments under an entry before "View more", as the GUI
 COMMENT_PAGE = 20                        # ... and how many more each time
+OLDER = "older:"                         # "View older threads" at the end of a large group (#86)
+SHOWN_FIRST = 200                        # threads, entries or chat lines shown first, as the GUI
+
+
+def newest_rows(rows: list, limit: int, chat: bool) -> tuple[list, bool]:
+    """A large group's rows cut to its newest (#86), the same as the core answers the GUI
+    (UN-RFC 0046, ``limit``): the last ``limit`` lines of a chat (they come oldest first),
+    else the first ``limit`` threads or feed entries (newest first), each with every row
+    under it. Returns the rows and whether older ones were left out."""
+    if chat:
+        return (rows[-limit:], True) if len(rows) > limit else (rows, False)
+    out, starts = [], 0
+    for row in rows:
+        if row[1] == 0:
+            starts += 1
+            if starts > limit:
+                return out, True
+        out.append(row)
+    return out, False
 CLIP_LINES = 10                          # an entry's text in a feed before "… more"
 SITE_MARK = "▤"                          # your site in the group list (UN-RFC 0035)
 REPLY_MARK, MENTION_MARK = "◄", "♦"   # in the basic character set (Windows console)
