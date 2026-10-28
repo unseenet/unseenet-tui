@@ -6,6 +6,10 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+- **Your contacts, Private posts and Private chats alike** (as the GUI, #73): three fixed
+  items at the top in that order, at most three unread chats under Private chats, and **a
+  person picker** for `m` and *Chat with someone* instead of typing a name or key: Chat |
+  Post (Tab), find or paste a key, recent people first - Chat opens the chat itself.
 - **Room to write a post, as the GUI** (#74, gui#203): Ctrl+E gives the text nearly all the
   room (remembered with your identity); content warnings behind one *⚠ Content warning*
   button / Ctrl+W, the chosen ones named on it; Ctrl+B bold and Ctrl+Q quote; language,

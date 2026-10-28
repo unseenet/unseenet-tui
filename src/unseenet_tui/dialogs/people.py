@@ -80,7 +80,9 @@ class ContactsDialog(Dialog):
     def compose(self) -> ComposeResult:
         """Your contacts: the list, and chat, rename, remove, add."""
         with Vertical(classes="dialog"):
-            yield Label("Contacts", classes="title")
+            yield Label("Your contacts", classes="title")
+            yield Static("The people you gave a name - names only you see; nobody is told.",
+                         classes="hint", markup=False)
             if not self.contacts:
                 yield Static("No contacts yet. Press a on a post or a message to add its author "
                              "under a name of your own.", markup=False)
@@ -160,6 +162,99 @@ class ContactsDialog(Dialog):
     def _act(self, event: Button.Pressed) -> None:
         if (key := self._chosen()):
             self.dismiss((event.button.id, key))
+
+
+class PersonPicker(Dialog):
+    """Who to write to (#73, as gui#209), in place of a To field: Chat or Post (Tab
+    switches), a filter that also takes a pasted key, recent people first, then
+    contacts. Dismissed with ``(kind, key)``."""
+
+    BINDINGS = [Binding("escape", "cancel", "Close"),
+                Binding("tab", "switch", "Chat / Post", priority=True),
+                Binding("down", "move(1)", show=False, priority=True),
+                Binding("up", "move(-1)", show=False, priority=True)]
+
+    def __init__(self, kind: str, people: list[tuple[str, str, bool]]):
+        """``people``: (key, label, recent) - recent ones first."""
+        super().__init__()
+        self.kind, self.people, self.shown = kind, people, list(people)
+
+    def _title(self) -> str:
+        return "New private chat" if self.kind == "chat" else "New private post"
+
+    def compose(self) -> ComposeResult:
+        """The title with Chat | Post, the filter and the list."""
+        with Vertical(classes="dialog"):
+            yield Label(self._title() + "   [Chat | Post: Tab]", classes="title", id="ptitle", markup=False)
+            yield Input(placeholder="Find a contact, or paste a key", id="pfind")
+            yield OptionList(*self._options(), id="plist")
+            yield Label(self._foot(), classes="hint", id="pfoot", markup=False)
+            with Horizontal(classes="buttons"):
+                yield Button("Close", id="cancel")
+                yield Button("Open", variant="primary", id="ok")
+
+    def _foot(self) -> str:
+        return ("Sealed to their key: only the two of you can read it." if self.kind == "chat"
+                else "A post with a subject, sealed to them.") + "  ↑↓ choose · Enter open"
+
+    def _options(self) -> list:
+        out, rest_shown = [], False
+        for i, (key, label, recent) in enumerate(self.shown):
+            tag = "recent" if recent else ("contacts" if not rest_shown else "")
+            if not recent:
+                rest_shown = True
+            out.append(Option(("Recent:   " if recent and i == 0 else "Contacts: " if tag == "contacts"
+                               else "          ") + label, id=key))
+        return out
+
+    def on_mount(self) -> None:
+        """The focus in the filter, on the first person."""
+        self.query_one("#pfind", Input).focus()
+        if self.shown:
+            self.query_one("#plist", OptionList).highlighted = 0
+
+    @on(Input.Changed, "#pfind")
+    def _filter(self, event: Input.Changed) -> None:
+        q = event.value.strip().lower()
+        self.shown = [p for p in self.people if not q or q in p[1].lower() or q in p[0].lower()]
+        lst = self.query_one("#plist", OptionList)
+        lst.clear_options()
+        lst.add_options(self._options())
+        lst.highlighted = 0 if self.shown else None
+
+    def action_switch(self) -> None:
+        """Tab: chat or post."""
+        self.kind = "post" if self.kind == "chat" else "chat"
+        self.query_one("#ptitle", Label).update(self._title() + "   [Chat | Post: Tab]")
+        self.query_one("#pfoot", Label).update(self._foot())
+
+    def action_move(self, step: int) -> None:
+        """Up and down the list."""
+        if not self.shown:
+            return
+        lst = self.query_one("#plist", OptionList)
+        at = lst.highlighted if lst.highlighted is not None else -step
+        lst.highlighted = max(0, min(len(self.shown) - 1, at + step))
+
+    def _chosen(self) -> str | None:
+        typed = self.query_one("#pfind", Input).value.strip()
+        if typed.startswith("ed25519:"):
+            return typed
+        lst = self.query_one("#plist", OptionList)
+        if lst.highlighted is None or not self.shown:
+            return None
+        return self.shown[lst.highlighted][0]
+
+    @on(Input.Submitted, "#pfind")
+    @on(Button.Pressed, "#ok")
+    def _open(self) -> None:
+        if (key := self._chosen()):
+            self.dismiss((self.kind, key))
+
+    @on(OptionList.OptionSelected, "#plist")
+    def _picked(self, event: OptionList.OptionSelected) -> None:
+        if event.option.id:
+            self.dismiss((self.kind, event.option.id))
 
 
 class ChatsDialog(Dialog):

@@ -61,5 +61,22 @@ async def test_tui_private_chats_item_and_list(tmp_path, monkeypatch):
         assert await wait_for(pilot, lambda: app.current_group == CONTACT + key, 300)
         names = [c.title for c in app.get_system_commands(app.screen)]
         assert "Private chats" in names
+        # #73: Your contacts, Private posts, Private chats - in that order, alike
+        from unseenet_tui.helpers import CONTACTS
+        top = [n.data for n in tree.root.children]
+        assert top.index(CONTACTS) < top.index(app.session.my_inbox) < top.index(CHATS)
+        # the person picker: Tab switches chat/post; her name, Enter opens the chat
+        from unseenet_tui.dialogs.people import PersonPicker
+        app.select_group(app.session.my_inbox)
+        app.action_chat_with()
+        assert await wait_for(pilot, lambda: isinstance(app.screen, PersonPicker), 200)
+        assert app.screen.kind == "chat" and app.screen.people[0][0] == key
+        app.screen.action_switch()
+        assert app.screen.kind == "post"
+        app.screen.action_switch()
+        app.screen.query_one("#pfind").value = "sonia"
+        await pilot.pause(0.1)
+        app.screen._open()
+        assert await wait_for(pilot, lambda: app.current_group == CONTACT + key, 300)
         await pilot.press("q")
     server.close()
