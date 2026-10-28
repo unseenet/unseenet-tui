@@ -6,6 +6,10 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+- **Private chats as a fixed item** (asked for by the maintainer, #39): `» Private chats (N)`
+  at the top under *Private posts*, with only the chats with unread lines under it (at most
+  five, then *Show all*); selecting it, or Ctrl+P *Private chats*, opens the full list -
+  find, Contacts, + New chat, closed chats last. The `Chats` folder among the groups is gone.
 - **What comes into the timeline** (asked for by the maintainer, #64, UN-RFC 0034 6.2):
   Ctrl+P *Add to timeline / take out of timeline* for the group shown, a `•` on the groups in
   it in the list and its title line, and the Timeline counts groups, not only feeds.

@@ -56,11 +56,11 @@ from unseenet.client.session import (MAX_SIG_LINES, SIG_SEPARATOR, GroupInfo, Me
 from unseenet.client.threads import CONTACT, FOR_YOU, TIMELINE   # the session's pseudo groups (#139)
 from unseenet.client.runtime import ClientRuntime
 from unseenet.client import events as ev
-from .helpers import REFRESH_SECONDS, REPO_URL, DOCS_URL, ACROSS, FEED_MARK, TIMELINE_MARK, START_FEED, START_SITE, SITE_MARK, REPLY_MARK, MENTION_MARK, for_you_marks, for_you_news, sess_default_pow, group_name_problem, GROUP_KINDS, known_node_details, node_details, ICONS, _ONION, PIN_MARK, ICON_LEGEND, ORIGIN_MARK, NETWORK_NAMES, network_name, origin_text, edited_when, group_icons, is_personal_inbox, by_hierarchy, CSS  # noqa: F401
+from .helpers import REFRESH_SECONDS, REPO_URL, DOCS_URL, ACROSS, FEED_MARK, TIMELINE_MARK, START_FEED, START_SITE, CHATS, CHATS_SHOWN, SITE_MARK, REPLY_MARK, MENTION_MARK, for_you_marks, for_you_news, sess_default_pow, group_name_problem, GROUP_KINDS, known_node_details, node_details, ICONS, _ONION, PIN_MARK, ICON_LEGEND, ORIGIN_MARK, NETWORK_NAMES, network_name, origin_text, edited_when, group_icons, is_personal_inbox, by_hierarchy, CSS  # noqa: F401
 from .dialogs.base import Dialog, InputDialog, InfoDialog, ConfirmDialog, KeyListDialog  # noqa: F401
 from .dialogs.setup import UnlockDialog, ChangePassphraseDialog, OTHER_NODE, SetupDialog, BridgesDialog  # noqa: F401
 from .dialogs.compose import ComposeDialog, PageDialog, PreviewDialog, SignatureDialog, PinDialog, ReactDialog, reactions_text  # noqa: F401
-from .dialogs.people import ContactsDialog, NamesDialog, PROFILE_WARNING, identicon_text, MARKDOWN_HINT, manifest_text, profiles_clean, writes_markdown, ProfileDialog, EditProfileDialog  # noqa: F401
+from .dialogs.people import ContactsDialog, ChatsDialog, NamesDialog, PROFILE_WARNING, identicon_text, MARKDOWN_HINT, manifest_text, profiles_clean, writes_markdown, ProfileDialog, EditProfileDialog  # noqa: F401
 from .dialogs.groups import DELIVERY_CHOICES, DELIVERY, SITE_CHOICE, KINDS_CHOICES, KINDS, REACTIONS_CHOICES, reactions_choice, COMMENTS_CHOICES, FILES_CHOICES, FILES_GROUP_TYPES, reactions_label, comments_label, GROUP_NAME_HELP, CreateGroupDialog, GroupInfoDialog, EditGroupDialog, BrowseTree, NO_SELECT_ON_FOCUS, BrowseDialog  # noqa: F401
 from .dialogs.moderation import ReportDialog, ModerationDialog  # noqa: F401
 from .dialogs.nodes import NodesDialog, AddNodeDialog, NodeInfoDialog  # noqa: F401
@@ -212,6 +212,8 @@ class GroupsMixin:
         for g in mine:                                   # private messages always first
             node = tree.root.add_leaf(label(g), data=g.group_id)
             nodes[g.group_id] = node
+        if not searching:                                # then private chats: one item (#39)
+            self._chats_item(tree, nodes)
         for_you = self.session.for_you_counts()
         text = Text(f"{REPLY_MARK} For you" + for_you_marks(for_you))
         if for_you.total:
@@ -233,32 +235,6 @@ class GroupsMixin:
                     nodes[start] = tree.root.add_leaf(
                         Text(f"{mark} Start your {kind}", style="dim"), data=start)
         self._for_you_seen = getattr(self, "_for_you_seen", None) or for_you
-        # one chat per person: your contacts, and anyone else you have chatted with
-        # (UN-RFC 0028, 6.2); posts are in Private posts
-        partners = [] if searching else self.session.chat_partners()
-        if partners:
-            total = sum(self.session.unread_from(k, KIND_CHAT) for k in partners)
-            folder = Text("Chats" + (f" ({total})" if total else ""))
-            if total:
-                folder.stylize("bold")
-            cnode = tree.root.add(folder, data=("folder", "Chats"),
-                                  expand="Chats" in was_open or "Chats" not in known)
-            nodes[("folder", "Chats")] = cnode
-            for key in partners:
-                name = self.session.contact_name(key) or ""
-                unread = self.session.unread_from(key, KIND_CHAT)
-                if not name:                 # what they call themselves, with their fingerprint
-                    said = next((m.from_name for m in reversed(self.session.conversation(key, KIND_CHAT))
-                                 if m.sender_key == key and m.from_name), "")
-                    name = self.session.identity_label(key, said) if said else self._key_label(key)
-                    name = "◦ " + name
-                else:
-                    name = "• " + name
-                text = Text(name
-                            + (f" ({unread})" if unread else ""))
-                if unread:
-                    text.stylize("bold")
-                nodes[CONTACT + key] = cnode.add_leaf(text, data=CONTACT + key)
         for top, items in by_hierarchy([g for g in groups if g not in on_top]):
             if not top:                          # a hierarchy of one: no folder, full name
                 for g in items:
@@ -391,6 +367,38 @@ class GroupsMixin:
         if self.session.rules_unseen(gid) and isinstance(self.screen, Screen) \
                 and not isinstance(self.screen, ModalScreen):
             self.action_group_info(first_time=True)
+
+    def _chat_label(self, key: str) -> str:
+        """A person in the chats: the name you gave them, else what they call themselves
+        with their fingerprint (◦: not a contact)."""
+        name = self.session.contact_name(key) or ""
+        if name:
+            return "• " + name
+        said = next((m.from_name for m in reversed(self.session.conversation(key, KIND_CHAT))
+                     if m.sender_key == key and m.from_name), "")
+        return "◦ " + (self.session.identity_label(key, said) if said else self._key_label(key))
+
+    def _chats_item(self, tree, nodes) -> None:
+        """Private chats as one fixed item (#39): its unread count, under it only the
+        chats with unread lines - at most five, and the one you are in - then Show all,
+        so many chats never push the groups down. One chat per person (UN-RFC 0028 6.2)."""
+        partners = self.session.chat_partners()
+        unread = {k: self.session.unread_from(k, KIND_CHAT) for k in partners}
+        total = sum(unread.values())
+        text = Text(f"{ICONS['chat']} Private chats" + (f" ({total})" if total else ""))
+        if total:
+            text.stylize("bold")
+        under = [k for k in partners if unread[k] or self.current_group == CONTACT + k][:CHATS_SHOWN]
+        node = tree.root.add(text, data=CHATS, expand=True) if under else tree.root.add_leaf(text, data=CHATS)
+        nodes[CHATS] = node
+        for key in under:
+            leaf = Text(self._chat_label(key) + (f" ({unread[key]})" if unread[key] else ""))
+            if unread[key]:
+                leaf.stylize("bold")
+            nodes[CONTACT + key] = node.add_leaf(leaf, data=CONTACT + key)
+        closed = [k for k, _ in self.session.contacts() if self.session.chat_closed(k)]
+        if under and len(partners) + len(closed) > len(under):
+            node.add_leaf(Text(f"Show all ({len(partners) + len(closed)})", style="dim"), data=CHATS)
 
     def _render_threads(self) -> None:
         gid = self.current_group

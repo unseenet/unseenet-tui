@@ -162,6 +162,115 @@ class ContactsDialog(Dialog):
             self.dismiss((event.button.id, key))
 
 
+class ChatsDialog(Dialog):
+    """Private chats (#39): every chat, one per person - only you and the other person
+    can read them - unread first, then the closed ones, which come back when either of
+    you writes (UN-RFC 0044 ``closed_chats``). Type to find someone; Enter opens the
+    chat; + starts a new one; Contacts opens the address book."""
+
+    ABOUT = ("Private chats, one per person - only you and the other person can read them. "
+             "Add people as contacts, or start a chat with +.")
+    BINDINGS = [Binding("escape", "cancel", "Close"),
+                Binding("plus", "new", "New chat", show=False),
+                Binding("down", "move(1)", show=False, priority=True),
+                Binding("up", "move(-1)", show=False, priority=True)]
+
+    def __init__(self, chats: list[tuple[str, str, int, bool]]):
+        """``chats``: (key, label, unread, closed) for every person."""
+        super().__init__()
+        self.chats = chats
+        self.shown = list(chats)
+
+    def compose(self) -> ComposeResult:
+        """The list, a filter, and Contacts, New chat and Chat."""
+        with Vertical(classes="dialog"):
+            yield Label("Private chats", classes="title")
+            yield Static(self.ABOUT, classes="hint", markup=False)
+            if self.chats:
+                yield Input(placeholder="Find: a name or a key", id="find")
+                yield Label(self._count(), classes="hint", id="count", markup=False)
+                yield OptionList(*self._options(), id="who")
+            with Horizontal(classes="buttons"):
+                yield Button("Close", id="cancel")
+                yield Button("Contacts", id="contacts")
+                yield Button("+ New chat", id="new")
+                if self.chats:
+                    yield Button("Chat", variant="primary", id="chat")
+
+    def on_mount(self) -> None:
+        """The focus in the filter, on the first chat."""
+        if self.chats:
+            self.query_one("#find", Input).focus()
+            self.query_one("#who", OptionList).highlighted = 0
+
+    def _count(self) -> str:
+        n, total = len(self.shown), len(self.chats)
+        if n == total:
+            return f"{total} chat{'s' if total != 1 else ''}. Type to find someone, Enter to chat."
+        return f"{n} of {total} chats" if n else "No chat matches"
+
+    def _options(self) -> list:
+        return [Option(f"{label}" + (f"  ({unread})" if unread else "")
+                       + ("  - closed, back when one of you writes" if closed else ""), id=key)
+                for key, label, unread, closed in self.shown]
+
+    @on(Input.Changed, "#find")
+    def _filter(self, event: Input.Changed) -> None:
+        q = event.value.strip().lower()
+        self.shown = [c for c in self.chats if not q or q in c[1].lower() or q in c[0].lower()]
+        who = self.query_one("#who", OptionList)
+        who.clear_options()
+        who.add_options(self._options())
+        who.highlighted = 0 if self.shown else None
+        self.query_one("#count", Label).update(self._count())
+
+    def action_move(self, step: int) -> None:
+        """Up and down the list."""
+        if not self.shown:
+            return
+        who = self.query_one("#who", OptionList)
+        at = who.highlighted if who.highlighted is not None else -step
+        who.highlighted = max(0, min(len(self.shown) - 1, at + step))
+
+    def action_new(self) -> None:
+        """+: a chat with someone new."""
+        self.dismiss(("new", None))
+
+    def action_cancel(self) -> None:
+        """Esc: clear the filter, then close."""
+        if self.chats:
+            find = self.query_one("#find", Input)
+            if find.value:
+                find.value = ""
+                return
+        self.dismiss(self.CANCEL_RESULT)
+
+    def _chosen(self) -> str | None:
+        who = self.query_one("#who", OptionList)
+        if who.highlighted is None or not self.shown:
+            return None
+        return self.shown[who.highlighted][0]
+
+    @on(Input.Submitted, "#find")
+    def _enter(self) -> None:
+        if (key := self._chosen()):
+            self.dismiss(("chat", key))
+
+    @on(OptionList.OptionSelected, "#who")
+    def _picked(self, event: OptionList.OptionSelected) -> None:
+        if event.option.id:
+            self.dismiss(("chat", event.option.id))
+
+    @on(Button.Pressed, "#chat")
+    def _chat(self) -> None:
+        if (key := self._chosen()):
+            self.dismiss(("chat", key))
+
+    @on(Button.Pressed, "#contacts, #new")
+    def _other(self, event: Button.Pressed) -> None:
+        self.dismiss((event.button.id, None))
+
+
 class NamesDialog(Dialog):
     """Your names (UN-RFC 0019): those you hold, those you asked for, and a field to claim one."""
 
