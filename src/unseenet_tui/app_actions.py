@@ -56,11 +56,11 @@ from unseenet.client.session import (MAX_SIG_LINES, SIG_SEPARATOR, GroupInfo, Me
 from unseenet.client.threads import CONTACT, FOR_YOU, TIMELINE   # the session's pseudo groups (#139)
 from unseenet.client.runtime import ClientRuntime
 from unseenet.client import events as ev
-from .helpers import REFRESH_SECONDS, REPO_URL, DOCS_URL, ACROSS, FEED_MARK, START_FEED, START_SITE, CHATS, CHATS_SHOWN, FOLDED, FEED_SHOWN, COMMENT_PAGE, CLIP_LINES, SITE_MARK, REPLY_MARK, MENTION_MARK, for_you_marks, for_you_news, sess_default_pow, group_name_problem, GROUP_KINDS, known_node_details, node_details, ICONS, _ONION, PIN_MARK, ICON_LEGEND, ORIGIN_MARK, NETWORK_NAMES, network_name, origin_text, edited_when, group_icons, is_personal_inbox, by_hierarchy, CSS  # noqa: F401
+from .helpers import REFRESH_SECONDS, REPO_URL, DOCS_URL, ACROSS, FEED_MARK, START_FEED, START_SITE, CHATS, CHATS_SHOWN, CONTACTS, FOLDED, FEED_SHOWN, COMMENT_PAGE, CLIP_LINES, SITE_MARK, REPLY_MARK, MENTION_MARK, for_you_marks, for_you_news, sess_default_pow, group_name_problem, GROUP_KINDS, known_node_details, node_details, ICONS, _ONION, PIN_MARK, ICON_LEGEND, ORIGIN_MARK, NETWORK_NAMES, network_name, origin_text, edited_when, group_icons, is_personal_inbox, by_hierarchy, CSS  # noqa: F401
 from .dialogs.base import Dialog, InputDialog, InfoDialog, ConfirmDialog, KeyListDialog  # noqa: F401
 from .dialogs.setup import UnlockDialog, ChangePassphraseDialog, OTHER_NODE, SetupDialog, BridgesDialog  # noqa: F401
 from .dialogs.compose import ComposeDialog, PageDialog, PreviewDialog, SignatureDialog, PinDialog, ReactDialog, reactions_text  # noqa: F401
-from .dialogs.people import ContactsDialog, ChatsDialog, NamesDialog, PROFILE_WARNING, identicon_text, MARKDOWN_HINT, manifest_text, profiles_clean, writes_markdown, ProfileDialog, EditProfileDialog  # noqa: F401
+from .dialogs.people import ContactsDialog, ChatsDialog, PersonPicker, NamesDialog, PROFILE_WARNING, identicon_text, MARKDOWN_HINT, manifest_text, profiles_clean, writes_markdown, ProfileDialog, EditProfileDialog  # noqa: F401
 from .dialogs.groups import DELIVERY_CHOICES, DELIVERY, SITE_CHOICE, KINDS_CHOICES, KINDS, REACTIONS_CHOICES, reactions_choice, COMMENTS_CHOICES, FILES_CHOICES, FILES_GROUP_TYPES, reactions_label, comments_label, GROUP_NAME_HELP, CreateGroupDialog, GroupInfoDialog, EditGroupDialog, BrowseTree, NO_SELECT_ON_FOCUS, BrowseDialog  # noqa: F401
 from .dialogs.moderation import ReportDialog, ModerationDialog  # noqa: F401
 from .dialogs.nodes import NodesDialog, AddNodeDialog, NodeInfoDialog  # noqa: F401
@@ -194,24 +194,47 @@ class ActionsMixin:
         if self._current_contact():
             self._render_threads()
 
+    def _picker_people(self, first: str = "") -> list[tuple[str, str, bool]]:
+        """For the person picker (#73): recent chats first, then contacts by name; a
+        person already chosen (``first``) on top."""
+        s = self.session
+        recent = list(s.chat_partners())
+        names = dict(s.contacts())
+        rest = sorted((k for k in names if k not in recent), key=lambda k: names[k].lower())
+        out = [(k, self._chat_label(k).lstrip("•◦ "), True) for k in recent]
+        out += [(k, names[k], False) for k in rest]
+        if first:
+            out = [p for p in out if p[0] == first] or [(first, self._key_label(first), True)]
+            out += [p for p in self._picker_people() if p[0] != first]
+        return out
+
     @work(group="dialog", exit_on_error=False)
-    async def action_message(self) -> None:
-        """m: a private message to the author of the selected post."""
+    async def pick_person(self, kind: str, first: str = "") -> None:
+        """The person picker (#73, as gui#209): Chat opens the chat, Post the compose screen."""
+        result = await self.push_screen_wait(PersonPicker(kind, self._picker_people(first)))
+        if not result:
+            return
+        kind, key = result
+        try:
+            crypto.key_from_text(key)
+        except crypto.CryptoError:
+            self.notify("That is not a valid key", severity="error")
+            return
+        if key == self.session.identity().key_text:
+            self.notify("That is your own key", severity="warning")
+            return
+        if kind == "post":
+            self._write_to_contact(key)
+        else:
+            self.select_group(CONTACT + key)
+
+    def action_message(self) -> None:
+        """m: a private post - the picker, with the selected post's author on top."""
         m = self.current_message
         known = (m.sender_key or m.author_key) if m and m.readable else ""
         if m and m.private and not m.sender_key:
             known = ""
-        contacts = self.session.contacts()
-        names = ", ".join(n for _, n in contacts[:6]) + (", ..." if len(contacts) > 6 else "")
-        typed = await self.push_screen_wait(InputDialog(
-            "Write a private post",
-            ("Type a contact's name" + (f" ({names})" if names else "") + ", or paste their key "
-             "(they find it with k). Only they can read it. c: your contacts. "
-             "To chat instead: Ctrl+P, Chat with someone."),
-            "a name or ed25519:...", value=self.session.contact_name(known) or known))
-        key = self._recipient(typed)
-        if key:
-            self._write_to_contact(key)
+        self.pick_person("post", known or "")
 
     def _recipient(self, typed: str | None) -> str | None:
         """A key from what was typed: a key, or (the start of) a contact's name."""
@@ -283,27 +306,13 @@ class ActionsMixin:
         elif what == "new":
             self.action_chat_with()
 
-    @work(group="dialog", exit_on_error=False)
-    async def action_chat_with(self) -> None:
-        """Open a chat with a key (UN-RFC 0028): a contact's, or anyone's."""
+    def action_chat_with(self) -> None:
+        """Chat with someone (UN-RFC 0028): the picker, as for posts (#73)."""
         m = self.current_message
         known = (m.sender_key or m.author_key) if m and m.readable else ""
         if m and m.private and not m.sender_key:
             known = m.to_key or ""
-        key = await self.push_screen_wait(InputDialog(
-            "Chat with someone", "Paste their key (they find it with k). Only the two of you "
-            "can read the chat.", "ed25519:...", value=known))
-        if not key:
-            return
-        try:
-            crypto.key_from_text(key)
-        except crypto.CryptoError:
-            self.notify("That is not a valid key", severity="error")
-            return
-        if key == self.session.identity().key_text:
-            self.notify("That is your own key", severity="warning")
-            return
-        self.select_group(CONTACT + key)
+        self.pick_person("chat", known or "")
 
     @work(group="dialog", exit_on_error=False)
     async def action_bridges(self) -> None:
