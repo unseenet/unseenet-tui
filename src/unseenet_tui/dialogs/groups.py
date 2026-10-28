@@ -334,8 +334,10 @@ class EditGroupDialog(Dialog):
                 r = d.get("reactions")
                 yield Select(REACTIONS_CHOICES, value=reactions_choice(r), allow_blank=False,
                              id="reactions")
-                yield Input(value=" ".join(r) if isinstance(r, list) else "", id="reaction_set",
-                            placeholder="Your own set: up to 12 emoji, e.g. 🎉 ❤️ 👏")
+                with Horizontal(id="own-set"):           # the picker beside the field (#45)
+                    yield Input(value=" ".join(r) if isinstance(r, list) else "", id="reaction_set",
+                                placeholder="Your own set: up to 12 emoji, e.g. 🎉 ❤️ 👏")
+                    yield Button("Add emoji…", id="add-emoji")
             if current == "pages":                       # a site (#5, UN-RFC 0035 section 3)
                 yield Select(INDEX_CHOICES, value="yes" if d.get("index") == "yes" else "no",
                              allow_blank=False, id="index")
@@ -369,6 +371,41 @@ class EditGroupDialog(Dialog):
             with Horizontal(classes="buttons"):
                 yield Button("Cancel", id="cancel")
                 yield Button("Publish", variant="primary", id="ok")
+
+    def on_mount(self) -> None:
+        """Your own set (field and picker) only while it is chosen."""
+        if self.query("#own-set"):
+            box = self.query_one("#own-set", Horizontal)
+            box.styles.height = "auto"
+            self.query_one("#reaction_set", Input).styles.width = "1fr"
+            self.query_one("#add-emoji", Button).styles.width = "auto"
+            box.display = self.query_one("#reactions", Select).value == "custom"
+
+    @on(Select.Changed, "#reactions")
+    def _reactions_changed(self, event: Select.Changed) -> None:
+        if self.query("#own-set"):
+            self.query_one("#own-set", Horizontal).display = event.value == "custom"
+
+    @on(Button.Pressed, "#add-emoji")
+    def _add_emoji(self) -> None:
+        """Pick an emoji for your own set (#45): by name or category, as Insert emoji;
+        the button keeps the focus, so Enter picks the next one."""
+        from ..emoji import EmojiPickerDialog          # emoji imports the dialogs
+        self.app.push_screen(EmojiPickerDialog("Add to your set of reactions"), self.add_to_own_set)
+
+    def add_to_own_set(self, code: str | None) -> None:
+        """Put the glyph of ``code`` (a shortcode) in your own set: once, at most 12."""
+        glyph = markup.emoji_table().get(code or "")
+        if not glyph:
+            return
+        box = self.query_one("#reaction_set", Input)
+        own = box.value.replace(",", " ").split()
+        if any(rx.same_emoji(glyph, e) for e in own):
+            self.app.notify(f"{glyph} is in your set already")
+        elif len(own) >= rx.MAX_SET:
+            self.app.notify(f"Your own set takes up to {rx.MAX_SET} emoji", severity="warning")
+        else:
+            box.value = " ".join(own + [glyph])         # the glyph, not its :shortcode:
 
     @on(Button.Pressed, "#ok")
     def _ok(self) -> None:
