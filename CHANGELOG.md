@@ -6,6 +6,11 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+- **What comes into the timeline** (asked for by the maintainer, #64, UN-RFC 0034 6.2):
+  Ctrl+P *Add to timeline / take out of timeline* for the group shown, a `•` on the groups in
+  it in the list and its title line, and the Timeline counts groups, not only feeds.
+  *Leave group* instead of *Unsubscribe from group*.
+
 - **Choosing a language from a list** (asked for by the maintainer): the *Language* field and
   *Write in … here* are lists of the languages by code and own name (the core's list,
   unseenet#694) - the suggestion and the group's first - and None.

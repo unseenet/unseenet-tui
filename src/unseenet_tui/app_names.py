@@ -600,17 +600,17 @@ class NamesMixin:
         if not g:
             return
         if g.group_id == self.session.my_inbox:
-            self.notify("Your private messages cannot be unsubscribed", severity="warning")
+            self.notify("Your private messages cannot be left", severity="warning")
             return
         if not await self.push_screen_wait(ConfirmDialog(
-                f"Unsubscribe from {self.session.group_label(g.group_id)}?",
+                f"Leave {self.session.group_label(g.group_id)}?",
                 "You stop following the group, and its saved posts are deleted from this "
-                "computer. The group stays on the network; you can subscribe again with g.",
-                "Unsubscribe")):
+                "computer. The group stays on the network; you can follow it again with g.",
+                "Leave")):
             return
         self.session.forget_group(g.group_id)
         self.current_group = None
-        self.notify(f"Unsubscribed from {self.session.group_label(g.group_id)}")
+        self.notify(f"You no longer follow {self.session.group_label(g.group_id)}")
         self.refresh_groups()
 
     @work(group="dialog", exit_on_error=False)
@@ -620,7 +620,7 @@ class NamesMixin:
         if not g:
             return
         if not self.session.group_entry(g.group_id).get("owner"):
-            self.notify("Only the group's owner can remove it. You can unsubscribe instead.",
+            self.notify("Only the group's owner can remove it. You can leave it instead.",
                         severity="warning")
             return
         if not await self.push_screen_wait(ConfirmDialog(

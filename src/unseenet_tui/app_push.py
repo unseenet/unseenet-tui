@@ -196,7 +196,7 @@ class PushMixin:
              self.action_toggle_private_ripe),
             ("Chat with someone", "A private chat with someone by their key (the author of the "
              "selected post is filled in)", self.action_chat_with),
-            ("Browse groups", "See all groups on the node, subscribe or unsubscribe  [g]",
+            ("Browse groups", "See all groups on the node, follow or leave  [g]",
              self.action_browse),
             ("Create group", "Create an open, moderated, channel, closed or inbox group",
              self.action_create_group),
@@ -336,8 +336,11 @@ class PushMixin:
             ("Private posts", "Open your private posts (chats are under each contact)", self.action_open_inbox),
             ("Mark group as read", "Mark every post in the current group as read",
              self.action_mark_all_read),
-            ("Unsubscribe from group", "Stop following the current group and forget it locally",
-             self.action_unsubscribe),
+            ("Leave group", "Stop following the current group and forget it locally "
+             "(unsubscribe, unfollow)", self.action_unsubscribe),
+            ("Add to timeline / take out of timeline", "Whether the current group's new threads "
+             "or entries come into your Timeline - feeds do by default, chats never "
+             "(UN-RFC 0034 6.2)", self.action_toggle_timeline),
             ("Withdraw (delete) post", "Remove, delete, slet, fjern: take your post, comment or "
              "chat line (or any post in a group you own) back from the network  [D]",
              self.action_withdraw),

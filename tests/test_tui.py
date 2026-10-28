@@ -645,8 +645,8 @@ def test_group_icons():
     assert group_icons("channel", {"view": "data"}) == "► ¤"       # UN-RFC 0008 3.1.1
     assert group_icons("open", {"view": "something new"}) == "  ≡"  # unknown: threads
     # WGL4 only: the classic Windows console shows every one of them
-    for ch in "≡»¤√►∩@⌂·" + ICON_LEGEND:
-        assert ord(ch) < 0x80 or ch in "≡»¤√►∩⌂·", ch
+    for ch in "≡»¤√►∩@⌂·•" + ICON_LEGEND:                 # • in your timeline (0034 6.2)
+        assert ord(ch) < 0x80 or ch in "≡»¤√►∩⌂·•", ch
 
 
 async def test_tui_browse_hides_data_groups(tmp_path, monkeypatch):

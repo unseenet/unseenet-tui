@@ -56,7 +56,7 @@ from unseenet.client.session import (MAX_SIG_LINES, SIG_SEPARATOR, GroupInfo, Me
 from unseenet.client.threads import CONTACT, FOR_YOU, TIMELINE   # the session's pseudo groups (#139)
 from unseenet.client.runtime import ClientRuntime
 from unseenet.client import events as ev
-from .helpers import REFRESH_SECONDS, REPO_URL, DOCS_URL, ACROSS, FEED_MARK, START_FEED, START_SITE, SITE_MARK, REPLY_MARK, MENTION_MARK, for_you_marks, for_you_news, sess_default_pow, group_name_problem, GROUP_KINDS, known_node_details, node_details, ICONS, _ONION, PIN_MARK, ICON_LEGEND, ORIGIN_MARK, NETWORK_NAMES, network_name, origin_text, edited_when, group_icons, is_personal_inbox, by_hierarchy, CSS  # noqa: F401
+from .helpers import REFRESH_SECONDS, REPO_URL, DOCS_URL, ACROSS, FEED_MARK, TIMELINE_MARK, START_FEED, START_SITE, SITE_MARK, REPLY_MARK, MENTION_MARK, for_you_marks, for_you_news, sess_default_pow, group_name_problem, GROUP_KINDS, known_node_details, node_details, ICONS, _ONION, PIN_MARK, ICON_LEGEND, ORIGIN_MARK, NETWORK_NAMES, network_name, origin_text, edited_when, group_icons, is_personal_inbox, by_hierarchy, CSS  # noqa: F401
 from .dialogs.base import Dialog, InputDialog, InfoDialog, ConfirmDialog, KeyListDialog  # noqa: F401
 from .dialogs.setup import UnlockDialog, ChangePassphraseDialog, OTHER_NODE, SetupDialog, BridgesDialog  # noqa: F401
 from .dialogs.compose import ComposeDialog, PageDialog, PreviewDialog, SignatureDialog, PinDialog, ReactDialog, reactions_text  # noqa: F401
@@ -161,6 +161,8 @@ class GroupsMixin:
             text.append((f" ({unread})" if unread else "") + marks)
             if unread:
                 text.stylize("bold")
+            if self.session.in_timeline(g.group_id):     # in your timeline (UN-RFC 0034 6.2)
+                text.append(f" {TIMELINE_MARK}", style="green")
             return text
 
         def folder_label(name: str, items: list[GroupInfo]) -> Text:
@@ -216,7 +218,7 @@ class GroupsMixin:
             text.stylize("bold")
         if not searching:
             nodes[FOR_YOU] = tree.root.add_leaf(text, data=FOR_YOU)
-            if self.session.feeds_followed():            # UN-RFC 0034 section 7
+            if self.session.timeline_groups():           # UN-RFC 0034 sections 6.2, 7
                 nodes[TIMELINE] = tree.root.add_leaf(Text(f"{FEED_MARK} Timeline"), data=TIMELINE)
             # your own feed and site, or a way to start them, where people look (#495)
             for kind, gid_, mark, start in (("feed", my_feed, FEED_MARK, START_FEED),
@@ -352,7 +354,7 @@ class GroupsMixin:
             self.query_one("#threads").focus()
             try:
                 await self.session.refresh_following()      # people's feeds, as they are now
-                for feed in self.session.feeds_followed():
+                for feed in self.session.timeline_groups():
                     await self.session.fetch_group(feed)
             except (SessionError, OSError, ConnectionError) as exc:
                 self.set_status(f"Offline ({exc}) - showing saved posts")
@@ -374,7 +376,7 @@ class GroupsMixin:
         except SessionError as exc:
             if "removed by its owner" in str(exc):
                 self.notify(f"{self.session.group_label(g.group_id)} was removed by its owner. "
-                            "Use 'Unsubscribe from group' (Ctrl+P) to forget it.",
+                            "Use 'Leave group' (Ctrl+P) to forget it.",
                             severity="warning", timeout=10)
             else:
                 self.set_status(f"{exc}")
