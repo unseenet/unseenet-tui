@@ -64,6 +64,8 @@ FEED_MARK = "≡"                          # the timeline in the group list (UN-
 TIMELINE_MARK = "•"                      # a group whose entries come into it (0034 6.2)
 START_FEED = ("action", "start-feed")    # "Start your feed" at the top of the group list (#495)
 START_SITE = ("action", "start-site")    # ... and "Start your site", the same way
+CHATS = ("action", "chats")              # "Private chats" at the top: every chat, in a list (#39)
+CHATS_SHOWN = 5                          # unread chats under it; the rest behind Show all
 SITE_MARK = "▤"                          # your site in the group list (UN-RFC 0035)
 REPLY_MARK, MENTION_MARK = "◄", "♦"   # in the basic character set (Windows console)
 
