@@ -302,12 +302,66 @@ class GroupInfoDialog(Dialog):
         self.dismiss("edit")
 
 
+def settings_help_text(keys: list[str]) -> str | None:
+    """The core's help for Edit group (unseenet-gui#178), the same as in every client: its
+    intro, then per setting in ``keys`` what it does, whom it affects and what changing it
+    later does. None with a core that has none yet."""
+    try:
+        from unseenet.client.settings_help import group_settings_help
+    except ImportError:
+        return None
+    h = group_settings_help()
+    by = {x["key"]: x for x in h["settings"]}
+    parts = [h["intro"]]
+    for k in keys:
+        if k in by:
+            x = by[k]
+            parts.append(f"{x['label']}\n  {x['what']}\n  Affects: {x['affects']}\n  Later: {x['later']}")
+    return "\n\n".join(parts)
+
+
+class SettingsHelpDialog(Dialog):
+    """What the settings of Edit group do (#83, as unseenet-gui#178), to read and close."""
+
+    def __init__(self, text: str):
+        super().__init__()
+        self.text = text
+
+    def compose(self) -> ComposeResult:
+        """The help, scrolling, and Close."""
+        with Vertical(classes="dialog"):
+            yield Label("What the settings do", classes="title")
+            with VerticalScroll(id="settings-help"):
+                yield Static(self.text, markup=False)
+            with Horizontal(classes="buttons"):
+                yield Button("Close", variant="primary", id="cancel")
+
+
 class EditGroupDialog(Dialog):
     """Owner: change title, description, rules, view and delivery (a new manifest)."""
+
+    BINDINGS = [Binding("f1", "help", "Help")]            # with Esc from Dialog
 
     def __init__(self, data: dict):
         super().__init__()
         self.data = data
+        d = data                                         # the settings shown, for Help (#83)
+        inbox, channel = d.get("type") == "inbox", d.get("type") == "channel"
+        self.help_keys = [k for k, on in (
+            ("title", True), ("view", True), ("low_latency", True), ("comments", channel),
+            ("reactions", not inbox), ("index", channel), ("files", d.get("type") in FILES_GROUP_TYPES),
+            ("min_pow", True), ("languages", not inbox), ("tags", not inbox),
+            ("report_issuers", not inbox), ("team_name", inbox), ("rules", True)) if on]
+        self.help_text = settings_help_text(self.help_keys)
+
+    def action_help(self) -> None:
+        """F1 or Help: what each setting does, beside the form (the core's text)."""
+        if self.help_text:
+            self.app.push_screen(SettingsHelpDialog(self.help_text))
+
+    @on(Button.Pressed, "#help")
+    def _help(self) -> None:
+        self.action_help()
 
     def compose(self) -> ComposeResult:
         """The owner's settings of a group: title, description, rules, view, comments,
@@ -370,6 +424,8 @@ class EditGroupDialog(Dialog):
                            value=writes_markdown(self.app, d.get("rules_type"), d.get("rules", "")))
             with Horizontal(classes="buttons"):
                 yield Button("Cancel", id="cancel")
+                if self.help_text:
+                    yield Button("Help", id="help")
                 yield Button("Publish", variant="primary", id="ok")
 
     def on_mount(self) -> None:
