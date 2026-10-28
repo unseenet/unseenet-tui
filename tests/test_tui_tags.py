@@ -130,3 +130,43 @@ async def test_the_age_guide(tmp_path, monkeypatch):
         assert await wait_for(pilot, lambda: app.session.warning_choices()["sexual"] == "hide"), stack(app)
         assert "13-17" not in json.dumps(app.session.data)
         await pilot.press("q")
+
+
+async def test_room_to_write_and_warnings_behind_one_choice(tmp_path, monkeypatch):
+    """#74 (as gui#203): Ctrl+E bigger and remembered, warnings behind one button with
+    only the chosen ones shown, Ctrl+B / Ctrl+Q, and the Send button sends."""
+    from textual.widgets import Checkbox
+    from unseenet_tui.dialogs.compose import ComposeDialog
+    from tuihelp import press
+    app = await _app(tmp_path, monkeypatch)
+    got = []
+    async with app.run_test(size=(140, 60)) as pilot:
+        assert await app_ready(pilot, app), stack(app)
+        s = app.session
+        dlg = ComposeDialog(s.group_info(GID))
+        app.push_screen(dlg, got.append)
+        assert await wait_for(pilot, lambda: laid_out(app, "#warn-btn")), stack(app)
+        assert not app.screen.query_one("#warn-list").has_class("open")     # no colours yet
+        app.screen.action_warnings()
+        assert app.screen.query_one("#warn-list").has_class("open")
+        app.screen.query_one("#w-spoiler", Checkbox).value = True
+        await pilot.pause(0.1)
+        assert "Spoiler" in str(app.screen.query_one("#warn-btn").label)
+        app.screen.action_bigger()
+        assert app.screen.query_one(".dialog.compose").has_class("big")
+        assert s.client_setting("tui", "compose_big") is True
+        body = app.screen.query_one("#body")
+        body.text = "hej"
+        body.select_all()
+        app.screen.action_bold()
+        assert body.text.startswith("**hej**")
+        body.move_cursor((0, 0))
+        app.screen.action_quote()
+        assert body.text.startswith("> **hej**")
+        app.screen.action_bigger()                       # back: the subject is shown again
+        app.screen.query_one("#subject").value = "Finalen"
+        app.screen.query_one("#tags").value = "finale"
+        await press(pilot, app, "#ok")                   # the button sends (not read more)
+        assert await wait_for(pilot, lambda: bool(got)), stack(app)
+        assert dlg.tags == ["spoiler", "finale"]
+        await pilot.press("q")

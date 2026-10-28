@@ -6,6 +6,12 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+- **Room to write a post, as the GUI** (#74, gui#203): Ctrl+E gives the text nearly all the
+  room (remembered with your identity); content warnings behind one *⚠ Content warning*
+  button / Ctrl+W, the chosen ones named on it; Ctrl+B bold and Ctrl+Q quote; language,
+  tags and warnings on one row; a short footer with the keys.
+- **Fixed:** the composer's *Send* button inserted a read-more line instead of sending
+  (since #68); Ctrl+S was not affected.
 - **A node that does not answer is said plainly** (#70, unseenet#704): the other nodes'
   groups are shown at once, the status line names the node that is not answering yet, and
   its groups come into the list when it answers.
