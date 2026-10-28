@@ -6,6 +6,9 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+- **People you follow, by person** (as the GUI, #76, unseenet#706): following someone puts
+  their feed and site together under their name in *People you follow*, sorted by name -
+  one row when they have only one - instead of `feed` and `site` folders.
 - **Your contacts, Private posts and Private chats alike** (as the GUI, #73): three fixed
   items at the top in that order, at most three unread chats under Private chats, and **a
   person picker** for `m` and *Chat with someone* instead of typing a name or key: Chat |
