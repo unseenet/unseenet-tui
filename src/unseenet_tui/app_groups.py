@@ -122,6 +122,10 @@ class GroupsMixin:
                 "No groups yet - press g to browse the node's groups, or Ctrl+P to create one")
         where = f"{len(s.nodes)} nodes" if len(s.nodes) > 1 else "node"
         down = f" - not reachable: {', '.join(s.node_label(n) for n in s.unreachable)}" if s.unreachable else ""
+        slow = list(getattr(s, "slow", {}))                 # asked, not answered yet (#70)
+        if slow:
+            down += (f" - {', '.join(s.node_label(n) for n in slow)} "
+                     f"{'is' if len(slow) == 1 else 'are'} not answering yet; its groups come when it does")
         self.set_status(f"{result.available} groups on {where}, {len(groups)} subscribed{down}")
 
     async def _render_groups(self) -> None:

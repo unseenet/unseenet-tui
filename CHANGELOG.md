@@ -6,6 +6,9 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+- **A node that does not answer is said plainly** (#70, unseenet#704): the other nodes'
+  groups are shown at once, the status line names the node that is not answering yet, and
+  its groups come into the list when it answers.
 - **Feeds as in the GUI** (#34): times say how long ago in feeds and the timeline (*now*,
   *5 min*, *Yesterday 14:20*, … - the core's words, kept true every minute), a long entry
   beside the list is cut with *… more* - at the author's read-more line when there is one -
