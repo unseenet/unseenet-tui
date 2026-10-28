@@ -79,7 +79,7 @@ async def fill(tmp: Path, addr: str) -> tuple[Path, dict[str, str]]:
 
     marsvin = await sonia.create_group("dk.snak.marsvin", "open", title="Guinea pigs",
                                        description="Pictures, care and stories", min_pow=10,
-                                       rules="Be kind. Guinea pigs only.")
+                                       charter="Be kind. Guinea pigs only.")
     await sonia.post(marsvin, "Our new guinea pig", "Her name is Kaj. She eats everything.\n")
 
     chat = await mikkel.create_group("dk.snak.chat", "open", view="chat", low_latency=True,
@@ -120,7 +120,7 @@ async def fill(tmp: Path, addr: str) -> tuple[Path, dict[str, str]]:
     await mikkel.send_chat("contact:" + me.identity().key_text, "Did you see my feed?\n")
     for gid in (snak, marsvin, chat, radio):
         await me.fetch_group(gid)
-        me.mark_rules_seen(gid)
+        me.mark_charter_seen(gid)
     me.data.setdefault("views", {})[chat] = "chat"
     await me.fetch_unknown_manifests()
     for gid in (mfeed, sfeed, ssite):

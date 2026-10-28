@@ -250,7 +250,7 @@ class PushMixin:
             ("Write plain text" if self.session.text_type() == markup.MARKDOWN_TYPE else "Write Markdown",
              "What you write is sent as Markdown (*emphasis*, `code`, :tada:) or as plain text "
              "(UN-RFC 0031)", self.action_toggle_markdown),
-            ("About this group", "Its rules, type, owner and settings  [?]", self.action_group_info),
+            ("About this group", "Its charter, type, owner and settings  [?]", self.action_group_info),
             ("Open the mentioned post", "From a mention notice in For you: the post that names "
              "you, or its group first", self.action_open_mentioned),
             ("Stop telling people you mention" if self.session.notice_settings()["send"]
@@ -263,7 +263,7 @@ class PushMixin:
              "!dk.snak, or subscribe to it  [!]", self.action_group_ref),
             ("Switch chat / threads", "Show the current group as a chat or as threads  [v]",
              self.action_toggle_view),
-            ("Edit group", "Owner: change title, description, rules, view and delivery",
+            ("Edit group", "Owner: change title, description, charter, view and delivery",
              self.action_edit_group),
             ("The group's emoji", "Owner: the group's own emoji, written :name: (UN-RFC 0056)",
              self.action_group_emoji),
@@ -282,7 +282,7 @@ class PushMixin:
             ("Name your posts show", "If you have several names, choose one",
              self.action_primary_name),
             ("Report post", "Tell the group's owner, moderators, maintainer or node operator "
-             "about a post that breaks the rules or the law", self.action_report),
+             "about a post that goes against the group's charter or the law", self.action_report),
             ("Open reported post", "From a report you received: go to the post it is about",
              self.action_open_reported),
             ("Read this inbox with the team", "The selected post adds you as a reader of a team "
@@ -385,7 +385,7 @@ class PushMixin:
 
     @work(group="dialog", exit_on_error=False)
     async def action_group_info(self, first_time: bool = False) -> None:
-        """i: the group's info (first_time: as it is first opened, with its rules)."""
+        """i: the group's info (first_time: as it is first opened, with its charter)."""
         g = self._need_group()
         if not g:
             return
@@ -398,8 +398,8 @@ class PushMixin:
         result = await self.push_screen_wait(GroupInfoDialog(
             g.group_id, data, self._owner_label(data), owner, first_time,
             node=self.session.node_for(g.group_id) or ""))
-        if data.get("rules"):
-            self.session.mark_rules_seen(g.group_id)
+        if data.get("charter"):
+            self.session.mark_charter_seen(g.group_id)
         if result == "edit":
             self.action_edit_group()
 
@@ -421,7 +421,7 @@ class PushMixin:
         except (SessionError, OSError, ConnectionError, ValueError) as exc:
             self.notify(f"Not changed: {exc}", severity="error", timeout=8)
             return
-        self.session.mark_rules_seen(g.group_id)
+        self.session.mark_charter_seen(g.group_id)
         self.notify("Group updated")
         self._render_threads()
 

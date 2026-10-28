@@ -1,4 +1,4 @@
-"""Markdown in a profile's about and a group's rules (#211, UN-RFC 0022 4.1, 0014 2.1)."""
+"""Markdown in a profile's about and a group's charter (#211, UN-RFC 0022 4.1, 0014 2.1)."""
 
 import json
 
@@ -30,7 +30,7 @@ def _types(nodes, out=None):
     return out
 
 
-def test_tui_shows_markdown_profiles_and_rules():
+def test_tui_shows_markdown_profiles_and_charter():
     import pytest
     pytest.importorskip("textual")
     from unseenet_tui.app import manifest_text

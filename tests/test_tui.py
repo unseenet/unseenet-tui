@@ -334,7 +334,7 @@ async def test_tui_background_error_is_reported_not_fatal(tmp_path, monkeypatch)
     server.close()
 
 
-async def test_tui_chat_group_and_rules_on_first_visit(tmp_path, monkeypatch):
+async def test_tui_chat_group_and_charter_on_first_visit(tmp_path, monkeypatch):
     import unseenet.client.session as sess
     from unseenet_tui.app import GroupInfoDialog
     monkeypatch.setattr(sess, "DEFAULT_POW", 10)
@@ -344,7 +344,7 @@ async def test_tui_chat_group_and_rules_on_first_visit(tmp_path, monkeypatch):
     owner = Session(Vault.open(tmp_path / "o.vault", "pw", **KDF), status=lambda *_: None)
     owner.new_identity("o", "Owner"); owner.add_node(addr)
     gid = await owner.create_group("chat.venner", "open", view="chat", low_latency=True,
-                                   rules="Kun hyggesnak.", min_pow=9)
+                                   charter="Kun hyggesnak.", min_pow=9)
     await owner.post(gid, "", "Hej alle!\n", kind="chat")          # a chat line (UN-RFC 0028)
     await owner.close()
 
@@ -358,11 +358,11 @@ async def test_tui_chat_group_and_rules_on_first_visit(tmp_path, monkeypatch):
         assert await app_ready(pilot, app), stack(app)
         assert await wait_for(pilot, lambda: gid in app.groups, 300)
         app.select_group(gid)
-        # the rules are shown the first time
+        # the charter is shown the first time
         assert await wait_for(pilot, lambda: isinstance(app.screen, GroupInfoDialog), 300)
         await pilot.press("escape")
         await pilot.pause(0.3)
-        assert not app.session.rules_unseen(gid)
+        assert not app.session.charter_unseen(gid)
         assert app.view_of(gid) == "chat"                       # the owner's hint
         assert "fast delivery" in str(app.query_one("#threads-title").render())
         app.query_one("#chat-input").focus()

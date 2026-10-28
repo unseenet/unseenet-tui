@@ -421,7 +421,7 @@ class GroupsMixin:
             self.groups[gid].type = self.session.group_entry(gid).get("type")
         self._render_threads()
         self._focus_view(gid)
-        if self.session.rules_unseen(gid) and isinstance(self.screen, Screen) \
+        if self.session.charter_unseen(gid) and isinstance(self.screen, Screen) \
                 and not isinstance(self.screen, ModalScreen):
             self.action_group_info(first_time=True)
 

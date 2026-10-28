@@ -428,7 +428,7 @@ MARKDOWN_HINT = "Markdown - # headings, - lists, **strong**, [links](https://...
 
 
 def manifest_text(text: str, text_type: str | None) -> Text:
-    """A profile's about or a group's rules, plain or Markdown (UN-RFC 0022 4.1, 0014 2.1)."""
+    """A profile's about or a group's charter, plain or Markdown (UN-RFC 0022 4.1, 0014 2.1)."""
     return richtext.blocks(markup.manifest_text(profiles_clean(text), text_type))
 
 
