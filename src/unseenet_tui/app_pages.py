@@ -287,18 +287,23 @@ class PagesMixin:
             if not text or text.strip() == split_signature(m.body)[0].strip():
                 return
             subject, body, notify = "", text.strip(), []
+            tags = languages = None                  # a chat line keeps its own (unseenet#733)
         else:
-            result = await self.push_screen_wait(ComposeDialog(
+            # its tags, warnings and language filled in, so an edit keeps them (unseenet#733)
+            dlg = ComposeDialog(
                 g, m.subject, m.body, is_reply=True,
-                heading=f"Edit your post in {s.group_label(gid)} - {warn}"))
+                heading=f"Edit your post in {s.group_label(gid)} - {warn}",
+                start_tags=s.tags_to_keep(m), start_languages=list(m.languages or ()))
+            result = await self.push_screen_wait(dlg)
             if not result:
                 return
             subject, body, notify = result
+            tags, languages = dlg.tags, dlg.languages
         before = {k for _, k in s.mentioned(m.subject, m.body)}
         notify = [k for k in notify if k not in before]   # only newly mentioned (0042, 4.3)
         self.set_status("Sending the new version (computing postage) ...")
         try:
-            msgid = await s.edit(m, subject, body)
+            msgid = await s.edit(m, subject, body, tags=tags, languages=languages)
         except (SessionError, OSError, ConnectionError) as exc:
             self.notify(f"Not changed: {exc}", severity="error", timeout=8)
             return

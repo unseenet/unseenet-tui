@@ -82,8 +82,15 @@ class ComposeDialog(Dialog):
 
     def __init__(self, group: GroupInfo, subject: str = "", quote: str = "", is_reply: bool = False,
                  heading: str | None = None, signature: str = "", has_charter: bool = False,
-                 files_allowed: bool = False, reply_to=None):
+                 files_allowed: bool = False, reply_to=None,
+                 start_tags: list[str] | None = None, start_languages: list[str] | None = None):
+        """``start_tags``/``start_languages``: an edit's - the post's own tags and warnings
+        (without the ``#words`` in its text) and its language, filled in instead of the
+        suggestions (unseenet#733, #91). ``None`` for a new post."""
         super().__init__()
+        self.editing = start_tags is not None or start_languages is not None
+        self.start_tags = list(start_tags or [])
+        self.start_languages = list(start_languages) if start_languages is not None else None
         self.group, self.subject, self.quote, self.is_reply = group, subject, quote, is_reply
         self.reply_to = reply_to                 # the Message answered: its language first (#686)
         self._lang_touched = False               # the language field is yours once you type in it
@@ -92,8 +99,8 @@ class ComposeDialog(Dialog):
         self.heading, self.signature, self.has_charter = heading, signature, has_charter
         self.files_allowed = files_allowed       # the group takes files (UN-RFC 0027)
         self.files: list[str] = []               # what to send with it, read after dismiss
-        self.tags: list[str] = []                # the author's tags (UN-RFC 0052), after dismiss
-        self.languages: list[str] | None = None  # what it is written in (0052 5a), after dismiss
+        self.tags: list[str] = list(self.start_tags)   # the author's tags (UN-RFC 0052), after dismiss
+        self.languages: list[str] | None = self.start_languages   # (0052 5a), after dismiss
         self._suggested: list[str] = []
         self.warnings: list[str] = []            # content warnings chosen (UN-RFC 0052/0053)
 
@@ -116,22 +123,27 @@ class ComposeDialog(Dialog):
             # language, tags and warnings on one row (#74, as gui#203), each with its why
             with Horizontal(classes="metarow"):
                 if self.group.type != "inbox" and gid and not gid.startswith(("contact:", "inbox@")):
-                    codes, why = self.app.session.suggest_languages(gid, reply_to=self.reply_to)  # 0052 5a
+                    if self.start_languages is not None:      # an edit: the post's own (#91)
+                        codes, why = self.start_languages, "post"
+                        self._lang_touched = True             # no suggestion over it
+                    else:
+                        codes, why = self.app.session.suggest_languages(gid, reply_to=self.reply_to)  # 0052 5a
                     self._suggested = codes
                     with Vertical(classes="langcol"):
                         yield Select(language_options(codes, self.app.session.manifest_data(gid).get("languages") or []),
                                      value=codes[0] if codes else "", allow_blank=False, id="lang",
                                      prompt="Language")
-                        yield Label("Language: " + {"you": "what you wrote in here last", "group": "the group's",
+                        yield Label("Language: " + {"post": "the post's", "you": "what you wrote in here last", "group": "the group's",
                                                     "profile": "from your profile"}.get(why, "none is sent"),
                                     classes="hint", markup=False, id="lang-why")
                 if self.group.type != "inbox":              # tags; warnings behind one choice
-                    yield Input(placeholder="Tags - add a tag, or write #word in the text", id="tags")
+                    yield Input(value=" ".join(t for t in self.start_tags if t not in WARNING_ORDER),
+                                placeholder="Tags - add a tag, or write #word in the text", id="tags")
                     yield Button("⚠ Content warning", id="warn-btn")
             if self.group.type != "inbox":                  # the warnings, when asked for (Ctrl+W)
                 with Horizontal(id="warn-list", classes="warnlist"):
                     for w in WARNING_ORDER:
-                        yield Checkbox(WARNING_TEXT[w], id="w-" + w)
+                        yield Checkbox(WARNING_TEXT[w], value=w in self.start_tags, id="w-" + w)
             if self.files_allowed:
                 yield Input(placeholder="Files to send with it - paths, comma between: "
                             "~/garden.jpg, ~/map.pdf", id="files")
@@ -229,6 +241,9 @@ class ComposeDialog(Dialog):
             body.focus()
         else:
             self.query_one("#subject").focus()
+        if any(w in self.start_tags for w in WARNING_ORDER) and self.query("#warn-list"):
+            self._warn_changed()                         # an edit's warnings: on the button
+            self.query_one("#warn-list").add_class("open")
 
     def action_bigger(self) -> None:
         """Ctrl+E: the text gets nearly all the room - or back (#74); remembered."""
@@ -309,7 +324,11 @@ class ComposeDialog(Dialog):
         if self.query("#lang"):                           # chosen; cleared: [] forgets it here
             value = self.query_one("#lang", Select).value
             chosen = [value] if isinstance(value, str) and value else []
-            self.languages = chosen if (chosen or self._suggested) else None
+            if self.editing:                              # the post's, or what you chose (#91)
+                start = self.start_languages or []
+                self.languages = start if start and chosen == start[:1] else chosen
+            else:
+                self.languages = chosen if (chosen or self._suggested) else None
         if self.query("#tags"):                           # the core normalises them, adds #words
             typed = [t for t in self.query_one("#tags", Input).value.replace(",", " ").split() if t]
             self.tags = list(self.warnings) + [t for t in typed if t not in self.warnings]
