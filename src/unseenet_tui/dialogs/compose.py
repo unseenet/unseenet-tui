@@ -74,7 +74,8 @@ def language_options(first, group) -> list[tuple[str, str]]:
 
 
 class ComposeDialog(Dialog):
-    BINDINGS = [Binding("escape", "cancel", "Cancel"), Binding("ctrl+s", "send", "Send")]
+    BINDINGS = [Binding("escape", "cancel", "Cancel"), Binding("ctrl+s", "send", "Send"),
+                Binding("ctrl+r", "read_more", "Read more")]
 
     def __init__(self, group: GroupInfo, subject: str = "", quote: str = "", is_reply: bool = False,
                  heading: str | None = None, signature: str = "", has_rules: bool = False,
@@ -215,6 +216,15 @@ class ComposeDialog(Dialog):
             self.query_one("#subject").focus()
 
     @on(Button.Pressed, "#ok")
+    def action_read_more(self) -> None:
+        """Ctrl+R: a read-more line at the cursor (UN-RFC 0031 3.2.1) - a feed cuts the
+        post there for "... more"; nobody needs to know the syntax."""
+        body = self.query_one("#body", TextArea)
+        row, col = body.cursor_location
+        body.text, cursor = with_read_more(body.text, row, col)
+        body.move_cursor(cursor)
+        body.focus()
+
     def action_send(self) -> None:
         """Ctrl+S: check and send it, or say what is missing."""
         subject = self.query_one("#subject", Input).value.strip()
@@ -235,6 +245,18 @@ class ComposeDialog(Dialog):
         if self.query("#tags"):                           # the core normalises them, adds #words
             self.tags = [t for t in self.query_one("#tags", Input).value.replace(",", " ").split() if t]
         self.dismiss((subject, body, keys))
+
+
+def with_read_more(text: str, row: int, col: int) -> tuple[str, tuple[int, int]]:
+    """``text`` with a read-more line (UN-RFC 0031 3.2.1) put in at (row, col), on a line
+    of its own with blank lines around it, and where the cursor goes after it."""
+    lines = text.split("\n")
+    line = lines[row] if row < len(lines) else ""
+    head = "\n".join(lines[:row] + [line[:col].rstrip(" ")]).rstrip("\n")
+    tail = "\n".join([line[col:].lstrip(" ")] + lines[row + 1:]).lstrip("\n")
+    out = (head + "\n\n" if head else "") + "...\n\n"
+    cursor = (out.count("\n"), 0)
+    return out + tail, cursor
 
 
 class PageDialog(Dialog):
