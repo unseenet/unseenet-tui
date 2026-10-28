@@ -36,8 +36,14 @@ async def test_tui_a_persons_feed_and_site_together(tmp_path, monkeypatch):
         def people():
             return next((n for n in tree.root.children if n.data == ("folder", "people:")), None)
         assert await wait_for(pilot, lambda: people() is not None and people().children, 400), stack(app)
+        def named():                                       # her name, once her posts are read
+            kids = people().children if people() is not None else []
+            if kids and "Alice" in str(kids[0].label):
+                return True
+            app.refresh_groups()
+            return False
+        assert await wait_for(pilot, named, 400), stack(app)
         [person] = people().children
-        assert "Alice" in str(person.label)
         assert {c.data for c in person.children} == {feed, site}
         assert not any(isinstance(n.data, tuple) and n.data[1] in ("feed", "site") for n in tree.root.children)
         await pilot.press("q")
