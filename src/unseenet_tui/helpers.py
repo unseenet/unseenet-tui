@@ -265,6 +265,7 @@ ModalScreen { align: center middle; }
 .dialog.list Tree, .dialog.list DataTable { height: 1fr; min-height: 3; }
 .dialog .details { height: auto; max-height: 10; margin-top: 1; padding: 0 1;
                    border-left: thick $primary-darken-2; color: $text; }
+#settings-help { height: auto; max-height: 30; padding: 0 1; }
 #profile-view { height: auto; max-height: 24; margin-top: 1; padding: 0 1;
                 border-left: thick $primary-darken-2; }
 #names-details { margin: 1 0 1 0; }        /* the key line must not touch the field below */
