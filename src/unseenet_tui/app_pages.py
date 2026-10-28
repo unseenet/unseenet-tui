@@ -657,8 +657,9 @@ class PagesMixin:
                     f"hour; the answer comes to your private messages, and {done}.", timeout=12)
 
     @work(group="dialog", exit_on_error=False)
-    async def action_show_profile(self, key: str = "") -> None:
-        """A profile: the key given, or the author of the selected post."""
+    async def action_show_profile(self, key: str = "", context: str | None = None) -> None:
+        """A profile: the key given, or the author of the selected post. ``context``:
+        where it is opened from, when not the group on screen - "me" from your contacts."""
         m = None if key else self.current_message
         key = key or (m.author_key if m and m.readable and m.author_key else "")
         if not key:
@@ -685,7 +686,7 @@ class PagesMixin:
             return
         label = s.identity_label(key, m.from_name if m and m.author_key == key else "")
         gid = self.current_group or ""
-        context = ("me" if (m is not None and m.private) or gid.startswith(CONTACT)
+        context = context or ("me" if (m is not None and m.private) or gid.startswith(CONTACT)
                    or gid == s.my_inbox else
                    gid if s.group_entry(gid).get("type") == "closed" else None)
         shared = None
@@ -746,6 +747,17 @@ class PagesMixin:
                 await self._render_groups()
         elif answer in ("their-feed", "their-site"):
             await self._open_personal_of(key, label, answer.split("-")[1])
+        elif answer == "chat":
+            self.select_group(CONTACT + key)
+        elif answer == "post":
+            self._write_to_contact(key)
+        elif answer == "rename":
+            name = await self.push_screen_wait(InputDialog(
+                "Rename contact", "", "Name", value=s.contact_name(key) or ""))
+            if name:
+                s.add_contact(key, name)
+                await self._render_groups()
+                self._render_title()
 
     async def _open_personal_of(self, key: str, label: str, kind: str = "feed") -> None:
         """Open someone's personal feed or site from their profile, to read without

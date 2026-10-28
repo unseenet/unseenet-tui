@@ -271,6 +271,8 @@ class ActionsMixin:
             self.select_group(CONTACT + key)
         elif what == "post":
             self._write_to_contact(key)
+        elif what == "profile":                  # their profile, feed and site (gui#215)
+            self.action_show_profile(key, context="me")
         elif what == "rename":
             name = await self.push_screen_wait(InputDialog(
                 "Rename contact", "", "Name", value=self.session.contact_name(key) or ""))
