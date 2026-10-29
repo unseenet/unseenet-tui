@@ -493,11 +493,18 @@ class UnseenetApp(GroupsMixin, ChatMixin, ActionsMixin, FeedsMixin, AddressesMix
         except (SessionError, OSError, ValueError) as exc:
             self.set_status(f"Ripening stopped: {exc}")
 
+    def _to4_left_text(self) -> str:
+        from .app_feeds import rough
+        return rough(self._to4_left())
+
     def _update_subtitle(self) -> None:
         s = self.session
         more = f"  (+{len(s.nodes) - 1} more)" if len(s.nodes) > 1 else ""
         lv = s.ripening().level                   # UN-RFC 0025 section 7: show the level
         ripe = f"  -  key level {lv}" if lv is not None else ""
+        target = self._ripen_target()                                         # unseenet#740
+        if ripe and target == 4 and lv < 4:
+            ripe += f" -> 4, {self._to4_left_text()} left"
         if ripe and self.runtime is not None and self.runtime.ripening_paused:
             ripe += " (ripening paused)"                                      # #358
         elif ripe and s.ripening_limit is not None:
