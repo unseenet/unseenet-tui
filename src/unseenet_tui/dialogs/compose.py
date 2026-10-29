@@ -73,6 +73,17 @@ def language_options(first, group) -> list[tuple[str, str]]:
     return [(f"{c.upper():<3} {langs.name(c)}", c) for c in order] + [("None - no language is sent", "")]
 
 
+def comment_days_options(group_days: int | None) -> list[tuple[str, str]]:
+    """How long a new thread takes comments (UN-RFC 0030 3.1): as the group (the default),
+    none, or shorter - never longer than the group's."""
+    out = [(f"Comments: as the group ({group_days} day{'s' if group_days != 1 else ''})"
+            if group_days else "Comments: as the group (no limit)", "group"),
+           ("Comments: none", "0")]
+    out += [(f"Comments: {label}", str(n)) for n, label in ((1, "a day"), (7, "a week"), (30, "a month"))
+            if not group_days or n < group_days]
+    return out
+
+
 class ComposeDialog(Dialog):
     BINDINGS = [Binding("escape", "cancel", "Cancel"), Binding("ctrl+s", "send", "Send"),
                 Binding("ctrl+e", "bigger", "Bigger"),        # room to write (#74, as gui#203)
@@ -83,7 +94,8 @@ class ComposeDialog(Dialog):
     def __init__(self, group: GroupInfo, subject: str = "", quote: str = "", is_reply: bool = False,
                  heading: str | None = None, signature: str = "", has_charter: bool = False,
                  files_allowed: bool = False, reply_to=None,
-                 start_tags: list[str] | None = None, start_languages: list[str] | None = None):
+                 start_tags: list[str] | None = None, start_languages: list[str] | None = None,
+                 comment_days_max: int | None = None, own_days: bool = False):
         """``start_tags``/``start_languages``: an edit's - the post's own tags and warnings
         (without the ``#words`` in its text) and its language, filled in instead of the
         suggestions (unseenet#733, #91). ``None`` for a new post."""
@@ -103,6 +115,10 @@ class ComposeDialog(Dialog):
         self.languages: list[str] | None = self.start_languages   # (0052 5a), after dismiss
         self._suggested: list[str] = []
         self.warnings: list[str] = []            # content warnings chosen (UN-RFC 0052/0053)
+        # a new thread's own time for comments (UN-RFC 0030 3.1): offered when ``own_days``,
+        # never longer than the group's ``comment_days_max``; read after dismiss (None: as the group)
+        self.own_days, self.comment_days_max = own_days, comment_days_max
+        self.comment_days: int | None = None
 
     def compose(self) -> ComposeResult:
         """The compose window: where it goes, the subject, the text with the quote and
@@ -118,6 +134,9 @@ class ComposeDialog(Dialog):
             text = self.quote + (("\n" if self.quote else "\n\n") + SIG_SEPARATOR + self.signature
                                  if self.signature else "")
             yield EmojiTextArea(text, id="body", soft_wrap=True)     # :ta completion (#6)
+            if self.own_days and not self.is_reply and not self.editing:
+                yield Select(comment_days_options(self.comment_days_max), value="group",
+                             allow_blank=False, id="comment_days", prompt="Comments")
             yield Static("", id="body-emoji", markup=False)
             gid = self.group.group_id or ""
             # language, tags and warnings on one row (#74, as gui#203), each with its why
@@ -329,6 +348,9 @@ class ComposeDialog(Dialog):
                 self.languages = start if start and chosen == start[:1] else chosen
             else:
                 self.languages = chosen if (chosen or self._suggested) else None
+        if self.query("#comment_days"):                   # as the group, or its own (0030 3.1)
+            value = self.query_one("#comment_days", Select).value
+            self.comment_days = None if value == "group" else int(value)
         if self.query("#tags"):                           # the core normalises them, adds #words
             typed = [t for t in self.query_one("#tags", Input).value.replace(",", " ").split() if t]
             self.tags = list(self.warnings) + [t for t in typed if t not in self.warnings]
@@ -487,9 +509,11 @@ class PinDialog(Dialog):
     """Pin a post: an optional note, and what happens to the oldest pin when the
     group is full (UN-RFC 0033 section 7.1). Dismisses with the note, "" for none."""
 
-    def __init__(self, title: str, hint: str, warning: str = ""):
+    def __init__(self, title: str, hint: str, warning: str = "", button: str = "Pin",
+                 placeholder: str = "A note shown with it (optional)", note: bool = True):
         super().__init__()
         self.title_, self.hint, self.warning = title, hint, warning
+        self.button, self.placeholder, self.note = button, placeholder, note
 
     def compose(self) -> ComposeResult:
         """Pinning a post: a note to show with it, and Pin (UN-RFC 0033)."""
@@ -498,10 +522,14 @@ class PinDialog(Dialog):
             yield Label(self.hint, classes="hint", markup=False)
             if self.warning:
                 yield Static(self.warning, markup=False, classes="hint")
-            yield Input(placeholder="A note shown with it (optional)", id="value", max_length=256)
+            yield Input(placeholder=self.placeholder, id="value", max_length=256)
             with Horizontal(classes="buttons"):
                 yield Button("Cancel", id="cancel")
-                yield Button("Pin", variant="primary", id="ok")
+                yield Button(self.button, variant="primary", id="ok")
+
+    def on_mount(self) -> None:
+        """No note (a close in a closed group): the field is not there to fill."""
+        self.query_one("#value", Input).display = self.note
 
     @on(Input.Submitted)
     @on(Button.Pressed, "#ok")

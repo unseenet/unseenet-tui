@@ -147,6 +147,8 @@ class CreateGroupDialog(Dialog):
             yield Label("", id="view-help", classes="hint", markup=False)
             yield Select(KINDS_CHOICES, value="both", allow_blank=False, id="kinds")
             yield Select(COMMENTS_CHOICES, value="none", allow_blank=False, id="comments")
+            yield Input(placeholder="Days a thread takes replies or comments (empty: always)",
+                        id="comment_days")
             yield Select(FILES_CHOICES, value="none", allow_blank=False, id="files")
             yield Input(placeholder="Title (optional; keep it vague for closed groups)", id="title")
             yield Label("Charter (optional) - what the group is for and asks of those who write; "
@@ -162,6 +164,22 @@ class CreateGroupDialog(Dialog):
         self.query_one("#charter", TextArea).styles.height = 6
         self.query_one("#comments", Select).display = False
 
+    def _days_shown(self) -> None:
+        """Days for comments (UN-RFC 0030 3.3): not in inboxes or local groups, chat or
+        sites, nor a channel whose readers do not comment."""
+        gtype = self.query_one("#type", Select).value
+        view = self.query_one("#view", Select).value
+        self.query_one("#comment_days", Input).display = (
+            gtype in ("open", "moderated", "closed", "channel")
+            and self.query_one("#where", Select).value != "local"
+            and view not in ("chat", "fastchat", "pages", "data")
+            and not (gtype == "channel" and self.query_one("#comments", Select).value != "open"))
+
+    @on(Select.Changed, "#where")
+    @on(Select.Changed, "#comments")
+    def _where_changed(self, _event: Select.Changed) -> None:
+        self._days_shown()
+
     @on(Select.Changed, "#type")
     def _type_changed(self, event: Select.Changed) -> None:
         # only a channel can be opened for comments (UN-RFC 0030)
@@ -170,6 +188,7 @@ class CreateGroupDialog(Dialog):
         self.query_one("#files", Select).display = event.value in FILES_GROUP_TYPES
         if event.value != "channel" and self.query_one("#view", Select).value == "pages":
             self.query_one("#view", Select).value = "threads"   # a site is a channel
+        self._days_shown()
 
     @on(Select.Changed, "#view")
     def _view_changed(self, event: Select.Changed) -> None:
@@ -187,6 +206,7 @@ class CreateGroupDialog(Dialog):
                               "channel only you post and anyone comments; open: anyone posts.")
         else:
             help_label.update("")
+        self._days_shown()
 
     @on(Input.Changed, "#name")
     def _check_name(self, event: Input.Changed) -> None:
@@ -207,8 +227,14 @@ class CreateGroupDialog(Dialog):
             help_label.set_class(True, "error")
             self.query_one("#name", Input).focus()
             return
+        days_in = self.query_one("#comment_days", Input)
+        days = days_in.value.strip() if days_in.display else ""
+        if days and (not days.isdigit() or int(days) < 1):
+            self.app.notify("Days for comments: a whole number of days, or empty", severity="error")
+            return
         view, fast = DELIVERY[self.query_one("#view", Select).value]
         self.dismiss({"name": name, "gtype": self.query_one("#type", Select).value,
+                      "comment_days": int(days) if days else None,
                       "title": self.query_one("#title", Input).value.strip(),
                       "local": self.query_one("#where", Select).value == "local",
                       "charter": self.query_one("#charter", TextArea).text.strip(),
@@ -427,8 +453,11 @@ class EditGroupDialog(Dialog):
             if d.get("type") == "channel":
                 yield Select(COMMENTS_CHOICES, value=d.get("comments", "none"), allow_blank=False,
                              id="comments")
+            if d.get("type") in ("open", "moderated", "closed", "channel") and not d.get("local"):
                 yield Input(value=str(d.get("comment_days") or ""), id="comment_days",
-                            placeholder="Days a thread takes comments (empty: always)")
+                            placeholder="Days a thread takes replies or comments (empty: always)")
+                yield Label("A change counts for comments from now on; those already there stay.",
+                            classes="hint", markup=False)
             if d.get("type") != "inbox":                 # UN-RFC 0048 section 4.1
                 r = d.get("reactions")
                 yield Select(REACTIONS_CHOICES, value=reactions_choice(r), allow_blank=False,
@@ -526,13 +555,15 @@ class EditGroupDialog(Dialog):
                    "view": view, "low_latency": fast, "min_pow": min_pow}
         changes["charter_type"] = markup.text_type_for(self.query_one("#markdown", Checkbox).value,
                                                        changes["charter"])
-        if self.data.get("type") == "channel":
+        if self.query("#comment_days"):                  # every group that can (UN-RFC 0030 3.3)
             days = self.query_one("#comment_days", Input).value.strip()
             if days and (not days.isdigit() or int(days) < 1):
                 self.app.notify("Comment days: a whole number of days, or empty", severity="error")
                 return
+            if days or self.data.get("comment_days") is not None:
+                changes["comment_days"] = int(days) if days else None
+        if self.data.get("type") == "channel":
             changes["comments"] = self.query_one("#comments", Select).value
-            changes["comment_days"] = int(days) if days else None
         if self.query("#index"):                         # a site (#5)
             changes["index"] = self.query_one("#index", Select).value
         if self.query("#files"):
