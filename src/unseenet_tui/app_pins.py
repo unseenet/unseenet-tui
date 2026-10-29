@@ -168,6 +168,17 @@ class PinsMixin:
             self._save_soon()
         self._render_threads()
 
+    def action_mark_group_read(self) -> None:
+        """Catch up (unseenet#625): every post in the group shown is marked read at once."""
+        gid, s = self.current_group, self.session
+        if not gid or not hasattr(s, "mark_group_read"):
+            self.notify("Select a group first", severity="warning")
+            return
+        n = s.mark_group_read(gid)
+        self._render_threads()
+        self.refresh_groups()
+        self.notify(f"Marked {n} post{'' if n == 1 else 's'} read" if n else "Nothing unread here")
+
     @work(group="dialog", exit_on_error=False)
     async def action_pinned_posts(self) -> None:
         """All pins of the group: choose one to read it."""
