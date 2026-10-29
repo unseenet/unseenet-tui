@@ -6,6 +6,12 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+- **Level 4 by choice** (#93, unseenet#740, as the GUI): *Ripen to level 4* in the
+  palette (Ctrl+P) says what it costs - weeks of one core while the client is open, at
+  this machine's speed - and what it gives - about a quarter of the work for each post -
+  before it starts; *Ripen to level 3* stops there again, keeping what was done. The
+  title shows the target and the time left ("key level 3 -> 4, about 12 days left").
+  This device's choice, kept with the key. Needs unseenet 0.6.
 - **How long threads take comments, and closing comments on one thread** (#90,
   unseenet#732, UN-RFC 0030): a new thread can have its own time for comments - as the
   group, none, a day, a week or a month, never longer than the group's. *Close or open

@@ -160,6 +160,11 @@ class PushMixin:
               if self.runtime is not None and self.runtime.ripening_paused else
               "Pause ripening your key (on battery, a warm laptop), and what ripening is"),
              self.action_ripening),
+            (("Ripen to level 3" if self._ripen_target() == 4 else "Ripen to level 4"),
+             ("Stop at level 3 again - what was done towards 4 is kept"
+              if self._ripen_target() == 4 else
+              "Go on to level 4: weeks of one core while open, then a quarter of the postage"),
+             self.action_ripen_to),
             ("Follow", "Follow a person - the selected post's author, or anyone by key or name; "
              "their feeds come into your Timeline", self.action_follow),
             ("Following", "The people you follow - stop following one", self.action_following),

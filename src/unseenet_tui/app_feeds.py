@@ -200,6 +200,59 @@ class FeedsMixin:
         self.set_status("Your state is kept on this device only." if not local else
                         "Your state is kept in the network again, from the next sync.")
 
+    def _ripen_target(self) -> int:
+        """The level the key is ripened to on this device (unseenet#740): chosen, else 3."""
+        rt = self.runtime
+        if rt is not None and hasattr(rt, "ripening_to"):
+            return rt.ripening_to()
+        return 3
+
+    def _to4_left(self) -> float:
+        """About how long from where the key is to level 4 here, in seconds of one core:
+        this device's measured speed, else the guess of 100,000 iterations a second."""
+        from unseenet.core import ripening as rp
+        s = self.session
+        left = s.ripening_seconds_left(4) if hasattr(s, "ripening_seconds_left") else None
+        if left is None:
+            th = next(t for lv, t, _ in rp.LEVELS if lv == 4)
+            left = max(0, th - s.ripening().t) / 100_000
+        return left
+
+    @work(group="dialog", exit_on_error=False)
+    async def action_ripen_to(self) -> None:
+        """Ripen to level 4, or back to 3 (unseenet#740, as the GUI): said what it costs
+        and gives before it starts. This device's choice, kept with the key."""
+        s, rt = self.session, self.runtime
+        if s is None or rt is None or not hasattr(rt, "set_ripening_to"):
+            self.notify("This core cannot ripen to level 4 by choice yet", severity="warning")
+            return
+        lv = s.ripening().level
+        if lv == 4:
+            self.notify("Your key is at level 4 already: the top.")
+            return
+        to4 = self._ripen_target() != 4
+        if to4:
+            text = (f"Level 4 takes {rough(self._to4_left())} of one core on this machine, only "
+                    "while Unseenet is open, and no more memory than now. Afterwards each post "
+                    "costs about a quarter of the work: 2 bits less postage than at level 3.\n\n"
+                    "Worth it on a machine that is on a lot, or if you post a great deal; not "
+                    "needed to post. It is this device's choice: your other devices do not "
+                    "ripen the key twice.")
+            title, button = "Ripen to level 4", "Ripen to level 4"
+        else:
+            text = ("Your key stops at level 3 - where the extra postage ends. What it did "
+                    "towards level 4 is kept, if you change your mind.")
+            title, button = "Ripen to level 3", "Stop at level 3"
+        if not await self.push_screen_wait(ConfirmDialog(title, text, button)):
+            return
+        await rt.set_ripening_to(4 if to4 else 3)
+        if to4 and not rt.ripening_paused:
+            self.ripen_on()
+        else:
+            self.workers.cancel_group(self, "ripening")      # after the segment it is on
+        self._update_subtitle()
+        self.set_status("Ripening your key on to level 4." if to4 else "Your key stops at level 3.")
+
     @work(group="dialog", exit_on_error=False)
     async def action_ripening(self) -> None:
         """Pause or resume ripening your key, with what it is (#358) - as the GUI has it."""
@@ -212,7 +265,7 @@ class FeedsMixin:
                 "your client works through step by step while Unseenet is open, on one core. "
                 "It shows that a key is not brand new, so it cannot be thrown away after every "
                 "post - and the riper your key, the less postage each post costs. Level 3 ends "
-                "the extra postage.\n\n")
+                "the extra postage; level 4 is a choice (Ctrl+P: Ripen to level 4).\n\n")
         if s.ripening_limit is not None:
             text += (f"This machine can ripen this key to level {s.ripening_limit}: more needs "
                      "more memory than it has free.\n\n")
@@ -232,3 +285,14 @@ class FeedsMixin:
             await rt.pause_ripening()
             self.set_status("Ripening paused until you resume it.")
         self._update_subtitle()
+
+
+def rough(seconds: float) -> str:
+    """A time as people say it: about 20 minutes, about 3 hours, about 12 days."""
+    if seconds < 90:
+        return "about a minute"
+    if seconds < 5400:
+        return f"about {round(seconds / 60)} minutes"
+    if seconds < 48 * 3600:
+        return f"about {round(seconds / 3600)} hours"
+    return f"about {round(seconds / 86400)} days"
