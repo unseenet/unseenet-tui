@@ -39,7 +39,7 @@ def qr_text(data: str) -> Text:
     import segno
     qr = segno.make(data, error="m", boost_error=False)
     rows = [list(r) for r in qr.matrix]
-    size, quiet = len(rows), 2
+    size, quiet = len(rows), 4             # the quiet zone the standard asks for (gui#247)
     full = [[0] * (size + 2 * quiet) for _ in range(quiet)]
     full += [[0] * quiet + r + [0] * quiet for r in rows]
     full += [[0] * (size + 2 * quiet) for _ in range(quiet + 1)]
