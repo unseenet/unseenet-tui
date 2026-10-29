@@ -6,6 +6,14 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-29
+
+**On unseenet 0.6 (`unseenet>=0.6,<0.7`): update the nodes first.** Feeds you can live in,
+your own rules, tags and content warnings, spam reports and labels you choose to follow,
+team inboxes, comments with an entry's own time and *Close comments*, copying your
+identity to another device and recovery words, and level 4 by choice - as in the
+graphical client.
+
 - **Mark all read** (unseenet#625): a palette command (Ctrl+P) that catches up a whole
   group at once, through the core's `mark_group_read`. Needs unseenet 0.6.
 
