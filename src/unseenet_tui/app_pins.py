@@ -262,6 +262,61 @@ class PinsMixin:
         self._render_threads()
         self.notify("Unpinned" if unpin else "Pinned")
 
+    def action_close_comments(self) -> None:
+        """Close comments on the selected thread, with a note - or open them again (UN-RFC
+        0030 section 3.2): its author, the owner and moderators. The post is the one
+        selected now: a refresh while the dialog opens must not change it."""
+        self._close_comments(self.current_group, self.current_message)
+
+    @work(group="dialog", exit_on_error=False)
+    async def _close_comments(self, gid: str | None, m: Message | None) -> None:
+        s = self.session
+        if m is None or m.group != gid:
+            self.notify("Select a thread first", severity="warning")
+            return
+        if m.references:
+            self.notify("Comments are closed and opened on a thread's first post",
+                        severity="warning")
+            return
+        if not s.may_close_comments(gid, m.message_id):
+            self.notify("Only the thread's author, the owner and moderators close or open its "
+                        "comments.", severity="warning")
+            return
+        state = s.comments_state(gid, m.message_id)
+        what = self._first_line(m)
+        if state["reason"] == "deadline":
+            self.notify("Its time for comments has run out: they cannot be opened again.",
+                        severity="warning")
+            return
+        reopen = state["reason"] == "closed"
+        if reopen:
+            if not await self.push_screen_wait(ConfirmDialog(
+                    f"Open comments on \"{what}\" again?",
+                    "Readers can comment again, until its time for comments runs out.",
+                    "Open comments")):
+                return
+            note = ""
+        else:
+            closed_group = s.manifest_data(gid).get("type") == "closed"
+            note = await self.push_screen_wait(PinDialog(
+                f"Close comments on \"{what}\"",
+                "New comments are refused; those already there stay, and readers can still "
+                "react." + ("" if closed_group else " The note is shown where the comment box was."),
+                button="Close comments", note=not closed_group,
+                placeholder="A note for readers, e.g. why (optional)"))
+            if note is None:
+                return
+        self.set_status("Opening comments ..." if reopen else "Closing comments ...")
+        try:
+            await s.close_comments(gid, m.message_id, note, reopen=reopen)
+        except (SessionError, ValueError, OSError, ConnectionError) as exc:
+            self.set_status("")
+            self.notify(f"Not done: {exc}", severity="error", timeout=8)
+            return
+        self.set_status("")
+        self._render_threads()
+        self.notify("Comments are open again" if reopen else "Comments are closed on it")
+
     def action_react(self, msg: Message | None = None) -> None:
         """l: react to the selected post, comment or chat line with one of the group's
         emoji (UN-RFC 0048 section 7.3); in a chat, choose the line first. The emoji you

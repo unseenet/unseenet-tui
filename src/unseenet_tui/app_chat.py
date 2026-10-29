@@ -425,6 +425,22 @@ class ChatMixin:
             counts = cache[m.group].get(m.message_id)
         return reactions_text(counts, counts.of(s.identity().key_text) if counts else None)
 
+    def _comments_soon(self, msg) -> str:
+        """"Comments close in 5 hours" once less than a day is left (UN-RFC 0030 section 5)."""
+        try:
+            state = self.session.comments_state(msg.group, msg.thread_root)
+        except Exception:                      # noqa: BLE001 - an older core, or not a root
+            return ""
+        until = state.get("until")
+        if not state.get("open") or until is None:
+            return ""
+        left = (until - datetime.now(timezone.utc)).total_seconds()
+        if left <= 0 or left > 86400:
+            return ""
+        hours = round(left / 3600)
+        return ("\n◷ Comments close in " + (f"{hours} hour{'s' if hours != 1 else ''}"
+                                            if hours >= 1 else "less than an hour"))
+
     def _who(self, m: Message) -> str:
         if m.to_key and self.current_group == self.session.my_inbox:
             return f"You → {self._key_label(m.to_key)}"
@@ -548,9 +564,12 @@ class ChatMixin:
                 if msg.to_key else
                 "\n@ private message - only you can read it" if msg.private
                 else "\n∩ end-to-end encrypted" if msg.encrypted else "")
-        if not msg.private and self.session.write_permission(
-                msg.group, reply_to=msg, kind=None).code == "comments_closed":
-            note += "\n✕ Comments closed"                  # where Reply would be (#181)
+        if not msg.private:
+            perm = self.session.write_permission(msg.group, reply_to=msg, kind=None)
+            if perm.code == "comments_closed":               # where Reply would be (#181), with
+                note += "\n✕ " + escape(perm.reason)          # a close's note (UN-RFC 0030 3.2)
+            else:
+                note += self._comments_soon(msg)
         head = f"[b]{escape(msg.subject)}[/b]\nFrom: {who}\nDate: {date}{note}"
         flags = self.warning_text(msg)                       # warnings over the subject (0053)
         if flags is not None:

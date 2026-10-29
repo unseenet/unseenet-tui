@@ -350,6 +350,7 @@ class PagesMixin:
                 charter=result["charter"], charter_type=result.get("charter_type"),
                 view=result["view"], low_latency=result["low_latency"],
                 kinds=result.get("kinds"), comments=result.get("comments"),
+                comment_days=result.get("comment_days"),
                 extra=({"attachments": result["attachments"]} if result.get("attachments")
                        else None),
                 min_pow=16 if result["low_latency"] else sess_default_pow())

@@ -358,9 +358,13 @@ class IdentityMixin:
         """The compose window for a post or reply in a group, then send it."""
         data = self.session.manifest_data(g.group_id)
         answered = self.messages.get(references[-1]) if references else None   # its language (#686)
+        own_days = (not references and data.get("type") in ("open", "moderated", "closed", "channel")
+                     and not data.get("local") and g.view != "chat"
+                     and not (data.get("type") == "channel" and data.get("comments") != "open"))
         dlg = ComposeDialog(
             g, subject, quote, bool(references), signature=self.session.signature(), reply_to=answered,
-            has_charter=bool(data.get("charter")),
+            has_charter=bool(data.get("charter")), own_days=own_days,     # UN-RFC 0030 3.1
+            comment_days_max=data.get("comment_days") if isinstance(data.get("comment_days"), int) else None,
             files_allowed=bool(data.get("attachments")) and g.type != "inbox"
             and (g.type != "closed" or bool(self.session.group_entry(g.group_id).get("keys"))))
         result = await self.push_screen_wait(dlg)
@@ -384,7 +388,8 @@ class IdentityMixin:
         try:
             msgid = await self.session.post(g.group_id, subject, body, references, files=files,
                                             tags=dlg.tags or None,         # UN-RFC 0052
-                                            languages=dlg.languages)       # and 5a
+                                            languages=dlg.languages,       # and 5a
+                                            comment_days=dlg.comment_days)  # UN-RFC 0030 3.1
         except (SessionError, OSError, ConnectionError) as exc:
             self.notify(f"Not sent: {exc}", severity="error", timeout=8)
             return

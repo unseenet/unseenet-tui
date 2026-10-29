@@ -6,6 +6,16 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+- **How long threads take comments, and closing comments on one thread** (#90,
+  unseenet#732, UN-RFC 0030): a new thread can have its own time for comments - as the
+  group, none, a day, a week or a month, never longer than the group's. *Close or open
+  comments* in the palette (Ctrl+P) closes them on the selected thread with an optional
+  note, or opens them again, for its author, the owner and moderators. The thread's head
+  says why it takes no comments, with a close's note, and "Comments close in 5 hours"
+  once less than a day is left. Create group and Edit group take the days for comments
+  or replies in open, moderated and closed groups too, not only channels. Needs
+  unseenet 0.6.
+
 - **A group's charter** (#87, unseenet#726): what a group's owner writes about the group
   is now called its *charter* everywhere - "? charter" in the title, *Charter* in group
   info, Create group and Edit group, and the first-time display. *Rules* means only your

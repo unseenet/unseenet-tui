@@ -80,6 +80,7 @@ NEEDS_NETWORK = frozenset({
     "Name your posts show", "Report post", "Open reported post", "Moderation queue", "Make moderator",
     "Make poster", "Moderators and posters", "Members of closed group", "Ban from group",
     "Block in hierarchy", "Banned from group", "Withdraw (delete) post", "Pin or unpin post",
+    "Close or open comments",
     "Remove group from the network", "Spam reports", "Become a spam report issuer",
     "Your spam reports", "Publish a spam report", "Read this inbox with the team",
     "Who reads this inbox"})
@@ -356,6 +357,9 @@ class PushMixin:
              self.action_withdraw),
             ("Pin or unpin post", "Owner or moderator: keep the selected post at the top of the "
              "group, kept by the nodes - or stop (UN-RFC 0033)", self.action_pin),
+            ("Close or open comments", "The thread's author, the owner or a moderator: stop "
+             "new comments or replies on the selected thread, with a note - or allow them "
+             "again (UN-RFC 0030)", self.action_close_comments),
             ("Pinned posts", "The posts pinned in this group: choose one to read it",
              self.action_pinned_posts),
             ("Next pin", "In a chat: show the next pinned line above it",
