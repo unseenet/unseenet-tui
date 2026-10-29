@@ -6,6 +6,9 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+- **The QR code has the quiet zone the standard asks for** (unseenet-gui#247): four modules
+  of white around it, not two, so a phone finds it on a dark terminal too.
+
 ## [0.2.0] - 2026-10-29
 
 **On unseenet 0.6 (`unseenet>=0.6,<0.7`): update the nodes first.** Feeds you can live in,
