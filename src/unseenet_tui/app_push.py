@@ -365,6 +365,8 @@ class PushMixin:
             ("Close or open comments", "The thread's author, the owner or a moderator: stop "
              "new comments or replies on the selected thread, with a note - or allow them "
              "again (UN-RFC 0030)", self.action_close_comments),
+            ("Mark all read", "Catch up: every post in this group read at once (unseenet#625)",
+             self.action_mark_group_read),
             ("Pinned posts", "The posts pinned in this group: choose one to read it",
              self.action_pinned_posts),
             ("Next pin", "In a chat: show the next pinned line above it",

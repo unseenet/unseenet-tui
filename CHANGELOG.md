@@ -6,6 +6,9 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+- **Mark all read** (unseenet#625): a palette command (Ctrl+P) that catches up a whole
+  group at once, through the core's `mark_group_read`. Needs unseenet 0.6.
+
 - **Level 4 by choice** (#93, unseenet#740, as the GUI): *Ripen to level 4* in the
   palette (Ctrl+P) says what it costs - weeks of one core while the client is open, at
   this machine's speed - and what it gives - about a quarter of the work for each post -
