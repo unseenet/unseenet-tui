@@ -71,6 +71,24 @@ from .screens import ChatBox, attachments_text, save_name, ReadScreen, AboutDial
 from .app_reports import HIDDEN_MARK, reported_text  # noqa: E402
 
 
+async def chat_card(session, text: str):
+    """A link card for a chat line (UN-RFC 0059): made quietly over Tor for its first link
+    while the line is sent, and shown in the chat as one small line - so without the
+    page's picture. None when link previews are off, there is no link, the page gives no
+    title or cannot be had: the line goes without one."""
+    url = session.card_url(text) if session.link_cards() else None
+    if not url:
+        return None
+    try:
+        draft = await session.make_card(url)
+    except (SessionError, OSError, ConnectionError, ValueError):
+        return None
+    if not draft.title.strip():
+        return None
+    draft.picture = None
+    return draft
+
+
 class ChatMixin:
 
     # --- chat view (UN-RFC 0008 section 5) ---
@@ -363,6 +381,16 @@ class ChatMixin:
         self._show_chat_files(gid)
         self.query_one("#chat-input").focus()
 
+    async def _chat_card(self, text: str):
+        """The chat line's link card, the status line saying so while it is made."""
+        if not (self.session.link_cards() and self.session.card_url(text)):
+            return None
+        self.set_status("Making a preview of the link over Tor ...")
+        try:
+            return await chat_card(self.session, text)
+        finally:
+            self.set_status("Sending (computing postage) ...")
+
     @work(group="post", exit_on_error=False)
     async def send_chat(self, gid: str, text: str, files: list[str] | None = None) -> None:
         """Send a chat line (with files) through the core, showing the postage work."""
@@ -377,7 +405,9 @@ class ChatMixin:
             if gid.startswith(CONTACT):
                 prepared = (self.session.prepare_files([Path(p).expanduser() for p in files])
                             if files else None)       # encrypted with the line (#497)
-                await self.session.send_chat(gid, text, files=prepared)
+                card = await self._chat_card(text)                 # UN-RFC 0059, small
+                more = {"card": card} if card else {}
+                await self.session.send_chat(gid, text, files=prepared, **more)
             else:
                 if not await self._accept_portals(gid):
                     self.query_one("#chat-input", ChatBox).value = text
@@ -388,7 +418,9 @@ class ChatMixin:
                     return
                 prepared = (self.session.prepare_files([Path(p).expanduser() for p in files])
                             if files else None)       # cleaned and checked here (#149, #496)
-                msgid = await self.session.send_chat(gid, text, files=prepared)   # UN-RFC 0028
+                card = await self._chat_card(text)                 # UN-RFC 0059, small
+                more = {"card": card} if card else {}
+                msgid = await self.session.send_chat(gid, text, files=prepared, **more)   # UN-RFC 0028
                 if self.session.was_submitted(gid, msgid):
                     self.notify("Sent to the moderators for approval", timeout=8)
                 if self.session.notice_settings()["send"] and self.session.may_notify(gid):

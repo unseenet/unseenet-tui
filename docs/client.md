@@ -210,6 +210,10 @@ from the page, once, by you - readers fetch nothing, they only see what is
 in the post. You are shown the preview and choose **With preview** or
 **Without preview** (Esc); the post is sent either way.
 
+A chat line with a link gets a small preview too, without asking: it is
+made while the line is sent (the status line says so) and shown in the chat
+as one line, `↳ domain - title`, without the page's picture.
+
 A post with a preview shows it under the text:
 
 ```
