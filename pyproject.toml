@@ -10,7 +10,7 @@ readme = "README.md"
 license = "Apache-2.0"
 requires-python = ">=3.11"
 dependencies = [
-    "unseenet>=0.6,<0.7",   # one minor version of the core at a time
+    "unseenet>=0.6.5,<0.7",   # one minor version of the core at a time
     "segno>=1.5",            # QR codes for copying to another device (UN-RFC 0050); pure Python
     "textual>=0.80",
 ]

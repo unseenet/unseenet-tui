@@ -6,11 +6,15 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-30
+
+Needs unseenet 0.6.5 (`unseenet>=0.6.5,<0.7`), which makes the link cards; nodes need no update for it.
+
 - **Link previews on chat lines**: a chat line with a link gets a small card, made quietly
   over Tor while the line is sent and shown as `↳ domain - title`, without the page's
   picture. Off with the other link previews (Ctrl+P).
 
-- **Link previews** (#102, UN-RFC 0059; needs unseenet main with #792): a post with a link
+- **Link previews** (#102, UN-RFC 0059; needs unseenet 0.6.5): a post with a link
   shows its card under the text - `┌ domain · site`, the title and description, "preview
   from the poster" - the domain taken from the link, and a warning when it may look like
   another address; a chat line one line `↳ domain - title`; the card's picture is among the
