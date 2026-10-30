@@ -271,7 +271,8 @@ the same node a chat is practically instant.
 
 A **feed** shows entries newest first, with comments under each - a person's own feed, or
 a group shown as one. Times say how long ago. A long entry is cut with *… more* (where
-its author put a line of three dots, if they did); Enter shows it whole. Comments are
+its author put a line of three dots, if they did); Enter shows it whole. A long comment
+is cut shorter, with *… [more]*, its own words first; Enter shows it whole too. Comments are
 folded to the newest one and your own talks: Enter on *View N more* shows 20 more, and
 ++ctrl+p++ *Which comments* shows where you wrote, or what names you, instead.
 
@@ -286,6 +287,33 @@ it. Chat groups are never in it.
 ![A person's feed: the entry cut at "… more", a comment folded](img/client-feed.svg)
 
 ![The timeline: feeds and a discussion group, newest first](img/client-timeline.svg)
+
+## Sharing
+
+Pass on what you read, as on Facebook, Mastodon and X (UN-RFC 0060). In a feed, ++b++
+shares the selected entry into your own feed (start it first: ++ctrl+p++ *Start your
+feed*). ++ctrl+p++ has the rest:
+
+- *Share with a comment* - your words, with the post as a card under them;
+- *Share into a group* - bring it to up to three other groups besides your feed; a
+  discussion group needs a few words that say why;
+- *Send to* - to one person, privately; nobody else is told;
+- *Undo share* - take back your share; sharing again replaces your earlier one there;
+- *Open the shared post* - the original, where it was posted, to comment or react.
+
+A share is a reference, never a copy. A plain share is listed as `↻ Mette shared:` and the
+original's subject, and read as the original itself, as its author wrote it - fetched
+through your nodes (*Fetching the shared post …* while it comes). A share with a comment
+has the original framed under it, `┌ ↻ Andreas · dk.snak`, and says *edited after it was
+shared* when the author changed it since. When the author withdraws the post it is gone
+from every share. In the timeline each post comes once, `↻ shared by Søren and Mette` -
+only people you follow are named, and nothing is ever counted.
+
+Not offered on closed groups or private posts; where the author asked that a post not
+be shared, Share says so - a request, not a protection, since anyone who reads a post can
+copy it. ++ctrl+p++ *Hide shares here* or *Hide shares in feeds and the timeline* hides
+plain shares; posts with words of their own still show. When someone shares a post of
+yours you are told in For you (++ctrl+p++ *Stop showing share notices*).
 
 ## A group's charter
 

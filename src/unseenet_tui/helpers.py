@@ -90,6 +90,8 @@ def newest_rows(rows: list, limit: int, chat: bool) -> tuple[list, bool]:
         out.append(row)
     return out, False
 CLIP_LINES = 10                          # an entry's text in a feed before "… more"
+COMMENT_LINES = 4                        # a comment's under it, before "… [more]" (#100)
+PREVIEW_WIDTH = 72                       # the width the core's cut counts lines in (unseenet#781)
 SITE_MARK = "▤"                          # your site in the group list (UN-RFC 0035)
 REPLY_MARK, MENTION_MARK = "◄", "♦"   # in the basic character set (Windows console)
 
