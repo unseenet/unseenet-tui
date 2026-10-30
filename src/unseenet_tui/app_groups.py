@@ -587,6 +587,9 @@ class GroupsMixin:
                                         f"  (Enter: {COMMENT_PAGE} more)", style="dim italic"),
                               "", "", key=FOLDED + entry)
                 continue
+            share_line = self.share_row(m)            # a plain share (UN-RFC 0060 5.2, 5.4)
+            if share_line == "":                      # hidden here, or its original gone
+                continue
             self.messages[m.message_id] = m
             flag = "●" if not s.is_read(m) else " "
             title = m.subject or "(no subject)"
@@ -599,6 +602,8 @@ class GroupsMixin:
                 subject = "  " * depth + "↳ " + title
             else:
                 subject = ("  " * (depth - 1) + "└ " if depth else "") + title
+            if share_line:
+                subject = share_line
             if getattr(m, "reported", None):            # hidden by a report: never its subject (0045)
                 subject = ("  " * (depth - 1) + "└ " if depth else "") + f"{HIDDEN_MARK} {reported_text(m)}"
             elif self.hidden_text(m):                    # a warning you hide: a quiet line (0053)

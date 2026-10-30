@@ -6,6 +6,24 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+Needs unseenet 0.6.6 (`unseenet>=0.6.6,<0.7`), which shares; update the nodes first.
+
+### Added
+
+- **Sharing** (#110, UN-RFC 0060): b shares the selected entry of a feed into your feed;
+  Ctrl+P has Share with a comment, Share into a group, Send to, Undo share and Open the
+  shared post. A plain share is listed as `↻ Mette shared: <subject>` and read as the
+  original, fetched through the core without holding up the view; a share with a comment
+  has the original framed under it, "edited after it was shared" when it was; one whose
+  original is gone is not listed. In the timeline each post once, "shared by Søren and
+  Mette" - never a count. Ctrl+P to hide shares here or everywhere, and for share notices.
+
+### Changed
+
+- **Long comments cut in feeds** (#100, unseenet#781): beside a feed a long comment is cut
+  by the core's rule with `… [more]`, its own words first; entries use the same core cut
+  as every client. Enter shows either whole.
+
 ## [0.3.1] - 2026-10-30
 
 A fix release on unseenet 0.6.5.

@@ -88,9 +88,10 @@ from .app_rules import RulesMixin  # noqa: E402 - your own rules (UN-RFC 0051)
 from .app_reports import ReportsMixin, reported_text, HIDDEN_MARK  # noqa: E402,F401 - spam reports (0045)
 from .app_teams import TeamsMixin  # noqa: E402 - team inboxes (UN-RFC 0047)
 from .app_tags import TagsMixin  # noqa: E402 - tags and content labels (UN-RFC 0052, 0053)
+from .app_shares import SharesMixin  # noqa: E402 - sharing (UN-RFC 0060)
 
 
-class UnseenetApp(GroupsMixin, ChatMixin, ActionsMixin, FeedsMixin, AddressesMixin, IdentityMixin, PagesMixin, PushMixin, NamesMixin, PinsMixin, RulesMixin, ReportsMixin, TeamsMixin, TagsMixin, App):
+class UnseenetApp(GroupsMixin, ChatMixin, ActionsMixin, FeedsMixin, AddressesMixin, IdentityMixin, PagesMixin, PushMixin, NamesMixin, PinsMixin, RulesMixin, ReportsMixin, TeamsMixin, TagsMixin, SharesMixin, App):
     TITLE = "unseenet"
     CSS = CSS + console_css()
 
@@ -109,6 +110,7 @@ class UnseenetApp(GroupsMixin, ChatMixin, ActionsMixin, FeedsMixin, AddressesMix
         Binding("n", "new_post", "New post"),
         Binding("r", "reply", "Reply"),
         Binding("l", "react", "React"),               # a like, or another emoji (UN-RFC 0048)
+        Binding("b", "share", "Share"),               # an entry into your feed (UN-RFC 0060)
         Binding("g", "browse", "Groups"),
         Binding("slash", "search_groups", "Search groups", show=False),
         Binding("j", "join", "Join", show=False),
@@ -176,6 +178,8 @@ class UnseenetApp(GroupsMixin, ChatMixin, ActionsMixin, FeedsMixin, AddressesMix
             if chat:
                 return bool(s.reaction_set(gid))
             return m is not None and s.react_permission(gid, m).allowed
+        if action == "share":                     # in a feed, on what can be shared (0060 5.5)
+            return self.can_share()
         if action == "invite":
             g = self.groups.get(gid)
             return bool(g and g.type == "closed" and s.group_entry(gid).get("owner"))

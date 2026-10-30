@@ -563,6 +563,8 @@ class ChatMixin:
         """The header (markup) and the body of a message, as the reader shows them.
         ``cut``: an entry beside a feed's list - a long post cut with "… more" (#34), at
         the author's read-more line when it is within twice the cut (UN-RFC 0031 3.2.1)."""
+        if msg.kind == "share" and msg.share_of:            # a plain share (UN-RFC 0060 5.2)
+            return self.plain_share_article(msg, cut)
         date = msg.date.astimezone().strftime("%A %d %B %Y %H:%M") if msg.date else ""
         if cut and msg.date:                                  # beside a feed: how long ago (#34)
             date = f"{ago(msg.date)}  ·  {date}"
@@ -625,10 +627,20 @@ class ChatMixin:
             # Markdown or plain, as the message says (UN-RFC 0031); the signature never is
             body = Text("\n")
             tree = markup.body(text, msg.content_type, msg.kind)
-            shown, more = cut_text(tree) if cut and msg.kind != KIND_CHAT else (richtext.blocks(tree), False)
+            # beside a feed: the core's one cut for entries and comments, as in every client
+            # (unseenet#781, #100) - a comment shorter, its own words first
+            comment = cut and bool(msg.references)
+            if cut and (msg.kind != KIND_CHAT or comment):
+                from .helpers import COMMENT_LINES, PREVIEW_WIDTH
+                p = markup.preview(text, msg.content_type, "post",
+                                   lines=COMMENT_LINES if comment else CLIP_LINES,
+                                   width=PREVIEW_WIDTH, quotes=not comment)
+                shown, more = richtext.blocks(p["tree"]), p["cut"]
+            else:
+                shown, more = richtext.blocks(tree), False
             body.append(shown)
             if more:
-                body.append("\n\n… more", style="bold")
+                body.append("\n\n… [more]" if comment else "\n\n… more", style="bold")
                 body.append("  - Enter shows it whole", style="dim italic")
             if sig is not None and not more:
                 body.append("\n\n")
@@ -647,6 +659,10 @@ class ChatMixin:
                 from .screens import card_text
                 body.append("\n\n")
                 body.append(card_text(card, chat=True))
+            shared = self.share_card_text(msg)               # what it shares (UN-RFC 0060 5.3)
+            if shared is not None:
+                body.append("\n\n")
+                body.append(shared)
             topics = self.topics_line(msg)                    # tags and topics (UN-RFC 0052)
             if topics is not None:
                 body.append("\n\n")

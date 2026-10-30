@@ -379,6 +379,7 @@ class PushMixin:
             ("Remove group from the network", "Delete a group you own from every node - final",
              self.action_remove_group),
         ]
+        commands += self.share_commands()             # sharing (UN-RFC 0060)
         for title, help_text, callback in commands:
             if title in NEEDS_NETWORK and not getattr(self, "_connected", False):
                 # not connected yet: said, not run - ready by itself once connected
