@@ -69,3 +69,13 @@ def test_a_chat_line_gets_a_small_card():
     assert asyncio.run(chat_card(_Session(title=""), f"Se {BT}")) is None      # no title: none
     s = _Session()
     assert asyncio.run(chat_card(s, "ingen link her")) is None and s.asked == []
+
+
+def test_a_posts_own_picture_first_and_its_card_one_line():
+    """UN-RFC 0059 section 8: the read view puts the post's own files first and the card
+    as the one line a chat shows, after them."""
+    import inspect
+    from unseenet_tui import app_chat
+    src = inspect.getsource(app_chat)
+    assert "card_text(card, chat=True)" in src and src.index("attachments_text(msg.attachments)") < \
+        src.index("card_text(card, chat=True)")
