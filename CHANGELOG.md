@@ -6,6 +6,7 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+- The manual lists every group a new client starts with, not only the first four.
 - **The QR code has the quiet zone the standard asks for** (unseenet-gui#247): four modules
   of white around it, not two, so a phone finds it on a dark terminal too.
 
