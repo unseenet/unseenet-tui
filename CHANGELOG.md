@@ -6,7 +6,9 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
-Needs unseenet 0.6.6 (`unseenet>=0.6.6,<0.7`), which shares; update the nodes first.
+## [0.4.0] - 2026-10-30
+
+Sharing (UN-RFC 0060). Needs unseenet 0.6.6 (`unseenet>=0.6.6,<0.7`), which shares; update the nodes first.
 
 ### Added
 
