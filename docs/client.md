@@ -68,9 +68,13 @@ Unseenet runs its own Tor process with its own settings and ignores
    down. Choose *Another node* to enter an address you were given.
 
 The client then subscribes you to the project's groups - `unseenet`
-(the project), `unseenet.announce` (releases and news), `unseenet.help`
-(ask anything) and `unseenet.test` (say hello) - so there is something to read. You can
-unsubscribe from them like any other group; they are not added again.
+(the project), `unseenet.announce` (release notes), `unseenet.help`
+(ask anything), `unseenet.help.news` (what is new, in plain words),
+`unseenet.chat` (the project's chat) and `unseenet.test` (say hello) -
+and to the demo's feed and site, `unseenet.demo.feed` and
+`unseenet.demo.site`, so there is something to read. You can
+unsubscribe from them like any other group; they are not added again
+(see [the groups you start with](https://unseenet.org/help/#the-groups-you-start-with)).
 Stuck? Ask in `unseenet.help` - see [Getting help](https://unseenet.org/help/).
 
 The first connection takes 10-30 seconds while Tor builds its circuits, and
