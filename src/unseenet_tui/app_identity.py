@@ -352,6 +352,31 @@ class IdentityMixin:
         self.session.accept_portals(gid)
         return True
 
+    async def _link_card(self, body: str):
+        """A link card for the first link in what was written (UN-RFC 0059): made over Tor
+        and shown before it is sent - with it or without. None when cards are off, there
+        is no link, or the page gives no title."""
+        s = self.session
+        url = s.card_url(body) if s.link_cards() else None
+        if not url:
+            return None
+        self.set_status("Making a preview of the link over Tor ...")
+        try:
+            draft = await s.make_card(url)
+        except SessionError as exc:
+            self.notify(f"No link preview: {exc}", timeout=6)
+            return None
+        finally:
+            self.set_status("")
+        if not draft.title.strip():
+            if draft.note:
+                self.notify(draft.note, timeout=6)
+            return None
+        from .dialogs.base import CardDialog
+        from .screens import card_text
+        text = card_text(draft.card()).plain + ("\n\nWith the page's picture." if draft.picture else "")
+        return draft if await self.push_screen_wait(CardDialog(text)) else None
+
     @work(group="post", exit_on_error=False)
     async def compose_post(self, g: GroupInfo, subject: str = "", quote: str = "",
                            references: list[str] | None = None) -> None:
@@ -384,9 +409,11 @@ class IdentityMixin:
             for f in files:
                 if getattr(f, "note", None):
                     self.notify(f.note, timeout=6)
+        card = await self._link_card(body)               # UN-RFC 0059
         self.set_status("Sending (computing postage) ...")
         try:
             msgid = await self.session.post(g.group_id, subject, body, references, files=files,
+                                            card=card,
                                             tags=dlg.tags or None,         # UN-RFC 0052
                                             languages=dlg.languages,       # and 5a
                                             comment_days=dlg.comment_days)  # UN-RFC 0030 3.1

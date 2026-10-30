@@ -6,6 +6,14 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+- **Link previews** (#102, UN-RFC 0059; needs unseenet main with #792): a post with a link
+  shows its card under the text - `┌ domain · site`, the title and description, "preview
+  from the poster" - the domain taken from the link, and a warning when it may look like
+  another address; a chat line one line `↳ domain - title`; the card's picture is among the
+  files (f saves it), marked as the preview's. Before a post or a private post is sent, the
+  first link that is not quoted gets a preview made over Tor, shown with "With preview" or
+  "Without preview" (Esc). Ctrl+P: "Link previews on/off".
+
 - The manual lists every group a new client starts with, not only the first four.
 - **The QR code has the quiet zone the standard asks for** (unseenet-gui#247): four modules
   of white around it, not two, so a phone finds it on a dark terminal too.

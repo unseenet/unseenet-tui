@@ -445,6 +445,13 @@ class NamesMixin:
         self.notify("Hiding posts by bots" if on else "Showing posts by bots, marked (bot)")
         self._render_threads()
 
+    def action_toggle_link_cards(self) -> None:
+        """Make link previews when posting, or not (UN-RFC 0059 section 7.5)."""
+        on = not self.session.link_cards()
+        self.session.set_link_cards(on)
+        self.notify("A link in a post gets a preview, shown before it is sent" if on
+                    else "Link previews are off: nothing is fetched for your links")
+
     def action_toggle_blocked(self) -> None:
         """Show or hide what a hierarchy's maintainer blocked (UN-RFC 0018 5.4)."""
         on = not self.session.data.get("show_blocked")
