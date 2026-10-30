@@ -162,6 +162,10 @@ class ChatMixin:
             liked = self._reactions_line(m, counted)     # UN-RFC 0048 section 7.2
             if liked:
                 line.append(f"\n{' ' * (len(when) + 1)}{liked}", style="dim")
+            if m.readable and getattr(m, "card", None) is not None:    # a link card (0059)
+                from .screens import card_text
+                line.append(f"\n{' ' * (len(when) + 1)}")
+                line.append(card_text(m.card, chat=True))
             if m.readable and m.attachments:             # files on a chat line (#496)
                 names = ", ".join(a.get("name") or ("picture" if a["type"].startswith("image/")
                                                     else a["type"]) for a in m.attachments)
@@ -597,6 +601,10 @@ class ChatMixin:
             if sig is not None and not more:
                 body.append("\n\n")
                 body.append(SIG_SEPARATOR + sig, style="dim")
+            if getattr(msg, "card", None) is not None:      # its link card (UN-RFC 0059)
+                from .screens import card_text
+                body.append("\n\n")
+                body.append(card_text(msg.card))
             if msg.attachments:                              # UN-RFC 0027 section 9.2
                 body.append("\n\n")
                 body.append(attachments_text(msg.attachments))

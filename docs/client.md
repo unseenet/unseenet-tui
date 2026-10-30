@@ -201,6 +201,30 @@ Group names are `a-z`, digits, `+`, `_`, `-` and dots, so `!dk.snak.` at the
 end of a sentence means `dk.snak`, while *Hello!*, a picture `![...]` and
 `!170` are not groups.
 
+## Link previews
+
+When a post or a private post has a link, the client makes a preview of the
+first link that is not quoted before it is sent: the site's domain, its name,
+the title and description, and its picture if it has one. It is made over Tor
+from the page, once, by you - readers fetch nothing, they only see what is
+in the post. You are shown the preview and choose **With preview** or
+**Without preview** (Esc); the post is sent either way.
+
+A post with a preview shows it under the text:
+
+```
+┌ bt.dk · B.T.
+│ Ansat i politiet snød Fleggaard: Nu er han dømt
+│ Retten i Sønderborg har idømt en mellemleder i politiet en bødestraf …
+└ preview from the poster · 2026-10-30
+```
+
+The first line is always the domain of the link itself - the title and the
+picture are what the poster says. An address that mixes alphabets, and may
+look like another, is marked. The picture is one of the post's files: `f`
+saves it. **Ctrl+P: Link previews on/off** - off, nothing is fetched for your
+links. The bootable client has them off from the start.
+
 ## Chat
 
 Any group - and any conversation with a contact - can be shown as a

@@ -180,12 +180,14 @@ class ActionsMixin:
         if not result:
             return
         subject, body, _ = result
+        card = await self._link_card(body)               # UN-RFC 0059, sealed with it
         self.set_status("Sending (computing postage) ...")
         try:
             files = (self.session.prepare_files([Path(p).expanduser() for p in dlg.files])
                      if dlg.files else None)          # encrypted with the post (#497)
             await self.session.send_private(target, subject, body, owner_key=owner_key,
-                                            references=references, files=files, as_team=as_team)
+                                            references=references, files=files, as_team=as_team,
+                                            card=card)
         except (SessionError, OSError, ConnectionError, ValueError) as exc:
             self.notify(f"Not sent: {exc}", severity="error", timeout=8)
             return

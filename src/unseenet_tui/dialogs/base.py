@@ -144,6 +144,30 @@ class ConfirmDialog(Dialog):
         self.dismiss(True)
 
 
+class CardDialog(Dialog):
+    """A link's preview as it will be sent (UN-RFC 0059 section 7.1): with it, or without.
+    Esc sends without it; the post is sent either way."""
+    AUTO_FOCUS = "#ok"
+
+    def __init__(self, text: str):
+        super().__init__()
+        self.text = text
+
+    def compose(self) -> ComposeResult:
+        """The card, and the two answers."""
+        with Vertical(classes="dialog"):
+            yield Label("Send it with this preview of the link?", classes="title", markup=False)
+            yield Static(self.text, markup=False)
+            yield Static("Made over Tor from the page; readers fetch nothing.", classes="hint", markup=False)
+            with Horizontal(classes="buttons"):
+                yield Button("Without preview", id="cancel")
+                yield Button("With preview", variant="primary", id="ok")
+
+    @on(Button.Pressed, "#ok")
+    def _ok(self) -> None:
+        self.dismiss(True)
+
+
 class KeyListDialog(Dialog):
     """A list of people (key, label); pick one for an action."""
 

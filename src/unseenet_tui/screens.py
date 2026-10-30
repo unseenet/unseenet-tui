@@ -116,6 +116,35 @@ class ChatBox(EmojiCompletion, TextArea):
         self.refresh_emoji()
 
 
+def card_text(card, chat: bool = False) -> Text:
+    """A post's link card (UN-RFC 0059 section 8) as a terminal shows it: the domain from
+    the link first, the site's own name, the title and description - the picture is one of
+    the post's files (f saves it). ``chat``: one line, domain and title."""
+    d = card.to_dict() if hasattr(card, "to_dict") else card
+    odd = "  ⚠ may look like another address" if d.get("domain_confusable") else ""
+    if chat:
+        out = Text("↳ ")
+        out.append(d.get("domain") or "", style="bold")
+        out.append(odd, style="bold yellow")
+        out.append(f" - {d.get('title') or ''}")
+        return out
+    out = Text("┌ ", style="green")
+    out.append(d.get("domain") or "", style="bold")
+    if d.get("site"):
+        out.append(f" · {d['site']}", style="dim")
+    out.append(odd, style="bold yellow")
+    out.append("\n│ ", style="green")
+    out.append(d.get("title") or "", style="bold")
+    if d.get("desc"):
+        out.append("\n│ ", style="green")
+        out.append(d["desc"])
+    made = d.get("made") or ""
+    out.append("\n└ ", style="green")
+    out.append("preview from the poster" + (f" · {made[:10]}" if made else "")
+               + ("  - its picture is in the files below" if d.get("image") else ""), style="dim")
+    return out
+
+
 def attachments_text(attachments) -> Text:
     """The files of a post as a terminal shows them (UN-RFC 0027 section 9.2): what the
     author says each is, its type and size - a terminal does not draw pictures here,
@@ -125,7 +154,8 @@ def attachments_text(attachments) -> Text:
         kind = "picture" if a["type"].startswith("image/") else a["type"]
         size = f"{a['size'] / 1024:.0f} KiB" if a["size"] >= 1024 else f"{a['size']} octets"
         dim = f", {a['dim'][0]}×{a['dim'][1]}" if a.get("dim") else ""
-        line = f"  {i}. {a.get('name') or 'file'} - {kind}, {size}{dim}"
+        line = f"  {i}. {a.get('name') or 'file'} - {kind}, {size}{dim}" + \
+            ("  (the link preview's picture)" if a.get("card") else "")
         out.append(line, style="dim")
         if a.get("alt"):
             out.append(f"\n     {a['alt']}")
