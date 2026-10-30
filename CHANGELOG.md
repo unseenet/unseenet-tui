@@ -6,6 +6,10 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+- **A post's own pictures before its link card** (unseenet#799, UN-RFC 0059 section 8): the
+  read view lists a post's own files first and its card after them as the one line a chat
+  shows, `↳ domain - title`.
+
 ## [0.3.0] - 2026-10-30
 
 Needs unseenet 0.6.5 (`unseenet>=0.6.5,<0.7`), which makes the link cards; nodes need no update for it.

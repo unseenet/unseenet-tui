@@ -633,13 +633,20 @@ class ChatMixin:
             if sig is not None and not more:
                 body.append("\n\n")
                 body.append(SIG_SEPARATOR + sig, style="dim")
-            if getattr(msg, "card", None) is not None:      # its link card (UN-RFC 0059)
+            card = getattr(msg, "card", None)              # its link card (UN-RFC 0059)
+            # the post's own files first, its card then one small line (UN-RFC 0059 8)
+            own = any(not a.get("card") for a in msg.attachments or ())
+            if card is not None and not own:
                 from .screens import card_text
                 body.append("\n\n")
-                body.append(card_text(msg.card))
+                body.append(card_text(card))
             if msg.attachments:                              # UN-RFC 0027 section 9.2
                 body.append("\n\n")
                 body.append(attachments_text(msg.attachments))
+            if card is not None and own:
+                from .screens import card_text
+                body.append("\n\n")
+                body.append(card_text(card, chat=True))
             topics = self.topics_line(msg)                    # tags and topics (UN-RFC 0052)
             if topics is not None:
                 body.append("\n\n")
