@@ -175,19 +175,27 @@ class PersonPicker(Dialog):
                 Binding("down", "move(1)", show=False, priority=True),
                 Binding("up", "move(-1)", show=False, priority=True)]
 
-    def __init__(self, kind: str, people: list[tuple[str, str, bool]]):
-        """``people``: (key, label, recent) - recent ones first."""
+    def __init__(self, kind: str, people: list[tuple[str, str, bool]], *, title: str | None = None,
+                 foot: str | None = None, find: str = "Find a contact, or paste a key",
+                 sections: bool = True):
+        """``people``: (key, label, recent) - recent ones first. With ``title`` it chooses
+        for something else (Send to…, Share into a group, UN-RFC 0060): no Chat | Post,
+        and ``foot``, ``find`` and ``sections`` say what is chosen."""
         super().__init__()
         self.kind, self.people, self.shown = kind, people, list(people)
+        self.fixed, self.foot, self.find, self.sections = title, foot, find, sections
 
     def _title(self) -> str:
+        if self.fixed:
+            return self.fixed
         return "New private chat" if self.kind == "chat" else "New private post"
 
     def compose(self) -> ComposeResult:
         """The title with Chat | Post, the filter and the list."""
         with Vertical(classes="dialog"):
-            yield Label(self._title() + "   [Chat | Post: Tab]", classes="title", id="ptitle", markup=False)
-            yield Input(placeholder="Find a contact, or paste a key", id="pfind")
+            yield Label(self._title() + ("" if self.fixed else "   [Chat | Post: Tab]"), classes="title",
+                        id="ptitle", markup=False)
+            yield Input(placeholder=self.find, id="pfind")
             yield OptionList(*self._options(), id="plist")
             yield Label(self._foot(), classes="hint", id="pfoot", markup=False)
             with Horizontal(classes="buttons"):
@@ -195,6 +203,8 @@ class PersonPicker(Dialog):
                 yield Button("Open", variant="primary", id="ok")
 
     def _foot(self) -> str:
+        if self.fixed:
+            return (self.foot or "") + "  ↑↓ choose · Enter write"
         return ("Sealed to their key: only the two of you can read it." if self.kind == "chat"
                 else "A post with a subject, sealed to them.") + "  ↑↓ choose · Enter open"
 
@@ -204,6 +214,9 @@ class PersonPicker(Dialog):
             tag = "recent" if recent else ("contacts" if not rest_shown else "")
             if not recent:
                 rest_shown = True
+            if not self.sections:
+                out.append(Option(label, id=key))
+                continue
             out.append(Option(("Recent:   " if recent and i == 0 else "Contacts: " if tag == "contacts"
                                else "          ") + label, id=key))
         return out
@@ -225,6 +238,8 @@ class PersonPicker(Dialog):
 
     def action_switch(self) -> None:
         """Tab: chat or post."""
+        if self.fixed:
+            return
         self.kind = "post" if self.kind == "chat" else "chat"
         self.query_one("#ptitle", Label).update(self._title() + "   [Chat | Post: Tab]")
         self.query_one("#pfoot", Label).update(self._foot())
@@ -239,7 +254,7 @@ class PersonPicker(Dialog):
 
     def _chosen(self) -> str | None:
         typed = self.query_one("#pfind", Input).value.strip()
-        if typed.startswith("ed25519:"):
+        if typed.startswith("ed25519:") and self.sections:
             return typed
         lst = self.query_one("#plist", OptionList)
         if lst.highlighted is None or not self.shown:
