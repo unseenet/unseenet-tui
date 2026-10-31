@@ -6,6 +6,18 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-10-31
+
+Needs unseenet 0.6.8 (`unseenet>=0.6.8,<0.7`).
+
+### Changed
+
+- **Sharing in the compose window** (UN-RFC 0060, as the graphical client): *Share with a
+  comment*, *Share into a group* and *Send to* open the ordinary compose window - subject
+  (if you like), text, files, language, tags - with the shared post as a card under your
+  words, instead of a line to type in. *Share into a group* chooses the group with a filter
+  first; *Send to* the person, with the person picker.
+
 ## [0.4.0] - 2026-10-30
 
 Sharing (UN-RFC 0060). Needs unseenet 0.6.6 (`unseenet>=0.6.6,<0.7`), which shares; update the nodes first.

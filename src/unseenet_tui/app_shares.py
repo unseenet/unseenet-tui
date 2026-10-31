@@ -17,11 +17,14 @@ from rich.text import Text
 from textual import work
 from textual.markup import escape
 
-from unseenet.client.session import Message, SessionError
+from unseenet.client.session import GroupInfo, Message, SessionError
+from unseenet.core import crypto
+from unseenet.core.groups import personal_inbox_id
 from unseenet.client.threads import TIMELINE
 from unseenet.nntp import NNTPError
 
-from .dialogs.base import ConfirmDialog, InputDialog, KeyListDialog
+from .dialogs.base import ConfirmDialog
+from .dialogs.people import PersonPicker
 
 SHARE_MARK = "↻"
 SHARE_STATES = {
@@ -40,7 +43,7 @@ def shared_by(m: Message) -> str:
     return (", ".join(names[:-1]) + " and " + names[-1]) if len(names) > 1 else names[0]
 
 
-def shared_text(state: dict | None, label: str = "", share_date=None) -> Text:
+def shared_text(state: dict | None, label: str = "", share_date=None, foot: bool = True) -> Text:
     """The original a share refers to, framed as a card (UN-RFC 0060 section 5.1): who,
     where, its subject and first lines - made from what was fetched, never from the share;
     "edited after it was shared" when the version shown is newer than ``share_date``.
@@ -67,7 +70,8 @@ def shared_text(state: dict | None, label: str = "", share_date=None) -> Text:
         out.append("\n│ ", style="green")
         out.append("edited after it was shared", style="italic")
     out.append("\n└ ", style="green")
-    out.append("Ctrl+P: Open the shared post", style="dim")
+    if foot:
+        out.append("Ctrl+P: Open the shared post", style="dim")
     return out
 
 
@@ -194,28 +198,32 @@ class SharesMixin:
             return
         self._shared_notice(mid)
 
+    def shared_text_for(self, m: Message) -> Text:
+        """The post being shared, as the card under your words in the compose window: the
+        original itself, or what a plain share refers to."""
+        if m.kind == "share" and m.share_of:
+            return shared_text(self._share_state(m), self._share_label(m.share_group or ""), foot=False)
+        return shared_text({"state": "ok", "message": m}, self._share_label(m.group), foot=False)
+
     @work(group="dialog", exit_on_error=False)
     async def action_share_comment(self) -> None:
-        """Share the selected post into your feed with words of your own."""
+        """Share the selected post into your feed with words of your own: the compose
+        window for a new post there, the post as a card under the text (as the GUI)."""
         m = self._share_subject()
         if m is None:
             return
-        text = await self.push_screen_wait(InputDialog(
-            "Share with a comment", "Your words, shown with the post as a card under them. "
-            "Public, like any post.", "Why it is worth reading"))
-        if not text:
+        feed = self.session.personal_group("feed")
+        if not feed:
+            self.notify("Start your feed first: Ctrl+P Start your feed", severity="warning", timeout=8)
             return
-        try:
-            mid = await self.session.share(m, text)
-        except SessionError as exc:
-            self.notify(f"Not shared: {exc}", severity="error", timeout=8)
-            return
-        self._shared_notice(mid)
+        g = self.groups.get(feed) or GroupInfo(feed, type="channel")
+        self.compose_post(g, share=m, heading="Share in your feed")
 
     @work(group="dialog", exit_on_error=False)
     async def action_share_into(self) -> None:
-        """Bring the selected post into another group, with a comment where it needs one
-        - at most three groups besides your feed (section 7.2)."""
+        """Bring the selected post into another group - chosen with a filter among those
+        that take it, at most three besides your feed (section 7.2) - then the compose
+        window for that group, the post as a card under the text."""
         s = self.session
         m = self._share_subject()
         if m is None:
@@ -225,52 +233,38 @@ class SharesMixin:
             self.notify("None of your groups takes shares, or you shared this into three already",
                         severity="warning", timeout=8)
             return
-        gid = await self.push_screen_wait(KeyListDialog(
-            "Share into a group", "At most three groups besides your feed. A discussion group "
-            "needs a few words: why you bring it there.",
-            [(d["group"], d["label"] + ("  (shared here)" if d["shared"] else "")
-              + ("" if d["plain"] else "  - needs a comment")) for d in places], "Share"))
-        if not gid:
+        result = await self.push_screen_wait(PersonPicker(
+            "post", [(d["group"], d["label"] + ("  (shared here - this replaces it)" if d["shared"] else ""),
+                      False) for d in places],
+            title="Share into a group", find="Find a group", sections=False,
+            foot="At most three groups besides your feed."))
+        if not result:
             return
+        gid = result[1]
         place = next(d for d in places if d["group"] == gid)
-        text = await self.push_screen_wait(InputDialog(
-            "Share into " + place["label"], "Your words" + ("" if place["plain"] else
-                                                          " - this group needs them") + ".",
-            "Why you bring it here"))
-        if not text and not place["plain"]:
-            self.notify("Not shared: a discussion group needs a few words", severity="warning")
-            return
-        try:
-            mid = await s.share(m, text or "", into=gid)
-        except SessionError as exc:
-            self.notify(f"Not shared: {exc}", severity="error", timeout=8)
-            return
-        self._shared_notice(mid)
+        g = self.groups.get(gid) or GroupInfo(gid)
+        self.compose_post(g, share=m, heading="Share in " + place["label"])
 
     @work(group="dialog", exit_on_error=False)
     async def action_send_share(self) -> None:
-        """Send the selected post to one person, privately (section 7.4)."""
-        s = self.session
+        """Send the selected post to one person, privately (section 7.4): the person
+        picker, then the compose window for a private post, the post as a card under it."""
         m = self._share_subject()
         if m is None:
             return
-        people = s.contacts()                                  # (key, name)
-        if people:
-            to = await self.push_screen_wait(KeyListDialog(
-                "Send to…", "Only they can read it; nobody else is told.", people, "Send"))
-        else:
-            to = await self.push_screen_wait(InputDialog(
-                "Send to…", "Their key. Only they can read it; nobody else is told.", "ed25519:..."))
-        if not to:
+        result = await self.push_screen_wait(PersonPicker(
+            "post", self._picker_people(), title="Send to…",
+            foot="Only they can read it; nobody else is told."))
+        if not result:
             return
-        text = await self.push_screen_wait(InputDialog(
-            "A few words", "If you like - or OK without.", "Look at this"))
+        key = result[1]
         try:
-            await s.send_share(m, to, text or "")
-        except SessionError as exc:
-            self.notify(f"Not sent: {exc}", severity="error", timeout=8)
+            owner = crypto.key_from_text(key)
+        except crypto.CryptoError:
+            self.notify("That is not a valid key", severity="error")
             return
-        self.notify("Sent", timeout=4)
+        name = self.session.contact_name(key) or key[:20]
+        self.compose_private(personal_inbox_id(owner), f"Send to {name}", owner_key=owner, share=m)
 
     @work(group="dialog", exit_on_error=False)
     async def action_unshare(self) -> None:

@@ -294,10 +294,12 @@ Pass on what you read, as on Facebook, Mastodon and X (UN-RFC 0060). In a feed, 
 shares the selected entry into your own feed (start it first: ++ctrl+p++ *Start your
 feed*). ++ctrl+p++ has the rest:
 
-- *Share with a comment* - your words, with the post as a card under them;
-- *Share into a group* - bring it to up to three other groups besides your feed; a
-  discussion group needs a few words that say why;
-- *Send to* - to one person, privately; nobody else is told;
+- *Share with a comment* - the compose window for a new post in your feed, the post as a
+  card under your words: a subject if you like, files, language and tags as in any post;
+- *Share into a group* - choose the group (type to filter), then write as in your feed - up
+  to three other groups besides your feed;
+- *Send to* - choose the person (type a name, or paste a key), then a private post with
+  the post under it; nobody else is told;
 - *Undo share* - take back your share; sharing again replaces your earlier one there;
 - *Open the shared post* - the original, where it was posted, to comment or react.
 

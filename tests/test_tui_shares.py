@@ -109,4 +109,26 @@ async def test_tui_shares(tmp_path, monkeypatch):
         assert app.check_action("share", ()) is True                   # a feed: b shares
         names = [t for t, *_ in app.share_commands()]
         assert "Share into a group" in names and "Stop showing share notices" in names
+
+        # Share with a comment: the compose window for your feed, the post as a card under
+        # the text, no subject needed (as the GUI)
+        from textual.widgets import Input, Static, TextArea
+        from unseenet_tui.dialogs.compose import ComposeDialog
+        app.select_group(gid)
+        assert await wait_for(pilot, lambda: app.current_group == gid and other in app.messages, 400)
+        app.current_message = app.messages[other]
+        app.action_share_comment()
+        assert await wait_for(pilot, lambda: isinstance(app.screen, ComposeDialog), 200)
+        dlg = app.screen
+        assert "Share in your feed" in str(dlg.query_one(".title").render())
+        assert "Et andet opslag" in str(dlg.query_one("#share-card", Static).render())
+        assert dlg.query_one("#subject", Input).placeholder == "Subject (if you like)"
+        dlg.query_one("#body", TextArea).text = "Se den her"
+        await pilot.pause()
+        dlg.action_send()
+        assert await wait_for(pilot, lambda: any("Shared" in n.message for n in app._notifications
+                                                 if "public" in n.message) and
+                              any(getattr(m, "share_of", None) and m.kind == "post"
+                                  for m in app.session.cache.get(feed, {}).values()), 600), \
+            [n.message for n in app._notifications]
     server.close()

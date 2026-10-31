@@ -95,11 +95,14 @@ class ComposeDialog(Dialog):
                  heading: str | None = None, signature: str = "", has_charter: bool = False,
                  files_allowed: bool = False, reply_to=None,
                  start_tags: list[str] | None = None, start_languages: list[str] | None = None,
-                 comment_days_max: int | None = None, own_days: bool = False):
+                 comment_days_max: int | None = None, own_days: bool = False,
+                 share_card=None):
         """``start_tags``/``start_languages``: an edit's - the post's own tags and warnings
         (without the ``#words`` in its text) and its language, filled in instead of the
-        suggestions (unseenet#733, #91). ``None`` for a new post."""
+        suggestions (unseenet#733, #91). ``None`` for a new post. ``share_card``: a share
+        (UN-RFC 0060) - the shared post as a card under the text, the subject optional."""
         super().__init__()
+        self.share_card = share_card
         self.editing = start_tags is not None or start_languages is not None
         self.start_tags = list(start_tags or [])
         self.start_languages = list(start_languages) if start_languages is not None else None
@@ -130,10 +133,13 @@ class ComposeDialog(Dialog):
             lock = "  ∩ encrypted" if self.group.type == "closed" else ""
             yield Label(self.heading or f"{kind} {self.app.session.group_label(self.group.group_id)}{lock}", classes="title",
                         markup=False)
-            yield Input(value=self.subject, placeholder="Subject", id="subject")
+            yield Input(value=self.subject, id="subject",
+                        placeholder="Subject (if you like)" if self.share_card is not None else "Subject")
             text = self.quote + (("\n" if self.quote else "\n\n") + SIG_SEPARATOR + self.signature
                                  if self.signature else "")
             yield EmojiTextArea(text, id="body", soft_wrap=True)     # :ta completion (#6)
+            if self.share_card is not None:               # what you share (UN-RFC 0060)
+                yield Static(self.share_card, id="share-card", classes="sharecard")
             if self.own_days and not self.is_reply and not self.editing:
                 yield Select(comment_days_options(self.comment_days_max), value="group",
                              allow_blank=False, id="comment_days", prompt="Comments")
@@ -331,7 +337,10 @@ class ComposeDialog(Dialog):
         """Ctrl+S: check and send it, or say what is missing."""
         subject = self.query_one("#subject", Input).value.strip()
         body = self.query_one("#body", TextArea).text
-        if not subject or not split_signature(body)[0].strip():
+        if self.share_card is not None and not split_signature(body)[0].strip():
+            self.app.notify("Write a few words of your own: why you share it", severity="error")
+            return
+        if self.share_card is None and (not subject or not split_signature(body)[0].strip()):
             self.app.notify("Subject and text are required", severity="error")
             return
         keys: list[str] = []
@@ -350,7 +359,8 @@ class ComposeDialog(Dialog):
                 self.languages = chosen if (chosen or self._suggested) else None
         if self.query("#comment_days"):                   # as the group, or its own (0030 3.1)
             value = self.query_one("#comment_days", Select).value
-            self.comment_days = None if value == "group" else int(value)
+            self.comment_days = (None if value == "group" or not isinstance(value, (int, str))
+                                 else int(value))
         if self.query("#tags"):                           # the core normalises them, adds #words
             typed = [t for t in self.query_one("#tags", Input).value.replace(",", " ").split() if t]
             self.tags = list(self.warnings) + [t for t in typed if t not in self.warnings]

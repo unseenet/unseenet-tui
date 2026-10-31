@@ -296,6 +296,7 @@ ModalScreen { align: center middle; }
 .dialog.about { width: 90; max-width: 100%; height: 94%; overflow-y: hidden; }
 .dialog.about #about-text { height: 1fr; padding-right: 1; }
 .dialog.compose #body { height: 1fr; margin-bottom: 1; }
+.dialog.compose .sharecard { height: auto; max-height: 8; margin-bottom: 1; color: $text-muted; }
 .dialog.compose .metarow { height: auto; }
 .dialog.compose .metarow .langcol { width: 34; height: auto; }
 .dialog.compose .metarow #tags { width: 1fr; }
