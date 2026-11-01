@@ -85,9 +85,13 @@ async def test_tui_create_group_with_pictures_and_attach_to_a_chat_line(tmp_path
         box = app.query_one("#chat-input")
         box.focus()
         box.value = "Min have"
+        # tui#116: on a slow runner Enter went out before the box had the focus, and the
+        # line was never sent - wait for the focus; then give the post with its picture
+        # (postage, the file's upload) up to a minute
+        assert await wait_for(pilot, lambda: app.focused is box, 200), app.focused
         await pilot.press("enter")
         assert await wait_for(pilot, lambda: any(a.get("Message-Kind") == "chat"
-                                                 for a in _with_blobs(node)), 400)
+                                                 for a in _with_blobs(node)), 1200)
         assert not app.chat_files.get(gid)
         await pilot.press("escape")
         await pilot.press("q")
