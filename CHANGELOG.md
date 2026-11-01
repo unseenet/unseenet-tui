@@ -6,6 +6,9 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+- The docs name the starter groups as unseenet 0.6.9 has them: `test.unseenet`,
+  `demo.unseenet.feed` and `demo.unseenet.site` (unseenet#821).
+
 ## [0.4.1] - 2026-10-31
 
 Needs unseenet 0.6.8 (`unseenet>=0.6.8,<0.7`).
