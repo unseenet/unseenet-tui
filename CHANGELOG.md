@@ -9,6 +9,14 @@ All notable changes to unseenet-tui are listed here. The format follows
 - The docs name the starter groups as unseenet 0.6.9 has them: `test.unseenet`,
   `demo.unseenet.feed` and `demo.unseenet.site` (unseenet#821).
 
+### Added
+
+- **Public name claims** (#114, UN-RFC 0054 section 8): where the registrar is a
+  council, claims are public and go out in two steps. Under @ the client says so before a claim,
+  renewal, transfer or release is sent, and shows each public claim's state - waiting
+  for its hour, sent, answered (issued, refused with the reason, released) or lapsed,
+  to claim again.
+
 ## [0.4.1] - 2026-10-31
 
 Needs unseenet 0.6.8 (`unseenet>=0.6.8,<0.7`).
