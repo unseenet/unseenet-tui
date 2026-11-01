@@ -67,6 +67,24 @@ from .dialogs.nodes import NodesDialog, AddNodeDialog, NodeInfoDialog  # noqa: F
 from .screens import ChatBox, attachments_text, save_name, ReadScreen, AboutDialog  # noqa: F401
 
 
+def claim_state(c: dict) -> str:
+    """A public claim's state in words (UN-RFC 0054 section 8; core naming.commit_state)."""
+    def at(iso: str) -> str:
+        return f"{nm.parse_rfc3339(iso).astimezone():%d %B %H:%M}"
+    if c["state"] == "waiting":
+        return (f"promise sent {at(c['sent'])}; the claim goes out by itself once it is an "
+                "hour old, while Unseenet is open")
+    if c["state"] == "revealed":
+        return f"sent {at(c['revealed'])}; the registrar decides, usually within a few hours"
+    if c["state"] == "lapsed":
+        return "not sent within seven days, so it no longer counts - claim it again"
+    a = c.get("answer") or {}
+    if a.get("outcome") == "issued":
+        return f"issued {at(a['date'])}"
+    if a.get("outcome") == "released":
+        return f"released {at(a['date'])}"
+    return "refused" + (f": {a['text']}" if a.get("text") else "")
+
 class PagesMixin:
 
     # --- writing pages of a site (UN-RFC 0035 section 9.2, #212) ---
@@ -581,14 +599,21 @@ class PagesMixin:
                          f"{c.expires.astimezone():%d %B %Y})"
                          + ("  - your posts show this one" if c.name == primary and len(mine) > 1 else ""))
         held = {c.name for c in mine}
+        public = naming.claims_are_public(s)
+        commits = naming.commits(s) if public else []
+        in_commits = {(c["name"], c["sent"]) for c in commits}
+        for c in reversed(commits):              # newest first (UN-RFC 0054 section 8)
+            lines.append(f"{c['action']} @{c['name']}: {claim_state(c)}")
         for name, action, when in naming.pending(s):
-            if name not in held:
+            if name not in held and (name, when) not in in_commits:
                 who = ("its holder" if action == "ask"
                        else "the registrar (it decides after about an hour)")
                 lines.append(f"{action} {name}: sent {nm.parse_rfc3339(when).astimezone():%d %B %H:%M}, "
                              f"waiting for {who}")
         if not lines:
             lines.append("You have no names yet.")
+        if public:
+            lines += ["", naming.PUBLIC_NOTICE]
         lines.append("")
         lines.append(f"Your key: {s.identity().key_text}")
         return "\n".join(lines)
@@ -613,11 +638,14 @@ class PagesMixin:
             self.notify(str(exc), severity="error")
             return
         to = None
+        public = naming.claims_are_public(s)     # a council registrar (UN-RFC 0054 section 8)
+        note = ("\n\n" + naming.PUBLIC_NOTICE + " It goes out in two steps: a sealed promise "
+                "now, the claim itself once that is an hour old.") if public else ""
         if action == "release":
             if not await self.push_screen_wait(ConfirmDialog(
                     f"Release @{name}?",
                     "You give the name up at once. Others can then claim it, and your "
-                    "posts no longer show it.", "Release", danger=True)):
+                    "posts no longer show it." + note, "Release", danger=True)):
                 return
         elif action == "transfer":
             to = await self.push_screen_wait(InputDialog(
@@ -637,7 +665,7 @@ class PagesMixin:
                 return
             if not await self.push_screen_wait(ConfirmDialog(
                     f"Transfer @{name}?", f"From now on the name belongs to\n\n{to}\n\n"
-                    "Only that key can give it back.", "Transfer", danger=True)):
+                    "Only that key can give it back." + note, "Transfer", danger=True)):
                 return
         if kind == "domain" and action == "claim":
             record = f"{nm.dns_record_name(name)}  TXT  \"{nm.dns_record_value(s.identity().key_text)}\""
@@ -645,8 +673,11 @@ class PagesMixin:
                     f"Claim {name}?",
                     "The registrar looks for this DNS record. Add it at your DNS provider "
                     f"first, then claim:\n\n{record}\n\nKeep it there: the name is renewed "
-                    "every month for as long as the record is there.", "Claim")):
+                    "every month for as long as the record is there." + note, "Claim")):
                 return
+        elif public and not await self.push_screen_wait(ConfirmDialog(
+                f"{action.capitalize()} @{name}?", note.strip(), action.capitalize())):
+            return
         self.set_status(f"Sending your {action} for {name} ...")
         try:
             await naming.claim(s, name, action, to)
@@ -659,6 +690,11 @@ class PagesMixin:
                 "renew": "the new expiry shows under @",
                 "transfer": "the name then belongs to the other key",
                 "release": "the name is then free"}[action]
+        if public:
+            self.notify(f"Your {action} of @{name} is committed. The claim goes out by itself when "
+                        f"it is an hour old, while Unseenet is open; the answer comes to your "
+                        f"private messages, and {done}.", timeout=12)
+            return
         self.notify(f"Sent your {action} of @{name} to the registrar. It decides after about an "
                     f"hour; the answer comes to your private messages, and {done}.", timeout=12)
 

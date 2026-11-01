@@ -940,6 +940,49 @@ async def test_tui_names_transfer_and_release(tmp_path, monkeypatch):
     server.close()
 
 
+
+async def test_tui_public_claims(tmp_path, monkeypatch):
+    """A council registrar (UN-RFC 0054 section 8, tui#114): @ says claims are public, a claim
+    is confirmed with that first, and each public claim's state is shown."""
+    from unseenet.client import naming
+    from unseenet_tui.app import ConfirmDialog, NamesDialog
+    from unseenet_tui.app_pages import claim_state
+    sent = []
+
+    async def fake_claim(s, name, action="claim", to=None):
+        sent.append((action, name))
+        return "<x@y>"
+
+    commits = [{"name": "old", "action": "claim", "sent": "2026-10-01T10:00:00Z", "state": "lapsed"},
+               {"name": "sonia", "action": "claim", "sent": "2026-11-01T10:00:00Z",
+                "revealed": "2026-11-01T11:00:00Z", "state": "revealed"},
+               {"name": "andlo", "action": "claim", "sent": "2026-10-30T10:00:00Z", "state": "answered",
+                "answer": {"outcome": "refused", "text": "held by another key", "date": "2026-10-30T12:00:00Z"}}]
+    monkeypatch.setattr(naming, "claim", fake_claim)
+    monkeypatch.setattr(naming, "claims_are_public", lambda s: True)
+    monkeypatch.setattr(naming, "commits", lambda s: commits)
+    assert "claim it again" in claim_state(commits[0])
+    assert "registrar decides" in claim_state(commits[1])
+    assert claim_state(commits[2]) == "refused: held by another key"
+    app, server = await _app_with_groups(tmp_path, monkeypatch, [])
+    async with app.run_test(size=(120, 40)) as pilot:
+        assert await app_ready(pilot, app), stack(app)
+        app.action_names()
+        assert await wait_for(pilot, lambda: isinstance(app.screen, NamesDialog)
+                              and app.screen.query("#value"), 300)
+        text = app.screen.text
+        assert "Claims are public" in text and "claim @sonia: sent" in text and "refused" in text
+        app.screen.query_one("#value").value = "lorensen"
+        await pilot.pause(0.3)
+        app.screen.query_one("#claim").press()
+        assert await wait_for(pilot, lambda: isinstance(app.screen, ConfirmDialog), 300)
+        assert "Claims are public" in " ".join(str(w.render()) for w in app.screen.query("Static"))
+        await pilot.pause(0.2)
+        app.screen.query_one("#ok").press()
+        assert await wait_for(pilot, lambda: sent == [("claim", "lorensen")], 300)
+        await pilot.press("q")
+    server.close()
+
 async def test_tui_ignore_and_show_again(tmp_path, monkeypatch):
     """#72: Ignore this person hides their posts; People you ignore shows them again."""
     from unseenet_tui.app import ConfirmDialog, KeyListDialog
