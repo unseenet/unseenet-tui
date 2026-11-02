@@ -6,6 +6,10 @@ All notable changes to unseenet-tui are listed here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- Runs on core 0.7 (`unseenet>=0.7,<0.8`): announced nodes, councils and servers that update themselves.
+
 - The docs name the starter groups as unseenet 0.6.9 has them: `test.unseenet`,
   `demo.unseenet.feed` and `demo.unseenet.site` (unseenet#821).
 
